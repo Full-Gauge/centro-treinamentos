@@ -1,5 +1,3 @@
-import { jwtVerify, importJWK } from 'jose';
-
 export async function handleAttendanceRequest(request, env, ctx) {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Método não permitido. Use POST.' }), {
@@ -9,43 +7,11 @@ export async function handleAttendanceRequest(request, env, ctx) {
   }
 
   try {
-    const { token, attendance } = await request.json();
+    const { email } = await request.json();
 
-    if (!token || !attendance) {
-      return new Response(JSON.stringify({ error: 'Dados incompletos: token e attendance são obrigatórios.' }), {
+    if (!email) {
+      return new Response(JSON.stringify({ error: 'O campo e-mail é obrigatório.' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    if (!env.JWT_SECRET) {
-      return new Response(JSON.stringify({ error: 'JWT_SECRET não configurado no ambiente do Worker.' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    let classId;
-    let email;
-    try {
-      // Importa a chave secreta para verificação
-      const secret = new TextEncoder().encode(env.JWT_SECRET);
-      const { payload } = await jwtVerify(token, secret);
-
-      // Extrai classId e email do payload do JWT
-      classId = payload.classId;
-      email = payload.email;
-
-      if (!classId || !email) {
-        return new Response(JSON.stringify({ error: 'Payload do JWT inválido: classId ou email ausentes.' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    } catch (jwtError) {
-      console.error('Erro na validação do JWT:', jwtError);
-      return new Response(JSON.stringify({ error: 'Token de acesso inválido ou expirado.' }), {
-        status: 401,
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -66,8 +32,7 @@ export async function handleAttendanceRequest(request, env, ctx) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email,
-        codigo_turma: classId,
-        confirmacao_presencao: attendance
+        confirmacao_presencao: "Sim"
       })
     });
 
