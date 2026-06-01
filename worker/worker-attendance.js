@@ -51,10 +51,10 @@ export async function handleAttendanceRequest(request, env, ctx) {
     }
 
     // Integração com o Power Automate
-    const powerAutomateUrl = env.url_registro_presenca;
+    const powerAutomateUrl = env.ATTENDANCE_WEBHOOK_URL || env.url_registro_presenca;
     
     if (!powerAutomateUrl) {
-      return new Response(JSON.stringify({ error: 'Configuração url_registro_presenca ausente no Cloudflare.' }), {
+      return new Response(JSON.stringify({ error: 'Configuração ATTENDANCE_WEBHOOK_URL ausente no Cloudflare.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -66,8 +66,8 @@ export async function handleAttendanceRequest(request, env, ctx) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email,
-        attendance: attendance,
-        classId: classId // Enviando o ID da turma também, caso precise filtrar no Flow
+        codigo_turma: classId,
+        confirmacao_presencao: attendance
       })
     });
 

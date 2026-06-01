@@ -7,5 +7,6 @@ build
 README.md
 *.log
 .env
+.dev.vars
 .continue/
 *.yaml

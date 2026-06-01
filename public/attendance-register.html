@@ -10,135 +10,87 @@
 </head>
 <body data-theme="light">
   <div class="bg-orb bg-orb-a" aria-hidden="true"></div>
-  
+  <div class="bg-orb bg-orb-b" aria-hidden="true"></div>
+
   <main class="app-shell" style="grid-template-columns: 1fr; justify-items: center; align-items: center; min-height: 80vh;">
-    <section class="wizard-panel" style="text-align: center; max-width: 600px;">
+    <section class="wizard-panel" style="text-align: center; max-width: 640px; width: 100%;">
+      <header class="wizard-toolbar" style="margin-bottom: 1rem;">
+        <div class="toolbar-left"></div>
+        <div class="control-group">
+          <div class="language-switch" role="group" aria-label="Idioma">
+            <button type="button" class="lang-btn active" data-lang="pt" aria-pressed="true" title="Português">
+              <svg viewBox="0 0 24 16" aria-hidden="true">
+                <rect width="24" height="16" fill="#009b3a"></rect>
+                <polygon points="12,2 21,8 12,14 3,8" fill="#ffdf00"></polygon>
+                <circle cx="12" cy="8" r="3.2" fill="#002776"></circle>
+              </svg>
+              <span>PT</span>
+            </button>
+            <button type="button" class="lang-btn" data-lang="en" aria-pressed="false" title="English">
+              <svg viewBox="0 0 24 16" aria-hidden="true">
+                <rect width="24" height="16" fill="#012169"></rect>
+                <rect x="10" width="4" height="16" fill="#ffffff"></rect>
+                <rect y="6" width="24" height="4" fill="#ffffff"></rect>
+                <rect x="11" width="2" height="16" fill="#c8102e"></rect>
+                <rect y="7" width="24" height="2" fill="#c8102e"></rect>
+              </svg>
+              <span>EN</span>
+            </button>
+            <button type="button" class="lang-btn" data-lang="es" aria-pressed="false" title="Español">
+              <svg viewBox="0 0 24 16" aria-hidden="true">
+                <rect width="24" height="16" fill="#aa151b"></rect>
+                <rect y="4" width="24" height="8" fill="#f1bf00"></rect>
+              </svg>
+              <span>ES</span>
+            </button>
+          </div>
+
+          <button id="themeToggle" type="button" class="ghost-btn" aria-label="Alternar tema">
+            <svg class="theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V2m0 20v-2m8-8h2M2 12h2m12.3 5.7 1.4 1.4M4.3 4.3 5.7 5.7m12.6 0 1.4-1.4M4.3 19.7l1.4-1.4M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z"></path></svg>
+            <svg class="theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path></svg>
+            <span data-i18n="themeToggle">Tema</span>
+          </button>
+        </div>
+      </header>
+
       <div class="brand-card" style="margin-bottom: 2rem;">
         <img src="/assets/logo.svg" alt="Full Gauge Controls" class="brand-logo" style="margin-bottom: 1.5rem;">
-        <h1 style="color: #fff; margin-bottom: 0;">Registro de Presença</h1>
+        <h1 style="color: #fff; margin-bottom: 0;" data-i18n="pageTitle">Registro de Presença</h1>
       </div>
 
       <form id="attendanceForm" style="text-align: left; background: var(--panel); padding: 2rem; border-radius: 20px; border: 1px solid var(--line-200); box-shadow: var(--shadow-1);">
-        <!-- Campo oculto para armazenar o token JWT completo -->
         <input type="hidden" id="jwtToken" name="jwtToken">
 
         <div class="field-wrap full">
           <p id="userInfo" style="margin-bottom: 1.5rem; font-size: 0.95rem; color: var(--ink-700); display: none;">
-            Registrando presença para: <strong id="displayEmail"></strong><br>Turma: <strong id="displayClassId"></strong>
+            <span data-i18n="registeringFor">Registrando presença para:</span> <strong id="displayEmail"></strong><br>
+            <span data-i18n="classLabel">Turma:</span> <strong id="displayClassId"></strong>
           </p>
 
-          <label style="font-size: 1.1rem; display: block; margin-bottom: 1rem;">Confirmar presença?</label>
+          <label style="font-size: 1.1rem; display: block; margin-bottom: 1rem;" data-i18n="attendanceQuestion">Confirmar presença?</label>
           <div class="radio-group">
             <label class="radio-chip">
               <input type="radio" name="attendance" value="Sim" required>
-              <span>Sim</span>
+              <span data-i18n="yes">Sim</span>
             </label>
             <label class="radio-chip">
               <input type="radio" name="attendance" value="Não" required>
-              <span>Não</span>
+              <span data-i18n="no">Não</span>
             </label>
           </div>
         </div>
 
         <div id="formError" style="color: var(--danger); font-size: 0.9rem; margin-top: 1rem; display: none;">
-          Link de acesso inválido. Por favor, utilize o link enviado oficialmente.
+          <span data-i18n="invalidLink">Link de acesso inválido. Por favor, utilize o link enviado oficialmente.</span>
         </div>
 
         <div style="display: flex; gap: 1rem; margin-top: 2.5rem;">
-          <button type="submit" class="primary-btn" style="flex: 2;">Confirmar Registro</button>
+          <button type="submit" class="primary-btn" style="flex: 2;" data-i18n="submit">Confirmar Registro</button>
         </div>
       </form>
     </section>
   </main>
 
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('t'); // 't' de token
-
-    const jwtTokenInput = document.getElementById('jwtToken');
-    const displayEmail = document.getElementById('displayEmail');
-    const userInfo = document.getElementById('userInfo');
-    const displayClassId = document.getElementById('displayClassId');
-    const attendanceForm = document.getElementById('attendanceForm');
-    const formError = document.getElementById('formError');
-    const submitBtn = attendanceForm.querySelector('button[type="submit"]');
-
-    let emailForDisplay = null;
-    let classIdForDisplay = null;
-
-    if (token) {
-      try {
-        // Decodifica apenas o payload do JWT para exibir o e-mail
-        // O payload é a segunda parte do JWT (entre os pontos)
-        const payloadBase64 = token.split('.')[1];
-        if (payloadBase64) {
-          const decodedPayload = JSON.parse(decodeURIComponent(escape(atob(payloadBase64))));
-          emailForDisplay = decodedPayload.email;
-          classIdForDisplay = decodedPayload.classId;
-        }
-      } catch (e) {
-        console.error("Erro ao decodificar payload do JWT para exibição:", e);
-      }
-    }
-
-    if (token && emailForDisplay && classIdForDisplay) {
-      jwtTokenInput.value = token; // Armazena o JWT completo
-      displayEmail.textContent = emailForDisplay;
-      displayClassId.textContent = classIdForDisplay;
-      userInfo.style.display = 'block';
-
-      // Limpa a URL visualmente (remove o ?classId=... da barra de endereço)
-      const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-      window.history.replaceState({ path: newUrl }, '', newUrl);
-    } else {
-      // Se não houver token ou o e-mail não puder ser extraído, desabilita o formulário
-      submitBtn.disabled = true;
-      formError.style.display = 'block';
-    }
-
-    // Lógica visual dos chips de rádio
-    document.querySelectorAll('input[name="attendance"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        document.querySelectorAll('.radio-chip').forEach(chip => {
-          chip.classList.toggle('radio-chip--selected', chip.querySelector('input').checked);
-        });
-      });
-    });
-
-    // Lógica de submissão do formulário
-    attendanceForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const attendanceValue = attendanceForm.querySelector('input[name="attendance"]:checked')?.value;
-      if (!attendanceValue) return;
-
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<span class="spinner" aria-hidden="true"></span> Enviando...`; // Usar spinner
-      const payload = {
-        token: jwtTokenInput.value, // Envia o JWT completo
-        attendance: attendanceValue
-      };
-
-      try {
-        const response = await fetch('/api/attendance', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (response.ok) {
-          attendanceForm.innerHTML = '<div style="text-align:center; padding: 2rem;"><h3>✅ Presença registrada!</h3><p>Obrigado por confirmar.</p></div>';
-        } else { // Handle API errors
-          alert('Erro ao registrar presença. Tente novamente.');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Confirmar Registro';
-        }
-      } catch (err) { // Handle network errors
-        alert('Erro de conexão.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Confirmar Registro';
-      }
-    });
-  </script>
+  <script type="module" src="/js/attendance-register.js"></script>
 </body>
 </html>
