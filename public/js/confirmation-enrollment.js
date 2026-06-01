@@ -1,56 +1,62 @@
 const i18n = {
   pt: {
     htmlLang: "pt-BR",
-    documentTitle: "Registro de presença de treinamentos - Full Gauge",
+    documentTitle: "Confirmação de inscrição de treinamentos - Full Gauge",
     themeToggle: "Tema",
-    pageTitle: "Registro de Presença",
-    registeringFor: "Registrando presença para:",
+    pageTitle: "Confirmação de Inscrição",
+    registeringFor: "Confirmando inscrição para:",
     classLabel: "Turma:",
-    attendanceQuestion: "Confirmar presença?",
+    attendanceQuestion: "Confirma inscrição?",
     yes: "Sim",
     no: "Não",
     invalidLink: "Link de acesso inválido. Por favor, utilize o link enviado oficialmente.",
-    submit: "Confirmar Registro",
+    submit: "Confirmar Inscrição",
     sending: "Enviando...",
-    successTitle: "Presença registrada!",
-    successMessage: "Obrigado por confirmar.",
-    submitError: "Erro ao registrar presença. Tente novamente.",
+    successTitle: "Inscrição confirmada!",
+    successMessage: "Obrigado por confirmar sua inscrição. Sua resposta foi enviada com sucesso.",
+    declinedTitle: "Inscrição não confirmada!",
+    declinedMessage: "Obrigado pelo retorno. Registramos que você não confirmou inscrição para esta turma.",
+    submitError: "Erro ao confirmar inscrição. Tente novamente.",
     connectionError: "Erro de conexão."
   },
   en: {
     htmlLang: "en",
-    documentTitle: "Training attendance register - Full Gauge",
+    documentTitle: "Training enrollment confirmation - Full Gauge",
     themeToggle: "Theme",
-    pageTitle: "Attendance Register",
-    registeringFor: "Registering attendance for:",
+    pageTitle: "Enrollment Confirmation",
+    registeringFor: "Confirming enrollment for:",
     classLabel: "Class:",
-    attendanceQuestion: "Confirm attendance?",
+    attendanceQuestion: "Confirm enrollment?",
     yes: "Yes",
     no: "No",
     invalidLink: "Invalid access link. Please use the official link that was sent to you.",
-    submit: "Confirm Registration",
+    submit: "Confirm Enrollment",
     sending: "Sending...",
-    successTitle: "Attendance registered!",
-    successMessage: "Thank you for confirming.",
-    submitError: "Error registering attendance. Please try again.",
+    successTitle: "Enrollment confirmed!",
+    successMessage: "Thank you for confirming your enrollment. Your response was sent successfully.",
+    declinedTitle: "Enrollment not confirmed!",
+    declinedMessage: "Thank you for your response. We registered that you did not confirm enrollment for this class.",
+    submitError: "Error confirming enrollment. Please try again.",
     connectionError: "Connection error."
   },
   es: {
     htmlLang: "es",
-    documentTitle: "Registro de asistencia a capacitaciones - Full Gauge",
+    documentTitle: "Confirmación de inscripción a capacitaciones - Full Gauge",
     themeToggle: "Tema",
-    pageTitle: "Registro de Asistencia",
-    registeringFor: "Registrando asistencia para:",
+    pageTitle: "Confirmación de Inscripción",
+    registeringFor: "Confirmando inscripción para:",
     classLabel: "Clase:",
-    attendanceQuestion: "¿Confirmar asistencia?",
+    attendanceQuestion: "¿Confirma inscripción?",
     yes: "Sí",
     no: "No",
     invalidLink: "Enlace de acceso inválido. Por favor, utiliza el enlace enviado oficialmente.",
-    submit: "Confirmar Registro",
+    submit: "Confirmar Inscripción",
     sending: "Enviando...",
-    successTitle: "¡Asistencia registrada!",
-    successMessage: "Gracias por confirmar.",
-    submitError: "Error al registrar la asistencia. Inténtalo de nuevo.",
+    successTitle: "¡Inscripción confirmada!",
+    successMessage: "Gracias por confirmar tu inscripción. Tu respuesta fue enviada correctamente.",
+    declinedTitle: "¡Inscripción no confirmada!",
+    declinedMessage: "Gracias por tu respuesta. Registramos que no confirmaste inscripción para esta clase.",
+    submitError: "Error al confirmar la inscripción. Inténtalo de nuevo.",
     connectionError: "Error de conexión."
   }
 };
@@ -114,11 +120,25 @@ function setTheme(theme) {
   localStorage.setItem("fg_theme", nextTheme);
 }
 
-function renderSuccessMessage() {
+function isAttendanceConfirmed(value) {
+  return value === "Sim";
+}
+
+function renderSuccessMessage(attendanceValue) {
+  const confirmed = isAttendanceConfirmed(attendanceValue);
+  const title = confirmed ? t("successTitle") : t("declinedTitle");
+  const message = confirmed ? t("successMessage") : t("declinedMessage");
+  const iconPath = confirmed
+    ? "M5 12.5 9.2 16.7 19 7"
+    : "M7 7 17 17M17 7 7 17";
+
   attendanceForm.innerHTML = `
-    <div style="text-align:center; padding: 2rem;">
-      <h3>${t("successTitle")}</h3>
-      <p>${t("successMessage")}</p>
+    <div class="attendance-success${confirmed ? "" : " attendance-success--declined"}" role="status" aria-live="polite">
+      <div class="attendance-success-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="${iconPath}"></path></svg>
+      </div>
+      <h3>${title}</h3>
+      <p>${message}</p>
     </div>
   `;
 }
@@ -188,7 +208,7 @@ attendanceForm.addEventListener("submit", async (e) => {
     });
 
     if (response.ok) {
-      renderSuccessMessage();
+      renderSuccessMessage(attendanceValue);
     } else {
       alert(t("submitError"));
       submitBtn.disabled = false;
