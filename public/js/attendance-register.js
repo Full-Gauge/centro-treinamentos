@@ -147,8 +147,7 @@ function validateForm() {
   const val = emailInput?.value.trim() || "";
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid = val && emailRegex.test(val) && !isDisposableEmail(val);
-  const isAttendanceSelected = !!attendanceForm.querySelector('input[name="attendance"]:checked');
-  if (submitBtn) submitBtn.disabled = !(isEmailValid && isAttendanceSelected);
+  if (submitBtn) submitBtn.disabled = !isEmailValid;
 }
 
 emailInput?.addEventListener("input", () => {
@@ -173,15 +172,6 @@ emailInput?.addEventListener("input", () => {
   }
 
   validateForm();
-});
-
-document.querySelectorAll('input[name="attendance"]').forEach((radio) => {
-  radio.addEventListener("change", () => {
-    document.querySelectorAll(".radio-chip").forEach((chip) => {
-      chip.classList.toggle("radio-chip--selected", chip.querySelector("input").checked);
-    });
-    validateForm();
-  });
 });
 
 attendanceForm.addEventListener("submit", async (e) => {
@@ -212,7 +202,7 @@ attendanceForm.addEventListener("submit", async (e) => {
   submitBtn.disabled = true;
   submitBtn.innerHTML = `<span class="spinner" aria-hidden="true"></span> ${t("sending")}`;
 
-  const attendanceValue = attendanceForm.querySelector('input[name="attendance"]:checked')?.value;
+  const attendanceValue = "Sim";
 
   const payload = {
     email: emailValue,
