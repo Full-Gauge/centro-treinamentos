@@ -201,7 +201,7 @@ attendanceForm.addEventListener("submit", async (e) => {
   };
 
   try {
-    const response = await fetch("/api/attendance", {
+    const response = await fetch("/api/confirmation", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)

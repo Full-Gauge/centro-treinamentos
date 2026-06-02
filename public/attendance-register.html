@@ -59,14 +59,13 @@
       </div>
 
       <form id="attendanceForm" style="text-align: left; background: var(--panel); padding: 2rem; border-radius: 20px; border: 1px solid var(--line-200); box-shadow: var(--shadow-1);">
-        <input type="hidden" id="jwtToken" name="jwtToken">
-
         <div class="field-wrap full">
-          <p id="userInfo" style="margin-bottom: 1.5rem; font-size: 0.95rem; color: var(--ink-700); display: none;">
-            <span data-i18n="registeringFor">Registrando presença para:</span> <strong id="displayEmail"></strong><br>
-            <span data-i18n="classLabel">Turma:</span> <strong id="displayClassId"></strong>
-          </p>
+          <label for="email" data-i18n="emailLabel">E-mail *</label>
+          <input type="email" id="email" name="email" required placeholder="seu@email.com">
+          <span class="input-error-msg" id="email-error" role="alert"></span>
+        </div>
 
+        <div class="field-wrap full" style="margin-top: 1.5rem;">
           <label style="font-size: 1.1rem; display: block; margin-bottom: 1rem;" data-i18n="attendanceQuestion">Confirmar presença?</label>
           <div class="radio-group">
             <label class="radio-chip">

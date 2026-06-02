@@ -636,6 +636,16 @@ button:focus {
   font-size: 0.76rem;
   color: var(--danger);
   margin-top: 0.15rem;
+  display: block;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  pointer-events: none;
+}
+
+.input-error-msg.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* --- Status Message Enhancements --- */
@@ -917,4 +927,39 @@ button:focus {
     flex: 1;
     justify-content: center;
   }
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.input-success-icon {
+  position: absolute;
+  right: 12px;
+  color: var(--fg-green-600);
+  display: flex;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.input-success-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.input-success-icon.visible {
+  opacity: 1;
 }

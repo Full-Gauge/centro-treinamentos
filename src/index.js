@@ -4,6 +4,7 @@ import { handleRegisterRequest } from '../worker/worker-register.js';
 import { handleTokenValidation } from '../worker/worker-token.js';
 import { handleAttendanceRequest } from '../worker/worker-attendance.js';
 import { handleJwtGenerationRequest } from '../worker/worker-jwt-generator.js';
+import { handleConfirmationRequest } from '../worker/worker-confirmation.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -27,6 +28,11 @@ export default {
     // 4. Roteamento para a API de Validação de Token
     if (url.pathname.replace(/\/$/, "") === "/api/validate-token") {
       return handleTokenValidation(request, env, ctx);
+    }
+
+    // 4.1 Roteamento para a API de Confirmação
+    if (url.pathname.replace(/\/$/, "") === "/api/confirmation") {
+      return handleConfirmationRequest(request, env, ctx);
     }
 
     // 5. Roteamento para a API de Registro de Presença
