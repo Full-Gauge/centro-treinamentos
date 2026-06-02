@@ -7,10 +7,27 @@ export async function handleConfirmationRequest(request, env, ctx) {
   }
 
   try {
-    const { email, attendance } = await request.json();
+    const body = await request.json();
+    let email = body.email;
+    let codigo_turma = body.codigo_turma;
+    const attendance = body.attendance;
+
+    // Se não veio e-mail direto, tenta extrair do Token (caso venha da tela de confirmação de inscrição)
+    if (body.token) {
+      try {
+        const payloadBase64 = body.token.split(".")[1];
+        if (payloadBase64) {
+          const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")));
+          if (!email) email = decoded.email;
+          if (!codigo_turma) codigo_turma = decoded.classId;
+        }
+      } catch (e) {
+        console.error("Erro ao decodificar token no worker:", e);
+      }
+    }
 
     if (!email || !attendance) {
-      return new Response(JSON.stringify({ error: 'Os campos e-mail e presença são obrigatórios.' }), {
+      return new Response(JSON.stringify({ error: 'E-mail (ou token válido) e presença são obrigatórios.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -29,6 +46,7 @@ export async function handleConfirmationRequest(request, env, ctx) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email,
+        codigo_turma: codigo_turma,
         confirmacao_presencao: attendance
       })
     });

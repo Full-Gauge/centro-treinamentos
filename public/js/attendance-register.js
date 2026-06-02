@@ -107,11 +107,25 @@ function setTheme(theme) {
   localStorage.setItem("fg_theme", nextTheme);
 }
 
-function renderSuccessMessage() {
+function isAttendanceConfirmed(value) {
+  return value === "Sim";
+}
+
+function renderSuccessMessage(attendanceValue) {
+  const confirmed = isAttendanceConfirmed(attendanceValue);
+  const title = confirmed ? t("successTitle") : t("declinedTitle");
+  const message = confirmed ? t("successMessage") : t("declinedMessage");
+  const iconPath = confirmed
+    ? "M5 12.5 9.2 16.7 19 7"
+    : "M7 7 17 17M17 7 7 17";
+
   attendanceForm.innerHTML = `
-    <div style="text-align:center; padding: 2rem;">
-      <h3>${t("successTitle")}</h3>
-      <p>${t("successMessage")}</p>
+    <div class="attendance-success${confirmed ? "" : " attendance-success--declined"}" role="status" aria-live="polite">
+      <div class="attendance-success-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="${iconPath}"></path></svg>
+      </div>
+      <h3>${title}</h3>
+      <p>${message}</p>
     </div>
   `;
 }
@@ -213,7 +227,7 @@ attendanceForm.addEventListener("submit", async (e) => {
     });
 
     if (response.ok) {
-      renderSuccessMessage();
+      renderSuccessMessage(attendanceValue);
     } else {
       alert(t("submitError"));
       isSubmitting = false;
