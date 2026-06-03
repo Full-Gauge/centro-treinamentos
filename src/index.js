@@ -5,6 +5,7 @@ import { handleTokenValidation } from '../worker/worker-token.js';
 import { handleAttendanceRequest } from '../worker/worker-attendance.js';
 import { handleJwtGenerationRequest } from '../worker/worker-jwt-generator.js';
 import { handleConfirmationRequest } from '../worker/worker-confirmation.js';
+import { handleShortenRequest, handleRedirectRequest } from '../worker/worker-url-shortener.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -43,6 +44,16 @@ export default {
     // 6. Roteamento para a API de Geração de JWT
     if (url.pathname.replace(/\/$/, "") === "/api/generate-jwt-register-attendance") {
       return handleJwtGenerationRequest(request, env, ctx);
+    }
+
+    // 6.1 Roteamento para a API de Encurtamento de URL
+    if (url.pathname.replace(/\/$/, "") === "/api/shorten-url") {
+      return handleShortenRequest(request, env, ctx);
+    }
+
+    // 6.2 Handler de Redirecionamento para URLs encurtadas (/s/[codigo])
+    if (url.pathname.startsWith("/s/")) {
+      return handleRedirectRequest(request, env, ctx);
     }
 
     // 7. Fallback: Se não for uma rota de API, entrega os arquivos estáticos (HTML, JS, CSS)

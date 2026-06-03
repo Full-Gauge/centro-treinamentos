@@ -6,5 +6,11 @@
     "directory": "public",
     "not_found_handling": "single-page-application"
   },
-  "vars": {} // Garanta que 'url_turmas' NÃO esteja aqui
+  "vars": {}, 
+  "kv_namespaces": [
+    {
+      "binding": "URL_SHORTENER_KV",
+      "id": "dba5af53bc924d55b24e47eb07fa4f56"
+    }
+  ]
 }
