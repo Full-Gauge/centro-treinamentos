@@ -41,6 +41,11 @@ Endpoint especializado (`worker-confirmation.js`) para processar links de confir
 - `/src/index.js`: Ponto de entrada (Router) do Worker.
 - `/worker/`: Contém os handlers específicos para cada rota de API (tokens, turmas, módulos, etc).
 
+### Documentos Importantes
+
+*   **`public/docs/termo-de-uso.pdf`**: Este documento contém os Termos de Uso da plataforma de inscrição de treinamentos. Ele é referenciado na última etapa do formulário de inscrição, onde os usuários devem lê-lo e aceitar as condições antes de finalizar o cadastro.
+
+
 ## ⚙️ Configuração (Variáveis de Ambiente)
 
 Para o funcionamento correto, as seguintes variáveis devem ser configuradas no painel da Cloudflare:

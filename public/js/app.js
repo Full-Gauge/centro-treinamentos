@@ -237,7 +237,7 @@ const STEPS = [
         }
       ],
       termsLink: {
-        url: "https://www.fullgauge.com.br", // Substitua pela URL real dos seus termos de uso
+        url: "/docs/termo-de-uso.pdf",
         label: { pt: "Leia os Termos de Uso", en: "Read Terms of Use", es: "Leer Términos de Uso" }
     },
   }
