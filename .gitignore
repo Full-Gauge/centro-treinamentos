@@ -3,10 +3,8 @@ node_modules
 dist
 build
 .git
-.github
 README.md
 *.log
 .env
 .dev.vars
 .continue/
-*.yaml
