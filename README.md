@@ -1,57 +1,168 @@
 # Plataforma de Treinamentos - Full Gauge
 
-Este projeto compreende o ecossistema de inscrição, confirmação e registro de presença para os treinamentos da Full Gauge. A solução foi desenhada para rodar em *Edge Computing*, utilizando Cloudflare Workers para garantir baixa latência e alta disponibilidade.
+Este projeto centraliza o fluxo de treinamentos da Full Gauge, incluindo:
+- inscrição;
+- confirmação de inscrição;
+- cancelamento de inscrição;
+- registro de presença;
+- geração de links com token JWT;
+- encurtamento e redirecionamento de URLs.
 
-## 🚀 Funcionalidades Principais
+A aplicação roda em **Cloudflare Workers** (Edge Computing), com frontend estático em `/public` e APIs serverless roteadas por `/src/index.js`.
 
-### 1. Inscrição de Treinamentos (Wizard)
-Localizado em `app.js`, este é um formulário multi-etapas (wizard) que gerencia o cadastro de novos alunos.
-- **Relação com a Marca:** Diferencia entre público geral e parceiros.
-- **Validação de Token:** Parceiros devem inserir um token válido que é verificado via API (`/api/validate-token`). Se válido, o sistema pré-preenche e trava campos como "Empresa" e "Turma".
-- **Máscaras e Validação:** Implementação nativa de máscaras para CPF e Telefone, além de verificação de e-mails descartáveis.
-- **Termos de Uso:** Exigência de leitura e aceitação de termos de imagem e custos antes do envio.
+## 🚀 Funcionalidades
 
-### 2. Registro de Presença
-Localizado em `attendance-register.js`, focado na simplicidade para o aluno durante o evento.
-- **Fluxo Simplificado:** O usuário insere apenas seu e-mail.
-- **Envio Automático:** O sistema envia silenciosamente o valor `Sim` para o campo de presença, removendo fricção da interface.
-- **Feedback Visual:** Micro-interações para validar o e-mail em tempo real e estados de carregamento (spinners).
+### 1) Inscrição de Treinamentos (Wizard)
+Tela principal em `public/index.html` com lógica em `public/js/app.js`.
 
-### 3. Confirmação de Inscrição
-Endpoint especializado (`worker-confirmation.js`) para processar links de confirmação enviados por e-mail.
-- **Processamento de Tokens:** Capaz de extrair e-mail e ID da turma diretamente de tokens JWT ou parâmetros de URL.
+Principais recursos:
+- Fluxo multi-etapas (wizard);
+- Diferenciação entre público geral e parceiros;
+- Validação de token de parceiro via `/api/validate-token`;
+- Pré-preenchimento de dados quando o token é válido;
+- Máscaras e validações de campos (ex.: CPF, telefone, e-mail);
+- Aceite de termos de uso antes do envio.
 
-## 🛠️ Tecnologias Envolvidas
+### 2) Registro de Presença
+Tela em `public/attendance-register.html` com lógica em `public/js/attendance-register.js`.
+
+Principais recursos:
+- Fluxo simples focado em agilidade;
+- Envio da presença para backend via `/api/attendance`;
+- Feedback visual de carregamento e validação.
+
+### 3) Confirmação de Inscrição
+Tela em `public/confirmation-enrollment.html` com lógica em `public/js/confirmation-enrollment.js`.
+
+Principais recursos:
+- Acesso por link com token JWT (`?t=...`);
+- Extração de e-mail e turma pelo token;
+- Resposta de confirmação via `/api/confirmation`;
+- Interface com i18n (PT/EN/ES) e tema claro/escuro.
+
+### 4) Cancelamento de Inscrição (Novo)
+Tela em `public/cancellation-enrollment.html` com lógica em `public/js/cancellation-enrollment.js`.
+
+Principais recursos:
+- Mesmo padrão visual e de usabilidade da tela de confirmação;
+- Acesso por token JWT (`?t=...`);
+- Envio da resposta de cancelamento via `/api/cancellation`;
+- Suporte a PT/EN/ES e tema claro/escuro.
+
+### 5) Geração de JWT para Links
+Endpoint: `/api/generate-jwt-register-attendance`
+
+Principais recursos:
+- Gera token com `classId` + `email`;
+- Expiração configurada no worker;
+- Proteção por `x-api-key`.
+
+### 6) Encurtador de URL
+Endpoints:
+- `POST /api/shorten-url`
+- `GET /s/:code`
+
+Principais recursos:
+- Geração de link curto com armazenamento em KV;
+- Redirecionamento automático com expiração (TTL).
+
+## 🔌 Rotas de API
+
+- `GET/POST /api/turmas`
+- `GET/POST /api/modulos`
+- `POST /api/register`
+- `POST /api/validate-token`
+- `POST /api/confirmation`
+- `POST /api/cancellation`
+- `POST /api/attendance`
+- `POST /api/generate-jwt-register-attendance`
+- `POST /api/shorten-url`
+- `GET /s/:code`
+
+## 🛠️ Tecnologias
 
 ### Frontend
-- **Vanilla JavaScript (ES6+):** Lógica de interface sem dependências externas (Zero Frameworks).
-- **CSS Moderno:** Uso extensivo de *CSS Variables* para suporte nativo a **Tema Claro/Escuro** e layouts responsivos com *Grid* e *Flexbox*.
-- **I18n (Internacionalização):** Sistema customizado de tradução suportando Português (PT), Inglês (EN) e Espanhol (ES).
+- Vanilla JavaScript (ES6+)
+- HTML + CSS com design responsivo
+- CSS Variables para temas claro/escuro
+- I18n customizado (PT, EN, ES)
 
-### Backend (Serverless)
-- **Cloudflare Workers:** Execução de lógica no Edge.
-- **Router Pattern:** O arquivo `index.js` atua como um roteador central para as diversas APIs do sistema.
-- **Integrações:** Os dados são enviados para fluxos de automação via **Power Automate (Webhooks)**.
+### Backend
+- Cloudflare Workers
+- Cloudflare KV (URL shortener)
+- Integração com webhooks (Power Automate)
 
 ## 📂 Estrutura de Arquivos Relevantes
 
-- `/public/js/app.js`: Lógica do wizard de inscrição.
-- `/public/js/attendance-register.js`: Lógica da tela de presença.
-- `/public/css/style.css`: Estilização global e temas.
-- `/src/index.js`: Ponto de entrada (Router) do Worker.
-- `/worker/`: Contém os handlers específicos para cada rota de API (tokens, turmas, módulos, etc).
+- `public/index.html`
+- `public/attendance-register.html`
+- `public/confirmation-enrollment.html`
+- `public/cancellation-enrollment.html`
+- `public/js/app.js`
+- `public/js/attendance-register.js`
+- `public/js/confirmation-enrollment.js`
+- `public/js/cancellation-enrollment.js`
+- `public/css/style.css`
+- `public/docs/termo-de-uso.pdf`
+- `src/index.js`
+- `worker/worker-register.js`
+- `worker/worker-attendance.js`
+- `worker/worker-confirmation.js`
+- `worker/worker-cancellation.js`
+- `worker/worker-jwt-generator.js`
+- `worker/worker-url-shortener.js`
 
-### Documentos Importantes
+## 🧪 Teste Local
 
-*   **`public/docs/termo-de-uso.pdf`**: Este documento contém os Termos de Uso da plataforma de inscrição de treinamentos. Ele é referenciado na última etapa do formulário de inscrição, onde os usuários devem lê-lo e aceitar as condições antes de finalizar o cadastro.
+### Pré-requisitos
+- Node.js 18+
+- Conta Cloudflare (para deploy)
+- Wrangler CLI (via `npx` ou instalação global)
+
+### 1) Instalar dependências
+```bash
+npm install
+```
+
+### 2) Rodar localmente
+```bash
+npx wrangler dev
+```
+
+Por padrão, o Wrangler sobe o Worker local com os assets de `/public` e as rotas de API de `/src/index.js`.
+
+### 3) Testar páginas no navegador
+- `http://127.0.0.1:8787/` (inscrição)
+- `http://127.0.0.1:8787/attendance-register.html`
+- `http://127.0.0.1:8787/confirmation-enrollment.html?t=SEU_JWT`
+- `http://127.0.0.1:8787/cancellation-enrollment.html?t=SEU_JWT`
+
+### 4) Testar APIs rapidamente (exemplo)
+```bash
+curl -X POST http://127.0.0.1:8787/api/cancellation \
+  -H "Content-Type: application/json" \
+  -d '{"token":"SEU_JWT","cancellation":"Sim"}'
+```
+
+### 5) Deploy
+```bash
+npx wrangler deploy
+```
+
+## ⚙️ Variáveis de Ambiente
 
 
-## ⚙️ Configuração (Variáveis de Ambiente)
+Configure no Cloudflare (Worker Settings / Secrets / Vars):
 
-Para o funcionamento correto, as seguintes variáveis devem ser configuradas no painel da Cloudflare:
-- `url_registro`: URL do webhook para novos cadastros.
-- `ATTENDANCE_WEBHOOK_URL`: URL para registro de presença.
-- `CONFIRMATION_WEBHOOK_URL`: URL para confirmação de inscrição.
+- `url_registro`: webhook para novos cadastros.
+- `ATTENDANCE_WEBHOOK_URL`: webhook para presença.
+- `CONFIRMATION_WEBHOOK_URL`: webhook para confirmação de inscrição.
+- `CANCELLATION_WEBHOOK_URL`: webhook para cancelamento de inscrição.
+- `JWT_SECRET`: segredo para assinatura dos tokens JWT.
+- `API_KEY`: chave esperada no header `x-api-key` para geração de JWT.
+- `URL_SHORTENER_KV`: binding do namespace KV do encurtador.
+
+> Observação: no worker de cancelamento existe fallback para `CONFIRMATION_WEBHOOK_URL` caso `CANCELLATION_WEBHOOK_URL` não esteja configurada.
 
 ---
 *Full Gauge Controls - Departamento de Engenharia de Software*
