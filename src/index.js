@@ -5,7 +5,9 @@ import { handleTokenValidation } from '../worker/worker-token.js';
 import { handleAttendanceRequest } from '../worker/worker-attendance.js';
 import { handleJwtGenerationRequest } from '../worker/worker-jwt-generator.js';
 import { handleConfirmationRequest } from '../worker/worker-confirmation.js';
+import { handleCancellationRequest } from '../worker/worker-cancellation.js';
 import { handleShortenRequest, handleRedirectRequest } from '../worker/worker-url-shortener.js';
+
 
 export default {
   async fetch(request, env, ctx) {
@@ -31,12 +33,18 @@ export default {
       return handleTokenValidation(request, env, ctx);
     }
 
-    // 4.1 Roteamento para a API de Confirmação
+        // 4.1 Roteamento para a API de Confirmação
     if (url.pathname.replace(/\/$/, "") === "/api/confirmation") {
       return handleConfirmationRequest(request, env, ctx);
     }
 
+    // 4.2 Roteamento para a API de Cancelamento
+    if (url.pathname.replace(/\/$/, "") === "/api/cancellation") {
+      return handleCancellationRequest(request, env, ctx);
+    }
+
     // 5. Roteamento para a API de Registro de Presença
+
     if (url.pathname.replace(/\/$/, "") === "/api/attendance") {
       return handleAttendanceRequest(request, env, ctx);
     }
