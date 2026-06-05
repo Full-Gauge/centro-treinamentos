@@ -97,7 +97,7 @@ const DISPOSABLE_DOMAINS = [
 
 const STEPS = [
   {
-    title: { pt: "Relação conosco", en: "Relationship with us", es: "Relación con nosotros" },
+    title: { pt: "Relação conosco Teste", en: "Relationship with us", es: "Relación con nosotros" },
     description: {
       pt: "Informações principais de identificação.",
       en: "Main identification information.",
