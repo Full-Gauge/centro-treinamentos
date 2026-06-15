@@ -771,10 +771,11 @@ select:focus {
 
 /* --- Status Message Enhancements --- */
 #statusMessageWrapper {
-  min-height: 300px;
+  min-height: 0;
+  margin-top: 0.75rem;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .status-message {
