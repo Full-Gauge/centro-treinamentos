@@ -713,10 +713,21 @@ async function validateEnrollmentName() {
       })
     });
 
-    const contentType = response.headers.get("content-type") || "";
-    const result = contentType.includes("application/json")
-      ? await response.json()
-      : { message: await response.text() };
+    const rawBody = await response.text();
+    let result = {};
+
+    try {
+      result = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      result = { message: rawBody };
+    }
+
+    const validate =
+      result?.validate ??
+      result?.valid ??
+      result?.approved ??
+      result?.success ??
+      result?.data;
 
     if (!response.ok) {
       const message =
@@ -731,12 +742,12 @@ async function validateEnrollmentName() {
       return false;
     }
 
-    if (result?.validate === false) {
+    if (validate === false) {
       showStatus("CPF já cadastrado em outro(a) usuário/inscrição", "error");
       return false;
     }
 
-    if (result?.validate !== true) {
+    if (validate !== true) {
       const message =
         result?.message ||
         result?.error ||
