@@ -30,6 +30,9 @@ const i18n = {
     selectOption:"Selecione uma opção",
     duplicateCpfError: "CPF já cadastrado em outro(a) usuário/inscrição",
     termsLockedMessage: "Primeiro baixe e leia os termos para prosseguir.",
+    termsDownloaded: "PDF baixado com sucesso.",
+    modulesInfo: "O curso completo é composto por {count} módulos. Você pode se inscrever em todos eles na mesma turma ou em turmas diferentes, desde que não repita um módulo.",
+    termsLinkMobileLabel: "Baixar Termos de Uso",
   },
   en: {
     brandEyebrow: "Training Enrollment Platform",
@@ -60,7 +63,10 @@ const i18n = {
     emailBounce: "This email domain is not allowed.",
     selectOption:"Select an option",
     duplicateCpfError: "CPF already registered for another user/enrollment",
-    termsLockedMessage: "First download and read the terms to continue."
+    termsLockedMessage: "First download and read the terms to continue.",
+    termsDownloaded: "PDF downloaded successfully.",
+    modulesInfo: "The full course is made up of {count} modules. You can enroll in all of them in the same class or across different classes, as long as you do not repeat a module.",
+    termsLinkMobileLabel: "Download Terms of Use"
   },
   es: {
     brandEyebrow: "Plataforma de inscripción a capacitaciones",
@@ -91,7 +97,10 @@ const i18n = {
     emailBounce: "Este dominio de correo no está permitido.",
     selectOption:"Seleccione una opción",
     duplicateCpfError: "CPF ya registrado en otro(a) usuario/inscripción",
-    termsLockedMessage: "Primero descarga y lee los términos para continuar."
+    termsLockedMessage: "Primero descarga y lee los términos para continuar.",
+    termsDownloaded: "PDF descargado con éxito.",
+    modulesInfo: "El curso completo está compuesto por {count} módulos. Puedes inscribirte en todos ellos en la misma clase o en clases diferentes, siempre que no repitas un módulo.",
+    termsLinkMobileLabel: "Descargar Términos de Uso"
   },
 };
 
@@ -264,6 +273,32 @@ function t(key) {
   return (i18n[currentLang] || i18n.pt)[key] || key;
 }
 
+function formatMessage(template, values = {}) {
+  return String(template).replace(/\{(\w+)\}/g, (_, key) =>
+    values[key] !== undefined ? values[key] : `{${key}}`
+  );
+}
+
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+function getTermsLinkLabel() {
+  if (isMobileDevice()) {
+    return t("termsLinkMobileLabel");
+  }
+  return STEPS[STEPS.length - 1].termsLink.label[currentLang] || STEPS[STEPS.length - 1].termsLink.label.pt;
+}
+
+function clearRequiredEmptyState(fieldId) {
+  const wrap = document.getElementById(`field-wrap-${fieldId}`);
+  const input = document.getElementById(fieldId);
+
+  wrap?.classList.remove("required-empty-group");
+  input?.classList.remove("required-empty");
+  input?.closest(".checkbox-chip")?.classList.remove("required-empty-chip");
+}
+
 function isDisposableEmail(email) {
   const domain = email.split('@')[1]?.toLowerCase();
   return DISPOSABLE_DOMAINS.includes(domain);
@@ -316,9 +351,17 @@ function renderFields() {
   const container = document.getElementById("formFields");
   const title = document.getElementById("stepTitle");
   const desc = document.getElementById("stepDescription");
+  const modulesField = step.fields?.find((f) => f.id === "modulos");
+  const modulesCount = Array.isArray(modulesField?.options) ? modulesField.options.length : 0;
 
   if (title) title.textContent = step.title[currentLang] || step.title.pt;
-  if (desc) desc.textContent = step.description[currentLang] || step.description.pt;
+  if (desc) {
+    const baseDesc = step.description[currentLang] || step.description.pt || "";
+    const modulesInfo = currentStep === 2 && modulesCount > 0
+      ? formatMessage(t("modulesInfo"), { count: modulesCount })
+      : "";
+    desc.textContent = [baseDesc, modulesInfo].filter(Boolean).join(" ");
+  }
   if (!container) return;
 
   // Verifica se é a etapa de termos e se há um link para exibir
@@ -327,8 +370,26 @@ function renderFields() {
   let checkboxesInitiallyDisabled = false;
 
   if (isTermsStep && step.termsLink) {
+    const termsLinkAttrs = isMobileDevice()
+      ? `download="Termos_de_Uso_Full_Gauge.pdf"`
+      : `target="_blank" rel="noopener noreferrer"`;
+    const termsLinkIcon = isMobileDevice()
+      ? `<svg class="terms-link-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 3v10"></path>
+          <path d="M8 11l4 4 4-4"></path>
+          <path d="M5 19h14"></path>
+        </svg>`
+      : `<svg class="terms-link-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path>
+          <path d="M14 2v5h5"></path>
+          <path d="M9 13h6"></path>
+          <path d="M9 17h6"></path>
+        </svg>`;
     termsLinkHtml = `<div class="field-wrap full">
-      <a href="${step.termsLink.url}" target="_blank" id="termsLink" class="primary-btn" style="text-decoration: none; display: inline-block; margin-bottom: 1rem;">${step.termsLink.label[currentLang] || step.termsLink.label.pt}</a>
+      <a href="${step.termsLink.url}" ${termsLinkAttrs} id="termsLink" class="terms-link-btn" style="display: inline-flex; align-items: center; gap: 0.55rem; margin-bottom: 1rem;" aria-label="${isMobileDevice() ? t("termsLinkMobileLabel") : (step.termsLink.label[currentLang] || step.termsLink.label.pt)}">
+        ${termsLinkIcon}
+        <span>${isMobileDevice() ? t("termsLinkMobileLabel") : (step.termsLink.label[currentLang] || step.termsLink.label.pt)}</span>
+      </a>
     </div>`;
     if (!formData.termsLinkVisited) {
       checkboxesInitiallyDisabled = true;
@@ -452,6 +513,7 @@ function renderFields() {
       group.querySelectorAll(`input[name="${f.id}"]`).forEach((radio) => {
         radio.addEventListener("change", () => {
           if (currentStep === 1) clearStatusIfError();
+          clearRequiredEmptyState(f.id);
           const wrap = document.getElementById(`field-wrap-${f.id}`);
           if (wrap) wrap.classList.remove("invalid-group");
 
@@ -476,6 +538,7 @@ function renderFields() {
       group.querySelectorAll(`input[type="checkbox"]`).forEach((cb) => {
         cb.addEventListener("change", () => {
           if (currentStep === 1) clearStatusIfError();
+          clearRequiredEmptyState(f.id);
           const wrap = document.getElementById(`field-wrap-${f.id}`);
           if (wrap) wrap.classList.remove("invalid-group");
           const checkedVals = Array.from(group.querySelectorAll("input:checked")).map(i => i.value);
@@ -492,6 +555,7 @@ function renderFields() {
 
     el.addEventListener(fieldType === "checkbox" ? "change" : "input", () => {
       if (currentStep === 1) clearStatusIfError();
+      clearRequiredEmptyState(f.id);
       const wrap = document.getElementById(`field-wrap-${f.id}`);
       if (wrap) wrap.classList.remove("invalid-group"); // Remove o erro ao interagir
       el.classList.remove("invalid");
@@ -549,14 +613,16 @@ function renderFields() {
       .forEach((f) => {
         const labelEl = document.querySelector(`#field-wrap-${f.id} label.checkbox-chip`);
         if (!labelEl) return;
-        labelEl.addEventListener("click", (event) => {
+        const showLockedMessage = (event) => {
           const input = labelEl.querySelector("input[type='checkbox']");
           if (input?.disabled) {
             event.preventDefault();
             event.stopPropagation();
             showStatus(t("termsLockedMessage"), "error");
           }
-        });
+        };
+        labelEl.addEventListener("pointerdown", showLockedMessage);
+        labelEl.addEventListener("click", showLockedMessage);
       });
   }
 
@@ -564,9 +630,29 @@ function renderFields() {
   if (isTermsStep && step.termsLink && !formData.termsLinkVisited) {
     const termsLinkEl = document.getElementById("termsLink");
     if (termsLinkEl) {
-      termsLinkEl.addEventListener("click", () => {
+      termsLinkEl.addEventListener("click", async (event) => {
         formData.termsLinkVisited = true;
+        clearStatus();
         render(); // Re-render to enable checkboxes
+
+        if (!isMobileDevice()) return;
+
+        event.preventDefault();
+        try {
+          const response = await fetch(step.termsLink.url);
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const downloadLink = document.createElement("a");
+          downloadLink.href = blobUrl;
+          downloadLink.download = "Termos_de_Uso_Full_Gauge.pdf";
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          downloadLink.remove();
+          URL.revokeObjectURL(blobUrl);
+          showStatus(t("termsDownloaded"), "success");
+        } catch (error) {
+          console.error("Erro ao baixar o PDF dos termos:", error);
+        }
       });
     }
   }
@@ -638,8 +724,10 @@ function validateCurrentStep() {
       if (!group) return;
       const checked = group.querySelector(`input[name="${f.id}"]:checked`);
       if (wrap) wrap.classList.remove("invalid-group");
+      wrap?.classList.remove("required-empty-group");
       if (f.required && !checked) {
         if (wrap) wrap.classList.add("invalid-group");
+        wrap?.classList.add("required-empty-group");
         valid = false;
       }
       return;
@@ -649,10 +737,12 @@ function validateCurrentStep() {
       const wrap = document.getElementById(`field-wrap-${f.id}`);
       const group = document.getElementById(`${f.id}-group`);
       if (wrap) wrap.classList.remove("invalid-group");
+      wrap?.classList.remove("required-empty-group");
       
       const isEmpty = !Array.isArray(formData[f.id]) || formData[f.id].length === 0;
       if (f.required && isEmpty) {
         if (wrap) wrap.classList.add("invalid-group");
+        wrap?.classList.add("required-empty-group");
         valid = false;
       }
       return;
@@ -665,10 +755,15 @@ function validateCurrentStep() {
 
     const wrap = document.getElementById(`field-wrap-${f.id}`);
     if (wrap) wrap.classList.remove("invalid-group"); // Limpa antes de revalidar
+    wrap?.classList.remove("required-empty-group");
+    el.classList.remove("required-empty");
+    el.closest(".checkbox-chip")?.classList.remove("required-empty-chip");
 
     if (fieldType === "checkbox") {
       if (f.required && !el.checked) {
         if (wrap) wrap.classList.add("invalid-group"); // Aplica ao wrap para consistência visual
+        el.classList.add("required-empty");
+        el.closest(".checkbox-chip")?.classList.add("required-empty-chip");
         valid = false;
       }
     } else {
@@ -679,6 +774,7 @@ function validateCurrentStep() {
 
       if (f.required && isEmpty) {
         el.classList.add("invalid");
+        el.classList.add("required-empty");
         valid = false;
         return;
       }
@@ -890,6 +986,7 @@ async function goNext() {
 
 function goPrev() {
   if (currentStep > 0) {
+    clearStatus();
     currentStep--;
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });

@@ -379,19 +379,21 @@ body[data-theme="dark"] .theme-icon-moon {
 }
 
 .form-head p {
-  margin: 0.35rem 0 1rem;
+  margin: 0.35rem 0 0.55rem;
   color: var(--ink-500);
   font-size: 0.92rem;
 }
 
 .required-legend {
-  margin: 0 0 0.85rem;
-  padding: 0.55rem 0.68rem;
-  border-radius: 10px;
-  border: 1px dashed var(--line-200);
-  background: color-mix(in srgb, var(--fg-green-100) 55%, transparent);
-  color: var(--ink-700);
-  font-size: 0.82rem;
+  margin: 0 0 1.15rem !important;
+  color: var(--ink-500);
+  font-size: 0.76rem;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+body[data-theme="dark"] .required-legend {
+  color: #b7cfc4;
 }
 
 .form-grid {
@@ -428,18 +430,19 @@ label {
 
 input,
 select {
-  border: 1px solid var(--line-200);
+  border: 2px solid color-mix(in srgb, var(--fg-green-700) 38%, var(--line-200));
   border-radius: 10px;
   padding: 0.62rem 0.7rem;
   background: color-mix(in srgb, var(--panel) 95%, transparent);
   color: var(--ink-900);
   font-size: 0.92rem;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg-green-700) 14%, transparent);
 }
 
 input:focus,
 select:focus,
 button:focus {
-  outline: 2px solid color-mix(in srgb, var(--fg-green-500) 50%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--fg-green-700) 62%, transparent);
   outline-offset: 1px;
 }
 
@@ -457,40 +460,58 @@ button:focus {
 
 .radio-chip,
 .checkbox-chip {
-  border: 1px solid var(--line-200);
+  border: 2px solid color-mix(in srgb, var(--fg-green-700) 34%, var(--line-200));
   border-radius: 24px;
   padding: 0.46rem 0.9rem;
   display: flex;
-  align-items: anchor-center;
+  align-items: center;
   gap: 0.45rem;
+  min-height: 2.6rem;
   font-size: 0.85rem;
   font-weight: 600;
+  line-height: 1.2;
   color: var(--ink-700);
   cursor: pointer;
   background: color-mix(in srgb, var(--panel) 96%, transparent);
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, box-shadow 120ms ease;
   user-select: none;
 }
 
 .radio-chip:hover,
 .checkbox-chip:hover {
-  border-color: var(--fg-green-500);
-  background: color-mix(in srgb, var(--fg-green-100) 60%, transparent);
+  border-color: var(--fg-green-700);
+  background: color-mix(in srgb, var(--fg-green-100) 72%, transparent);
   color: var(--fg-green-700);
 }
 
 .radio-chip--selected,
 .checkbox-chip--selected {
-  border-color: var(--fg-green-500);
+  border-color: var(--fg-green-700);
   background: var(--fg-green-100);
   color: var(--fg-green-700);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg-green-700) 28%, transparent);
+}
+
+.checkbox-chip:not(.checkbox-chip--selected) {
+  background: color-mix(in srgb, var(--fg-green-100) 34%, var(--panel));
+  border-color: color-mix(in srgb, var(--fg-green-700) 48%, var(--line-200));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg-green-700) 20%, transparent);
+}
+
+.checkbox-chip:not(.checkbox-chip--selected):hover {
+  border-color: var(--fg-green-700);
+  background: color-mix(in srgb, var(--fg-green-100) 46%, var(--panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg-green-700) 28%, transparent);
+}
+
+.checkbox-chip:not(.checkbox-chip--selected) input[type="checkbox"] {
+  border-color: color-mix(in srgb, var(--fg-green-700) 48%, var(--line-200));
 }
 
 /* Estado desabilitado para Chips */
 .checkbox-chip:has(input:disabled) {
   opacity: 0.5;
   cursor: not-allowed;
-  pointer-events: none;
   filter: grayscale(0.5);
 }
 
@@ -503,12 +524,22 @@ button:focus {
   height: 15px;
   min-width: 15px;
   border-radius: 50%;
-  border: 2px solid var(--line-200);
+  border: 2px solid color-mix(in srgb, var(--fg-green-700) 38%, var(--line-200));
   background: var(--panel);
   margin: 0;
-  margin-top: 2px;
+  margin-top: 0;
+  flex: 0 0 auto;
   transition: border-color 120ms ease, background 120ms ease;
   cursor: pointer;
+}
+
+.radio-chip:focus-within,
+.checkbox-chip:focus-within,
+input:focus,
+select:focus {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--fg-green-700) 16%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--fg-green-700) 24%, transparent);
 }
 
 .checkbox-chip input[type="checkbox"] {
@@ -531,17 +562,35 @@ button:focus {
   outline-offset: 2px;
 }
 
-/* Validação — borda vermelha no wrapper quando inválido */
+/* Validação do grupo: linha discreta abaixo do label */
 .invalid-group > label {
   color: var(--danger);
+  display: inline-block;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(199, 56, 56, 0.75);
+}
+
+.required-empty-group > label {
+  color: #b87500;
+  display: inline-block;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(184, 117, 0, 0.75);
 }
 
 .invalid-group .radio-group,
 .invalid-group .checkbox-group {
-  padding: 0.4rem;
-  border-radius: 12px;
-  border: 1px solid var(--danger);
-  background: color-mix(in srgb, var(--danger) 5%, transparent);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.required-empty-group .radio-group,
+.required-empty-group .checkbox-group {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .form-actions {
@@ -564,6 +613,52 @@ button:focus {
 .primary-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.terms-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg-green-700);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 2px;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.terms-link-btn:hover,
+.terms-link-btn:focus-visible {
+  background: transparent;
+  color: var(--fg-green-500);
+  text-decoration-thickness: 3px;
+  transform: none;
+}
+
+.terms-link-btn::after {
+  content: "↗";
+  font-size: 0.9em;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.terms-link-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--fg-green-500) 55%, white);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.terms-link-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
 }
 
 .danger-btn {
@@ -613,6 +708,32 @@ button:focus {
 
 .invalid {
   border-color: var(--danger);
+}
+
+.required-empty {
+  border-color: #b87500 !important;
+  background: linear-gradient(180deg, rgba(255, 181, 71, 0.15), rgba(255, 181, 71, 0.06));
+  box-shadow:
+    inset 0 0 0 1px rgba(184, 117, 0, 0.28),
+    0 0 0 3px rgba(184, 117, 0, 0.08);
+}
+
+.required-empty-group {
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px rgba(184, 117, 0, 0.18),
+    inset 0 0 0 1px rgba(184, 117, 0, 0.14);
+}
+
+.required-empty-chip {
+  color: #b87500 !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: inline-flex;
+  align-items: center;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(184, 117, 0, 0.75) !important;
 }
 
 /* Mensagem de erro inline abaixo do campo */
@@ -704,6 +825,28 @@ button:focus {
   animation: status-shake 280ms ease-in-out 1;
 }
 
+body[data-theme="dark"] .status-message.error {
+  background: linear-gradient(135deg, rgba(199, 56, 56, 0.28), rgba(199, 56, 56, 0.16));
+  border-color: rgba(255, 131, 131, 0.9);
+  color: #ffd8d8;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 131, 131, 0.18) inset;
+}
+
+body[data-theme="dark"] .invalid-group > label {
+  border-bottom-color: rgba(255, 131, 131, 0.92);
+  color: #ff9f9f;
+}
+
+body[data-theme="dark"] .required-empty-group > label {
+  border-bottom-color: rgba(255, 190, 87, 0.9);
+  color: #ffcf7a;
+}
+
+body[data-theme="dark"] .required-empty-chip {
+  border-bottom-color: rgba(255, 190, 87, 0.9) !important;
+  color: #ffcf7a !important;
+}
+
 .status-message.error::before {
   content: "!";
   display: inline-flex;
@@ -717,6 +860,17 @@ button:focus {
   font-weight: 800;
   line-height: 1;
   flex-shrink: 0;
+}
+
+body[data-theme="dark"] .status-message.error::before {
+  background: #ff7f7f;
+  color: #200707;
+}
+
+body[data-theme="dark"] .status-message.error .status-title,
+body[data-theme="dark"] .status-message.error .status-description,
+body[data-theme="dark"] .status-message.error {
+  color: #ffd8d8;
 }
 
 .status-message-content {
