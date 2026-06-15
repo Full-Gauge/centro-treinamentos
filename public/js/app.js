@@ -874,8 +874,13 @@ function goPrev() {
 let statusMessageTimeout;
 
 function showStatus(messageData, type = "", isPermanent = false) {
+  const wrapper = document.getElementById("statusMessageWrapper");
   const el = document.getElementById("statusMessage");
   if (!el) return;
+
+  if (wrapper) {
+    wrapper.style.display = "block";
+  }
 
   clearTimeout(statusMessageTimeout);
   el.classList.remove('show', 'success', 'error');
