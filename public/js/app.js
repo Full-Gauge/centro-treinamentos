@@ -28,6 +28,8 @@ const i18n = {
     invalidToken: "Token inválido.",
     emailBounce: "Este domínio de e-mail não é permitido.",
     selectOption:"Selecione uma opção",
+    duplicateCpfError: "CPF já cadastrado em outro(a) usuário/inscrição",
+    termsLockedMessage: "Primeiro baixe e leia os termos para prosseguir.",
   },
   en: {
     brandEyebrow: "Training Enrollment Platform",
@@ -56,7 +58,9 @@ const i18n = {
     loading: "Loading...",
     invalidToken: "Invalid token.",
     emailBounce: "This email domain is not allowed.",
-    selectOption:"Select an option"
+    selectOption:"Select an option",
+    duplicateCpfError: "CPF already registered for another user/enrollment",
+    termsLockedMessage: "First download and read the terms to continue."
   },
   es: {
     brandEyebrow: "Plataforma de inscripción a capacitaciones",
@@ -85,7 +89,9 @@ const i18n = {
     loading: "Cargando...",
     invalidToken: "Token inválido.",
     emailBounce: "Este dominio de correo no está permitido.",
-    selectOption:"Seleccione una opción"
+    selectOption:"Seleccione una opción",
+    duplicateCpfError: "CPF ya registrado en otro(a) usuario/inscripción",
+    termsLockedMessage: "Primero descarga y lee los términos para continuar."
   },
 };
 
@@ -537,6 +543,23 @@ function renderFields() {
     });
   });
 
+  if (isTermsStep && checkboxesInitiallyDisabled) {
+    step.fields
+      .filter((f) => f.type === "checkbox")
+      .forEach((f) => {
+        const labelEl = document.querySelector(`#field-wrap-${f.id} label.checkbox-chip`);
+        if (!labelEl) return;
+        labelEl.addEventListener("click", (event) => {
+          const input = labelEl.querySelector("input[type='checkbox']");
+          if (input?.disabled) {
+            event.preventDefault();
+            event.stopPropagation();
+            showStatus(t("termsLockedMessage"), "error");
+          }
+        });
+      });
+  }
+
   // Add event listener for termsLink if it exists and hasn't been visited yet
   if (isTermsStep && step.termsLink && !formData.termsLinkVisited) {
     const termsLinkEl = document.getElementById("termsLink");
@@ -746,7 +769,7 @@ async function validateEnrollmentName() {
     }
 
     if (validate === false) {
-      showStatus("CPF já cadastrado em outro(a) usuário/inscrição", "error");
+      showStatus(t("duplicateCpfError"), "error");
       return false;
     }
 
