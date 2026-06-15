@@ -445,6 +445,7 @@ function renderFields() {
       if (!group) return;
       group.querySelectorAll(`input[name="${f.id}"]`).forEach((radio) => {
         radio.addEventListener("change", () => {
+          if (currentStep === 1) clearStatusIfError();
           const wrap = document.getElementById(`field-wrap-${f.id}`);
           if (wrap) wrap.classList.remove("invalid-group");
 
@@ -468,6 +469,7 @@ function renderFields() {
       if (!group) return;
       group.querySelectorAll(`input[type="checkbox"]`).forEach((cb) => {
         cb.addEventListener("change", () => {
+          if (currentStep === 1) clearStatusIfError();
           const wrap = document.getElementById(`field-wrap-${f.id}`);
           if (wrap) wrap.classList.remove("invalid-group");
           const checkedVals = Array.from(group.querySelectorAll("input:checked")).map(i => i.value);
@@ -483,6 +485,7 @@ function renderFields() {
     if (!el) return;
 
     el.addEventListener(fieldType === "checkbox" ? "change" : "input", () => {
+      if (currentStep === 1) clearStatusIfError();
       const wrap = document.getElementById(`field-wrap-${f.id}`);
       if (wrap) wrap.classList.remove("invalid-group"); // Remove o erro ao interagir
       el.classList.remove("invalid");
@@ -916,8 +919,11 @@ function showStatus(messageData, type = "", isPermanent = false) {
   // Força o navegador a processar o layout para que a animação de opacidade funcione
   void el.offsetWidth;
   el.classList.add('show');
+  if ((type === "error" || type === "success") && wrapper) {
+    wrapper.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
-  if (!isPermanent) {
+  if (type !== "error" && !isPermanent) {
     statusMessageTimeout = setTimeout(() => {
       el.classList.remove('show');
     }, 5000);
@@ -930,6 +936,13 @@ function clearStatus() {
   if (el) {
     el.classList.remove('show', 'success', 'error');
     el.innerHTML = '';
+  }
+}
+
+function clearStatusIfError() {
+  const el = document.getElementById("statusMessage");
+  if (el?.classList.contains("error")) {
+    clearStatus();
   }
 }
 
