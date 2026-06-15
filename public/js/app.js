@@ -694,6 +694,75 @@ function validateCurrentStep() {
 }
 
 // ─── Navegação ────────────────────────────────────────────────────────────────
+async function validateEnrollmentName() {
+  showStatus(
+    currentLang === "pt" ? "Validando nome..." : currentLang === "en" ? "Validating name..." : "Validando nombre...",
+    ""
+  );
+
+  try {
+    const response = await fetch("/api/validate-name-flow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: formData.fullName,
+        cpf: formData.cpf,
+        email: formData.email,
+        empresa: formData.empresa,
+        relacao: formData.relacao
+      })
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+    const result = contentType.includes("application/json")
+      ? await response.json()
+      : { message: await response.text() };
+
+    if (!response.ok) {
+      const message =
+        result?.message ||
+        result?.error ||
+        (currentLang === "pt"
+          ? "Não foi possível validar o nome."
+          : currentLang === "en"
+          ? "Name validation failed."
+          : "No se pudo validar el nombre.");
+      showStatus(message, "error");
+      return false;
+    }
+
+    if (result?.validate === false) {
+      showStatus("CPF já cadastrado em outro(a) usuário/inscrição", "error");
+      return false;
+    }
+
+    if (result?.validate !== true) {
+      const message =
+        result?.message ||
+        result?.error ||
+        (currentLang === "pt"
+          ? "Não foi possível validar o nome."
+          : currentLang === "en"
+          ? "Name validation failed."
+          : "No se pudo validar el nombre.");
+      showStatus(message, "error");
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    showStatus(
+      currentLang === "pt"
+        ? `Erro ao validar o nome: ${error.message}`
+        : currentLang === "en"
+        ? `Error validating name: ${error.message}`
+        : `Error al validar el nombre: ${error.message}`,
+      "error"
+    );
+    return false;
+  }
+}
+
 async function goNext() {
   if (!validateCurrentStep()) {
     showStatus(
@@ -756,6 +825,20 @@ async function goNext() {
       showStatus(t("submitError"), "error");
       isValidatingToken = false;
       renderButtons();
+      return;
+    }
+  }
+
+  if (currentStep === 1) {
+    isSubmittingForm = true;
+    renderButtons();
+
+    const nameOk = await validateEnrollmentName();
+
+    isSubmittingForm = false;
+    renderButtons();
+
+    if (!nameOk) {
       return;
     }
   }

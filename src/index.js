@@ -7,6 +7,8 @@ import { handleJwtGenerationRequest } from '../worker/worker-jwt-generator.js';
 import { handleConfirmationRequest } from '../worker/worker-confirmation.js';
 import { handleCancellationRequest } from '../worker/worker-cancellation.js';
 import { handleShortenRequest, handleRedirectRequest } from '../worker/worker-url-shortener.js';
+import { handleNameValidationRequest } from '../worker/worker-name-validator.js';
+import { handleNameValidationFlowRequest } from '../worker/worker-name-validation-flow.js';
 
 
 export default {
@@ -59,7 +61,17 @@ export default {
       return handleShortenRequest(request, env, ctx);
     }
 
-    // 6.2 Handler de Redirecionamento para URLs encurtadas (/s/[codigo])
+    // 6.2 Roteamento para a API de validação de nome
+    if (url.pathname.replace(/\/$/, "") === "/api/validate-name") {
+      return handleNameValidationRequest(request, env, ctx);
+    }
+
+    // 6.3 Roteamento para a validação de nome no Power Automate
+    if (url.pathname.replace(/\/$/, "") === "/api/validate-name-flow") {
+      return handleNameValidationFlowRequest(request, env, ctx);
+    }
+
+    // 6.4 Handler de Redirecionamento para URLs encurtadas (/s/[codigo])
     if (url.pathname.startsWith("/s/")) {
       return handleRedirectRequest(request, env, ctx);
     }

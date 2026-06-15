@@ -77,6 +77,7 @@ Principais recursos:
 - `POST /api/attendance`
 - `POST /api/generate-jwt-register-attendance`
 - `POST /api/shorten-url`
+- `GET/POST /api/validate-name`
 - `GET /s/:code`
 
 ## 🛠️ Tecnologias
@@ -164,5 +165,38 @@ Configure no Cloudflare (Worker Settings / Secrets / Vars):
 
 > Observação: no worker de cancelamento existe fallback para `CONFIRMATION_WEBHOOK_URL` caso `CANCELLATION_WEBHOOK_URL` não esteja configurada.
 
+### 7) Validação de Nome
+Endpoint: `/api/validate-name`
+
+Principais recursos:
+- Normaliza acentuação, letras maiúsculas/minúsculas e partículas como `de`, `da`, `do`, `das`, `dos`;
+- Calcula similaridade com base em Levenshtein;
+- Retorna `valid`, `score`, `threshold` e os nomes normalizados;
+- Aceita `GET` com query string ou `POST` com JSON.
+- Quando `API_KEY` estiver configurada, exige o header `x-api-key`.
+
+Exemplo de uso:
+```bash
+curl -X POST http://127.0.0.1:8787/api/validate-name \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: SUA_CHAVE" \
+  -d '{"name":"João da Silva","referenceName":"Joao Silva","threshold":80}'
+```
+
 ---
 *Full Gauge Controls - Departamento de Engenharia de Software*
+
+Para guardar a URL do Power Automate como secret no Cloudflare, rode:
+```bash
+```
+
+
+### Secret da validação de nome
+Para guardar o webhook da validação de nome no Power Automate como secret, rode:
+```bash
+npx wrangler secret put NAME_VALIDATION_WEBHOOK_URL
+```
+
+O wizard chama `/api/validate-name-flow` ao sair da etapa **Inscrição**.
+Se `API_KEY` estiver configurada no Worker, ela é enviada no header `x-api-key` para o webhook de validação.
+
