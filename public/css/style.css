@@ -934,6 +934,18 @@ body[data-theme="dark"] .status-message.error {
   pointer-events: none;
 }
 
+.field-wrap--locked select:disabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+  background: color-mix(in srgb, var(--fg-green-100) 58%, var(--panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg-green-700) 22%, transparent);
+}
+
+.helper--locked {
+  color: var(--fg-green-700);
+  font-weight: 600;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

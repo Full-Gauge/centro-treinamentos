@@ -1,13 +1,19 @@
 // ─── Traduções ───────────────────────────────────────────────────────────────
 const i18n = {
   pt: {
-    brandEyebrow: "Plataforma de inscrição de treinamentos",
-    brandTitle: "Bem-vindo! Vamos começar seu cadastro.",
+    brandEyebrow: "CENTRO DE TREINAMENTOS FULL GAUGE CONTROLS",
+    brandTitle: "Qualificação Técnica Presencial",
     brandCopy:
-      "Desde 1985, a Full Gauge desenvolve soluções para automação em refrigeração, aquecimento e climatização com padrão internacional de qualidade.",
-    featureOne: "Segurança e confiança no cadastro de clientes",
-    featureTwo: "Vendedores e consultores técnicos especializados",
-    featureThree: "Marca consolidada internacionalmente em 62 países",
+      "Desenvolvida para técnicos, instaladores e profissionais com experiência na área de HVACR, nossa Qualificação Técnica Presencial oferece uma semana de imersão em aplicações práticas, produtos Full Gauge Controls e no software Sitrad.",
+    brandCopy2:
+      "O treinamento acontece de segunda a sexta-feira, das 8h30 às 17h30, em nosso Centro de Treinamentos, em Canoas/RS, e é dividido em três módulos independentes. Você pode participar da semana completa ou escolher apenas os módulos de seu interesse.",
+    brandTitleCopy: 
+      "Durante o treinamento você aprenderá sobre:",
+    featureOne: "Software Sitrad (básico ao avançado)",
+    featureTwo: "Controladores e soluções Full Gauge Controls",
+    featureThree: "Linha VX e válvulas de expansão eletrônica",
+    featureFour: "Instrumentos para refrigeração comercial e industrial",
+    featureFive: "Aplicações práticas e configuração de equipamentos",
     overallProgressLabel: "Progresso geral",
     clearForm: "Limpar cadastro",
     themeToggle: "Tema",
@@ -33,15 +39,25 @@ const i18n = {
     termsDownloaded: "PDF baixado com sucesso.",
     modulesInfo: "O curso completo é composto por {count} módulos. Você pode se inscrever em todos eles na mesma turma ou em turmas diferentes, desde que não repita um módulo.",
     termsLinkMobileLabel: "Baixar Termos de Uso",
+    specialConditionTitle: "Condição especial",
+    specialConditionBody1: "Para celebrar a inauguração do nosso Centro de Treinamentos, as primeiras turmas de 2026 estão sendo oferecidas gratuitamente.",
+    specialConditionBody2: "Siga os passos ao lado para verificar as turmas disponíveis e fazer sua inscrição!",
+    partnerClassLocked: "Turma vinculada ao token do parceiro.",
   },
   en: {
-    brandEyebrow: "Training Enrollment Platform",
-    brandTitle: "Welcome! Let's start your registration.",
+    brandEyebrow: "FULL GAUGE CONTROLS TRAINING CENTER",
+    brandTitle: "On-site Technical Qualification",
     brandCopy:
-      "Since 1985, Full Gauge develops solutions for refrigeration, heating and climate control automation with international quality standards.",
-    featureOne: "Secure and reliable client registration",
-    featureTwo: "Specialized sales and technical consultants",
-    featureThree: "Brand established in 62 countries worldwide",
+      "Designed for technicians, installers, and professionals with experience in the HVACR field, our On-Site Technical Qualification offers a week of immersion in practical applications, Full Gauge Controls products, and Sitrad software.",
+    brandCopy2:
+      "The training takes place Monday through Friday, from 8:30 AM to 5:30 PM, at our Training Center in Canoas/RS, and is divided into three independent modules. You can participate in the entire week or choose only the modules that interest you.",
+    brandTitleCopy:
+      "During the training you will learn about:",
+    featureOne: "Sitrad software (basic to advanced)",
+    featureTwo: "Full Gauge Controls controllers and solutions",
+    featureThree: "VX line and electronic expansion valves",
+    featureFour: "Commercial and industrial refrigeration instruments",
+    featureFive: "Practical applications and equipment configuration",
     overallProgressLabel: "Overall Progress",
     clearForm: "Clear form",
     themeToggle: "Theme",
@@ -66,16 +82,26 @@ const i18n = {
     termsLockedMessage: "First download and read the terms to continue.",
     termsDownloaded: "PDF downloaded successfully.",
     modulesInfo: "The full course is made up of {count} modules. You can enroll in all of them in the same class or across different classes, as long as you do not repeat a module.",
-    termsLinkMobileLabel: "Download Terms of Use"
+    termsLinkMobileLabel: "Download Terms of Use",
+    specialConditionTitle: "Special condition",
+    specialConditionBody1: "To celebrate the opening of our Training Center, the first classes of 2026 are being offered free of charge.",
+    specialConditionBody2: "Follow the steps on the side to check available classes and complete your registration!",
+    partnerClassLocked: "Class linked to the partner token.",
   },
   es: {
-    brandEyebrow: "Plataforma de inscripción a capacitaciones",
-    brandTitle: "¡Bienvenido! Comencemos tu registro.",
+    brandEyebrow: "CENTRO DE CAPACITACIÓN FULL GAUGE CONTROLS",
+    brandTitle: "Calificación Técnica Presencial",
     brandCopy:
-      "Desde 1985, Full Gauge desarrolla soluciones para automatización en refrigeración, calefacción y climatización con estándares de calidad internacionales.",
-    featureOne: "Seguridad y confianza en el registro de clientes",
-    featureTwo: "Vendedores y consultores técnicos especializados",
-    featureThree: "Marca consolidada internacionalmente en 62 países",
+      "Desarrollada para técnicos, instaladores y profesionales con experiencia en el área de HVACR, nuestra Calificación Técnica Presencial ofrece una semana de inmersión en aplicaciones prácticas, productos Full Gauge Controls y el software Sitrad.",
+    brandCopy2:
+      "La capacitación se realiza de lunes a viernes, de 8:30 a 17:30, en nuestro Centro de Capacitación en Canoas/RS, y está dividida en tres módulos independientes. Puede participar de la semana completa o elegir únicamente los módulos de su interés.",
+    brandTitleCopy:
+      "Durante la capacitación aprenderás sobre:",
+    featureOne: "Software Sitrad (de básico a avanzado)",
+    featureTwo: "Controladores y soluciones Full Gauge Controls",
+    featureThree: "Línea VX y válvulas de expansión electrónica",
+    featureFour: "Instrumentos para refrigeración comercial e industrial",
+    featureFive: "Aplicaciones prácticas y configuración de equipos",
     overallProgressLabel: "Progreso general",
     clearForm: "Limpiar registro",
     themeToggle: "Tema",
@@ -100,7 +126,11 @@ const i18n = {
     termsLockedMessage: "Primero descarga y lee los términos para continuar.",
     termsDownloaded: "PDF descargado con éxito.",
     modulesInfo: "El curso completo está compuesto por {count} módulos. Puedes inscribirte en todos ellos en la misma clase o en clases diferentes, siempre que no repitas un módulo.",
-    termsLinkMobileLabel: "Descargar Términos de Uso"
+    termsLinkMobileLabel: "Descargar Términos de Uso",
+    specialConditionTitle: "Condición especial",
+    specialConditionBody1: "Para celebrar la inauguración de nuestro Centro de Entrenamiento, los primeros grupos de 2026 se ofrecen de forma gratuita.",
+    specialConditionBody2: "¡Sigue los pasos al lado para consultar los grupos disponibles y completar tu inscripción!",
+    partnerClassLocked: "Clase vinculada al token del socio.",
   },
 };
 
@@ -267,6 +297,8 @@ let isFetchingTurmas = false;
 let isFetchingModulos = false;
 let isValidatingToken = false;
 let isSubmittingForm = false;
+let turmasFromPartnerToken = null;
+let allTurmasOptions = [];
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 function t(key) {
@@ -320,6 +352,78 @@ function applyMask(value, mask) {
     return digits.slice(0, 11).replace(/^(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").trim();
   }
   return value;
+}
+
+function normalizeTurmaOption(turma) {
+  if (!turma) return null;
+
+  if (typeof turma === "string") {
+    const value = turma.trim();
+    if (!value) return null;
+    return { value, label: value };
+  }
+
+  const value =
+    turma.value ||
+    turma.id ||
+    turma.FG_TRAININGCLASSID ||
+    turma.codigo_turma ||
+    turma.classId ||
+    turma.classID ||
+    turma.code ||
+    turma.CODIGO_TURMA ||
+    "";
+
+  if (!value) return null;
+
+  const labelSource =
+    turma.label ||
+    turma.name ||
+    turma.NAME ||
+    turma.title ||
+    turma.titulo ||
+    value;
+
+  const label =
+    typeof labelSource === "object"
+      ? labelSource[currentLang] || labelSource.pt || labelSource.en || labelSource.es || value
+      : labelSource;
+
+  return { value: String(value), label: String(label) };
+}
+
+function applyPartnerTurmaSelection(turmaOption) {
+  turmasFromPartnerToken = turmaOption;
+
+  if (!turmaOption) {
+    delete formData.turmas;
+    delete formData.turmasLocked;
+    updateTurmasFieldOptions();
+    return;
+  }
+
+  formData.turmas = turmaOption.value;
+  formData.turmasLocked = true;
+  updateTurmasFieldOptions({ fetchModules: true });
+}
+
+function updateTurmasFieldOptions({ fetchModules = false } = {}) {
+  const turmasStep = STEPS.find((s) => s.fields.some((f) => f.id === "turmas"));
+  if (!turmasStep) return;
+
+  const field = turmasStep.fields.find((f) => f.id === "turmas");
+  if (!field) return;
+
+  if (turmasFromPartnerToken) {
+    field.options = [turmasFromPartnerToken];
+    formData.turmas = turmasFromPartnerToken.value;
+    formData.turmasLocked = true;
+    if (fetchModules) fetchModulosData(turmasFromPartnerToken.value);
+    return;
+  }
+
+  field.options = allTurmasOptions;
+  delete formData.turmasLocked;
 }
 
 // ─── Render ───────────────────────────────────────────────────────────────────
@@ -408,6 +512,8 @@ function renderFields() {
 
       if (fieldType === "select") {
         const isLoading = (f.id === "turmas" && isFetchingTurmas) || (f.id === "modulos" && isFetchingModulos);
+        const isLocked = (f.id === "empresa" && formData.empresaLocked) || (f.id === "turmas" && formData.turmasLocked);
+        const helperText = f.id === "turmas" && formData.turmasLocked ? `<p class="helper helper--locked">${t("partnerClassLocked")}</p>` : "";
         
         if (f.multiple && !isLoading) {
           const chips = (f.options || [])
@@ -434,7 +540,6 @@ function renderFields() {
           </div>`;
         }
 
-        const isLocked = f.id === "empresa" && formData.empresaLocked;
         const placeholder = isLoading ? t("loading") : t("selectOption");
         const opts = (f.options || [])
           .map((o) => {
@@ -447,11 +552,12 @@ function renderFields() {
             return `<option value="${optVal}"${val === optVal ? " selected" : ""}>${optLabel}</option>`;
           })
           .join("");
-        return `<div class="field-wrap ${fullClass} ${isLoading ? 'loading-select' : ''}">
+        return `<div class="field-wrap ${fullClass} ${isLoading ? 'loading-select' : ''} ${isLocked ? 'field-wrap--locked' : ''}">
           <label for="${f.id}">${label}</label>
           <select id="${f.id}" name="${f.id}"${f.required ? " required" : ""}${isLoading || isLocked ? " disabled" : ""}>
             <option value="">${placeholder}</option>${opts}
           </select>
+          ${helperText}
         </div>`;
       }
 
@@ -520,6 +626,10 @@ function renderFields() {
           if (f.id === "relacao") {
             // Ao mudar a relação, limpa o formulário mantendo apenas a nova seleção
             formData = { [f.id]: radio.value };
+            if (radio.value !== "PARCEIRO") {
+              turmasFromPartnerToken = null;
+              updateTurmasFieldOptions();
+            }
             render();
           } else {
             formData[f.id] = radio.value;
@@ -947,13 +1057,16 @@ async function goNext() {
 
       // Se a API retornar uma turma vinculada ao token, seleciona a turma e trava o campo
       if (result.turma) {
-        formData.turmas = result.turma;
-        formData.turmasLocked = true;
-        fetchModulosData(result.turma); // Carrega módulos antecipadamente
+        const turmaOption = normalizeTurmaOption(result.turma);
+        applyPartnerTurmaSelection(turmaOption);
       } else {
-        formData.turmasLocked = false;
+        turmasFromPartnerToken = null;
+        delete formData.turmas;
+        delete formData.turmasLocked;
+        updateTurmasFieldOptions();
       }
       isValidatingToken = false;
+      render();
     } catch (error) {
       showStatus(t("submitError"), "error");
       isValidatingToken = false;
@@ -1177,9 +1290,10 @@ async function fetchTurmasData() {
       const turmasStep = STEPS.find(s => s.fields.some(f => f.id === 'turmas'));
       if (turmasStep) {
         const field = turmasStep.fields.find(f => f.id === 'turmas');
-        field.options = Array.isArray(data.data) 
+        allTurmasOptions = Array.isArray(data.data) 
           ? data.data.map(t => ({ value: t.id || t.FG_TRAININGCLASSID, label: (t.id || t.FG_TRAININGCLASSID) + ' - ' + (t.name || t.NAME) })) 
           : [];
+        updateTurmasFieldOptions();
         // Se estivermos na etapa das turmas, renderiza novamente
         if (STEPS[currentStep] === turmasStep) renderFields();
       }
@@ -1260,6 +1374,8 @@ function init() {
         : "¿Estás seguro de que deseas borrar todos los datos del registro?",
       () => {
         formData = {};
+        turmasFromPartnerToken = null;
+        updateTurmasFieldOptions();
         currentStep = 0;
         render();
         closeConfirm();
