@@ -39,9 +39,6 @@ const i18n = {
     termsDownloaded: "PDF baixado com sucesso.",
     modulesInfo: "O curso completo é composto por {count} módulos. Você pode se inscrever em todos eles na mesma turma ou em turmas diferentes, desde que não repita um módulo.",
     termsLinkMobileLabel: "Baixar Termos de Uso",
-    specialConditionTitle: "Condição especial",
-    specialConditionBody1: "Para celebrar a inauguração do nosso Centro de Treinamentos, as primeiras turmas de 2026 estão sendo oferecidas gratuitamente.",
-    specialConditionBody2: "Siga os passos ao lado para verificar as turmas disponíveis e fazer sua inscrição!",
     partnerClassLocked: "Turma vinculada ao token do parceiro.",
   },
   en: {
@@ -83,9 +80,6 @@ const i18n = {
     termsDownloaded: "PDF downloaded successfully.",
     modulesInfo: "The full course is made up of {count} modules. You can enroll in all of them in the same class or across different classes, as long as you do not repeat a module.",
     termsLinkMobileLabel: "Download Terms of Use",
-    specialConditionTitle: "Special condition",
-    specialConditionBody1: "To celebrate the opening of our Training Center, the first classes of 2026 are being offered free of charge.",
-    specialConditionBody2: "Follow the steps on the side to check available classes and complete your registration!",
     partnerClassLocked: "Class linked to the partner token.",
   },
   es: {
@@ -127,9 +121,6 @@ const i18n = {
     termsDownloaded: "PDF descargado con éxito.",
     modulesInfo: "El curso completo está compuesto por {count} módulos. Puedes inscribirte en todos ellos en la misma clase o en clases diferentes, siempre que no repitas un módulo.",
     termsLinkMobileLabel: "Descargar Términos de Uso",
-    specialConditionTitle: "Condición especial",
-    specialConditionBody1: "Para celebrar la inauguración de nuestro Centro de Entrenamiento, los primeros grupos de 2026 se ofrecen de forma gratuita.",
-    specialConditionBody2: "¡Sigue los pasos al lado para consultar los grupos disponibles y completar tu inscripción!",
     partnerClassLocked: "Clase vinculada al token del socio.",
   },
 };

@@ -121,7 +121,7 @@ export async function handleNameValidationRequest(request, env) {
 
     const parsedThreshold = Number(threshold);
     const safeThreshold = Number.isFinite(parsedThreshold) ? parsedThreshold : 80;
-    const score = similarity(name, referenceName);
+    const score = smartNameSimilarity(name, referenceName);
     const valid = score >= safeThreshold;
 
     return jsonResponse({
@@ -145,4 +145,73 @@ export async function handleNameValidationRequest(request, env) {
       { status: 500 }
     );
   }
+}
+
+
+function nameParts(name) {
+  return normalizeName(name).split(" ").filter(Boolean);
+}
+
+function wordSimilarity(a, b) {
+  const left = normalizeName(a);
+  const right = normalizeName(b);
+
+  const maxLength = Math.max(left.length, right.length);
+  if (maxLength === 0) return 100;
+
+  const distance = levenshtein(left, right);
+  return Math.round((1 - distance / maxLength) * 100);
+}
+
+function isInitialMatch(a, b) {
+  const left = normalizeName(a);
+  const right = normalizeName(b);
+
+  if (!left || !right) return false;
+
+  return (
+    left.length === 1 && right.startsWith(left)
+  ) || (
+    right.length === 1 && left.startsWith(right)
+  );
+}
+
+function smartNameSimilarity(name, referenceName) {
+  const nameWords = nameParts(name);
+  const refWords = nameParts(referenceName);
+
+  if (nameWords.length < 2 || refWords.length < 2) {
+    return similarity(name, referenceName);
+  }
+
+  const firstNameScore = wordSimilarity(nameWords[0], refWords[0]);
+
+  const lastNameScore = wordSimilarity(
+    nameWords[nameWords.length - 1],
+    refWords[refWords.length - 1]
+  );
+
+  const firstAndLastValid = firstNameScore >= 80 && lastNameScore >= 80;
+
+  if (!firstAndLastValid) {
+    return Math.min(firstNameScore, lastNameScore);
+  }
+
+  const middleNameWords = nameWords.slice(1, -1);
+  const middleRefWords = refWords.slice(1, -1);
+
+  const hasMiddleConflict =
+    middleNameWords.length > 0 &&
+    middleRefWords.length > 0 &&
+    !middleNameWords.some(current =>
+      middleRefWords.some(ref =>
+        wordSimilarity(current, ref) >= 80 || isInitialMatch(current, ref)
+      )
+    );
+
+  if (hasMiddleConflict) {
+    return 85;
+  }
+
+  return 100;
 }
