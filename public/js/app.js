@@ -1173,7 +1173,7 @@ function showStatus(messageData, type = "", isPermanent = false) {
         <div class="status-text-wrapper">
           <h3 class="status-title">${messageData.title}</h3>
           <p class="status-description">${messageData.message}</p>
-          ${isPermanent ? `<button id="startNewRegistrationBtn" class="primary-btn" style="margin-top: 1rem;">${t("startNewRegistration")}</button>` : ''}
+          ${isPermanent ? `<button id="startNewRegistrationBtn" class="primary-btn status-restart-btn" style="margin-top: 1rem;">${t("startNewRegistration")}</button>` : ''}
         </div>
       </div>
     `;

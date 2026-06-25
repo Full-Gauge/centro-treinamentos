@@ -9,10 +9,10 @@ export async function handleJwtGenerationRequest(request, env) {
   }
 
   try {
-    const { classId, email } = await request.json();
+    const { classId, email, modules = [] } = await request.json();
 
-    if (!classId || !email) {
-      return new Response(JSON.stringify({ error: 'classId e email são obrigatórios.' }), {
+    if (!classId || !email || !modules) {
+      return new Response(JSON.stringify({ error: 'classId/email/modules são obrigatórios.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -37,7 +37,11 @@ export async function handleJwtGenerationRequest(request, env) {
 
     
     // Gera o token com validade (ex: 7 dias)
-    const jwt = await new SignJWT({ classId, email })
+    const jwt = await new SignJWT({
+      classId,
+      email,
+      modules: Array.isArray(modules) ? modules : []
+    })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d') 

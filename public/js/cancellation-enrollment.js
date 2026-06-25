@@ -6,6 +6,9 @@ const i18n = {
     pageTitle: "Cancelamento de Inscrição",
     cancelingFor: "Cancelando inscrição para:",
     classLabel: "Turma:",
+    modulesLabel: "Módulos",
+    modulesHint: "Escolha o módulo que deseja cancelar ou selecione todos os módulos.",
+    allModules: "Todos os módulos",
     cancellationQuestion: "Confirma cancelamento da inscrição?",
     yes: "Sim",
     no: "Não",
@@ -26,6 +29,9 @@ const i18n = {
     pageTitle: "Enrollment Cancellation",
     cancelingFor: "Canceling enrollment for:",
     classLabel: "Class:",
+    modulesLabel: "Modules",
+    modulesHint: "Choose the module you want to cancel or select all modules.",
+    allModules: "All modules",
     cancellationQuestion: "Do you confirm enrollment cancellation?",
     yes: "Yes",
     no: "No",
@@ -46,6 +52,9 @@ const i18n = {
     pageTitle: "Cancelación de Inscripción",
     cancelingFor: "Cancelando inscripción para:",
     classLabel: "Clase:",
+    modulesLabel: "Módulos",
+    modulesHint: "Elige el módulo que deseas cancelar o selecciona todos los módulos.",
+    allModules: "Todos los módulos",
     cancellationQuestion: "¿Confirma la cancelación de la inscripción?",
     yes: "Sí",
     no: "No",
@@ -73,12 +82,16 @@ const jwtTokenInput = document.getElementById("jwtToken");
 const displayEmail = document.getElementById("displayEmail");
 const userInfo = document.getElementById("userInfo");
 const displayClassId = document.getElementById("displayClassId");
+const modulesSection = document.getElementById("modulesSection");
+const modulesGroup = document.getElementById("modulesGroup");
 const cancellationForm = document.getElementById("cancellationForm");
 const formError = document.getElementById("formError");
 const submitBtn = cancellationForm.querySelector('button[type="submit"]');
 
 let emailForDisplay = null;
 let classIdForDisplay = null;
+let modulesForDisplay = [];
+let selectedModuleChoice = "all";
 
 function t(key) {
   return (i18n[currentLang] || i18n.pt)[key] || i18n.pt[key] || key;
@@ -95,6 +108,82 @@ function decodeJwtPayload(jwt) {
   return JSON.parse(json);
 }
 
+function normalizeModuleOption(moduleItem, index) {
+  if (!moduleItem) return null;
+
+  if (typeof moduleItem === "string") {
+    const value = moduleItem.trim();
+    return value ? { value, label: value } : null;
+  }
+
+  const value =
+    moduleItem.value ||
+    moduleItem.id ||
+    moduleItem.moduleId ||
+    moduleItem.MODULEID ||
+    moduleItem.code ||
+    moduleItem.CODE ||
+    moduleItem.name ||
+    moduleItem.NAME ||
+    `module-${index + 1}`;
+
+  const labelSource =
+    moduleItem.label ||
+    moduleItem.name ||
+    moduleItem.NAME ||
+    moduleItem.title ||
+    moduleItem.TITLE ||
+    value;
+
+  const label = typeof labelSource === "object"
+    ? labelSource[currentLang] || labelSource.pt || labelSource.en || labelSource.es || value
+    : labelSource;
+
+  return { value: String(value), label: String(label) };
+}
+
+function getSelectedModules() {
+  if (!modulesForDisplay.length) return [];
+  if (selectedModuleChoice === "all") {
+    return modulesForDisplay.map((moduleItem) => moduleItem.value);
+  }
+  return [selectedModuleChoice];
+}
+
+function renderModulesSection() {
+  if (!modulesSection || !modulesGroup) return;
+
+  if (!modulesForDisplay.length) {
+    modulesSection.style.display = "none";
+    modulesGroup.innerHTML = "";
+    return;
+  }
+
+  modulesSection.style.display = "block";
+  modulesGroup.innerHTML = [
+    `<label class="radio-chip${selectedModuleChoice === "all" ? " radio-chip--selected" : ""}">
+      <input type="radio" name="moduleChoice" value="all"${selectedModuleChoice === "all" ? " checked" : ""}>
+      <span>${t("allModules")}</span>
+    </label>`,
+    ...modulesForDisplay.map((moduleItem) => {
+      const isSelected = selectedModuleChoice === moduleItem.value;
+      return `<label class="radio-chip${isSelected ? " radio-chip--selected" : ""}">
+        <input type="radio" name="moduleChoice" value="${moduleItem.value}"${isSelected ? " checked" : ""}>
+        <span>${moduleItem.label}</span>
+      </label>`;
+    })
+  ].join("");
+
+  modulesGroup.querySelectorAll('input[name="moduleChoice"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+      selectedModuleChoice = radio.value;
+      modulesGroup.querySelectorAll(".radio-chip").forEach((chip) => {
+        chip.classList.toggle("radio-chip--selected", chip.querySelector("input").checked);
+      });
+    });
+  });
+}
+
 function applyTranslations() {
   document.documentElement.lang = t("htmlLang");
   document.title = t("documentTitle");
@@ -108,6 +197,8 @@ function applyTranslations() {
     btn.classList.toggle("active", isActive);
     btn.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
+
+  renderModulesSection();
 
   if (submitBtn.disabled && !jwtTokenInput.value) {
     submitBtn.textContent = t("submit");
@@ -148,6 +239,10 @@ try {
     const decodedPayload = decodeJwtPayload(token);
     emailForDisplay = decodedPayload?.email;
     classIdForDisplay = decodedPayload?.classId;
+    modulesForDisplay = Array.isArray(decodedPayload?.modules)
+      ? decodedPayload.modules.map(normalizeModuleOption).filter(Boolean)
+      : [];
+    selectedModuleChoice = "all";
   }
 } catch (e) {
   console.error("Erro ao decodificar payload do JWT para exibição:", e);
@@ -158,6 +253,7 @@ if (token && emailForDisplay && classIdForDisplay) {
   displayEmail.textContent = emailForDisplay;
   displayClassId.textContent = classIdForDisplay;
   userInfo.style.display = "block";
+  renderModulesSection();
 
   const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
   window.history.replaceState({ path: newUrl }, "", newUrl);
@@ -199,6 +295,11 @@ cancellationForm.addEventListener("submit", async (e) => {
     token: jwtTokenInput.value,
     cancellation: cancellationValue
   };
+
+  if (modulesForDisplay.length) {
+    payload.modules = getSelectedModules();
+    payload.all_modules = selectedModuleChoice === "all";
+  }
 
   try {
     const response = await fetch("/api/cancellation", {

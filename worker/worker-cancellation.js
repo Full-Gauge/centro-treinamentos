@@ -11,6 +11,8 @@ export async function handleCancellationRequest(request, env, ctx) {
     let email = body.email;
     let codigo_turma = body.codigo_turma;
     const cancellation = body.cancellation;
+    let modules = Array.isArray(body.modules) ? body.modules : [];
+    const allModules = body.all_modules === true;
 
     if (body.token) {
       try {
@@ -19,6 +21,7 @@ export async function handleCancellationRequest(request, env, ctx) {
           const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")));
           if (!email) email = decoded.email;
           if (!codigo_turma) codigo_turma = decoded.classId;
+          if (!modules.length && Array.isArray(decoded.modules)) modules = decoded.modules;
         }
       } catch (e) {
         console.error("Erro ao decodificar token no worker:", e);
@@ -41,13 +44,15 @@ export async function handleCancellationRequest(request, env, ctx) {
     }
 
 
-        const flowResponse = await fetch(webhookUrl, {
+    const flowResponse = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email,
         codigo_turma: codigo_turma,
-        confirmacao_cancelamento: cancellation
+        confirmacao_cancelamento: cancellation,
+        modules: modules,
+        all_modules: allModules
       })
     });
 

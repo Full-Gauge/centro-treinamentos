@@ -615,6 +615,30 @@ select:focus {
   cursor: not-allowed;
 }
 
+.status-restart-btn {
+  color: var(--fg-green-700);
+  background: #ffffff;
+  border: 1px solid color-mix(in srgb, var(--fg-green-700) 34%, var(--line-200));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.status-restart-btn:hover,
+.status-restart-btn:focus-visible {
+  background: color-mix(in srgb, var(--fg-green-100) 70%, #ffffff);
+  color: var(--fg-green-700);
+}
+
+body[data-theme="dark"] .status-restart-btn {
+  color: #eefbf4;
+  background: color-mix(in srgb, var(--panel) 92%, var(--fg-green-700));
+  border-color: color-mix(in srgb, var(--fg-green-500) 45%, var(--line-200));
+}
+
+body[data-theme="dark"] .status-restart-btn:hover,
+body[data-theme="dark"] .status-restart-btn:focus-visible {
+  background: color-mix(in srgb, var(--fg-green-700) 24%, var(--panel));
+}
+
 .terms-link-btn {
   display: inline-flex;
   align-items: center;
