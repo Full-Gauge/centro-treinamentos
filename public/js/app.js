@@ -31,6 +31,18 @@ const i18n = {
     },
     submitError: "Erro ao enviar. Tente novamente.",
     validatingRegistration: "Validando cadastro...",
+    validatingName: "Validando nome...",
+    validatingToken: "Validando token...",
+    requiredFields: "Preencha os campos obrigatórios.",
+    sending: "Enviando...",
+    startNewRegistration: "Iniciar Novo Cadastro",
+    duplicateCpfModuleError: "Já existe uma inscrição para esse CPF e módulo escolhido",
+    genericError: "Erro",
+    nameValidationFailed: "Não foi possível validar o nome.",
+    validateNameError: "Erro ao validar o nome: {message}",
+    invalidEmail: "Informe um e-mail válido.",
+    noItemsAvailable: "Nenhum item disponível",
+    clearFormConfirm: "Tem certeza que deseja limpar todos os dados do cadastro?",
     loading: "Carregando...",
     invalidToken: "Token inválido.",
     emailBounce: "Este domínio de e-mail não é permitido.",
@@ -73,6 +85,18 @@ const i18n = {
     },
     submitError: "Error sending. Please try again.",
     validatingRegistration: "Validating registration...",
+    validatingName: "Validating name...",
+    validatingToken: "Validating token...",
+    requiredFields: "Please fill in the required fields.",
+    sending: "Sending...",
+    startNewRegistration: "Start New Registration",
+    duplicateCpfModuleError: "There is already a registration for this CPF and selected module",
+    genericError: "Error",
+    nameValidationFailed: "Name validation failed.",
+    validateNameError: "Error validating name: {message}",
+    invalidEmail: "Enter a valid e-mail address.",
+    noItemsAvailable: "No items available",
+    clearFormConfirm: "Are you sure you want to clear all registration data?",
     loading: "Loading...",
     invalidToken: "Invalid token.",
     emailBounce: "This email domain is not allowed.",
@@ -115,6 +139,18 @@ const i18n = {
     },
     submitError: "Error al enviar. Inténtalo de nuevo.",
     validatingRegistration: "Validando registro...",
+    validatingName: "Validando nombre...",
+    validatingToken: "Validando token...",
+    requiredFields: "Por favor, completa los campos obligatorios.",
+    sending: "Enviando...",
+    startNewRegistration: "Iniciar Nuevo Registro",
+    duplicateCpfModuleError: "Ya existe una inscripción para este CPF y módulo elegido",
+    genericError: "Error",
+    nameValidationFailed: "No se pudo validar el nombre.",
+    validateNameError: "Error al validar el nombre: {message}",
+    invalidEmail: "Ingrese un correo electrónico válido.",
+    noItemsAvailable: "No hay elementos disponibles",
+    clearFormConfirm: "¿Estás seguro de que deseas borrar todos los datos del registro?",
     loading: "Cargando...",
     invalidToken: "Token inválido.",
     emailBounce: "Este dominio de correo no está permitido.",
@@ -529,7 +565,7 @@ function renderFields() {
           return `<div class="field-wrap ${fullClass}" id="field-wrap-${f.id}">
             <label>${label}</label>
             <div class="checkbox-group" id="${f.id}-group">
-              ${chips || `<p class="helper">${currentLang === 'pt' ? 'Nenhum item disponível' : 'No items available'}</p>`}
+              ${chips || `<p class="helper">${t("noItemsAvailable")}</p>`}
             </div>
           </div>`;
         }
@@ -889,12 +925,7 @@ function validateCurrentStep() {
       const errSpan = document.getElementById(`${f.id}-error`);
       if (!emailRegex.test(el.value.trim())) {
         el.classList.add("invalid");
-        const msg = currentLang === "en"
-          ? "Enter a valid e-mail address."
-          : currentLang === "es"
-          ? "Ingrese un correo electrónico válido."
-          : "Informe um e-mail válido.";
-        if (errSpan) errSpan.textContent = msg;
+        if (errSpan) errSpan.textContent = t("invalidEmail");
         valid = false;
       } else if (isDisposableEmail(el.value.trim())) {
         el.classList.add("invalid");
@@ -921,10 +952,7 @@ function validateCurrentStep() {
 
 // ─── Navegação ────────────────────────────────────────────────────────────────
 async function validateEnrollmentName() {
-  showStatus(
-    currentLang === "pt" ? "Validando nome..." : currentLang === "en" ? "Validating name..." : "Validando nombre...",
-    ""
-  );
+  showStatus(t("validatingName"), "");
 
   try {
     const response = await fetch("/api/validate-name-flow", {
@@ -956,14 +984,7 @@ async function validateEnrollmentName() {
       result?.data;
 
     if (!response.ok) {
-      const message =
-        result?.message ||
-        result?.error ||
-        (currentLang === "pt"
-          ? "Não foi possível validar o nome."
-          : currentLang === "en"
-          ? "Name validation failed."
-          : "No se pudo validar el nombre.");
+      const message = result?.message || result?.error || t("nameValidationFailed");
       showStatus(message, "error");
       return false;
     }
@@ -974,28 +995,14 @@ async function validateEnrollmentName() {
     }
 
     if (validate !== true) {
-      const message =
-        result?.message ||
-        result?.error ||
-        (currentLang === "pt"
-          ? "Não foi possível validar o nome."
-          : currentLang === "en"
-          ? "Name validation failed."
-          : "No se pudo validar el nombre.");
+      const message = result?.message || result?.error || t("nameValidationFailed");
       showStatus(message, "error");
       return false;
     }
 
     return true;
   } catch (error) {
-    showStatus(
-      currentLang === "pt"
-        ? `Erro ao validar o nome: ${error.message}`
-        : currentLang === "en"
-        ? `Error validating name: ${error.message}`
-        : `Error al validar el nombre: ${error.message}`,
-      "error"
-    );
+    showStatus(formatMessage(t("validateNameError"), { message: error.message }), "error");
     return false;
   }
 }
@@ -1030,28 +1037,12 @@ async function validateCpfAndModulos() {
       result?.data;
 
     if (!response.ok || valid === false || valid === "false") {
-      const message =
-        result?.message ||
-        result?.error ||
-        (currentLang === "pt"
-          ? "Cadastro inválido."
-          : currentLang === "en"
-          ? "Invalid registration."
-          : "Registro inválido.");
-      showStatus(message, "error");
+      showStatus(t("duplicateCpfModuleError"), "error");
       return false;
     }
 
     if (valid !== true && valid !== "true" && valid !== undefined) {
-      const message =
-        result?.message ||
-        result?.error ||
-        (currentLang === "pt"
-          ? "Cadastro inválido."
-          : currentLang === "en"
-          ? "Invalid registration."
-          : "Registro inválido.");
-      showStatus(message, "error");
+      showStatus(t("duplicateCpfModuleError"), "error");
       return false;
     }
 
@@ -1064,14 +1055,7 @@ async function validateCpfAndModulos() {
 
 async function goNext() {
   if (!validateCurrentStep()) {
-    showStatus(
-      currentLang === "pt"
-        ? "Preencha os campos obrigatórios."
-        : currentLang === "en"
-        ? "Please fill in the required fields."
-        : "Por favor, completa los campos obligatorios.",
-      "error"
-    );
+    showStatus(t("requiredFields"), "error");
     return;
   }
 
@@ -1080,7 +1064,7 @@ async function goNext() {
     const tokenField = document.getElementById("token");
     const errSpan = document.getElementById("token-error");
     
-    showStatus(currentLang === "pt" ? "Validando token..." : "Validating token...", "");
+    showStatus(t("validatingToken"), "");
     
     isValidatingToken = true;
     renderButtons();
@@ -1189,7 +1173,7 @@ function showStatus(messageData, type = "", isPermanent = false) {
         <div class="status-text-wrapper">
           <h3 class="status-title">${messageData.title}</h3>
           <p class="status-description">${messageData.message}</p>
-          ${isPermanent ? '<button id="startNewRegistrationBtn" class="primary-btn" style="margin-top: 1rem;">Iniciar Novo Cadastro</button>' : ''}
+          ${isPermanent ? `<button id="startNewRegistrationBtn" class="primary-btn" style="margin-top: 1rem;">${t("startNewRegistration")}</button>` : ''}
         </div>
       </div>
     `;
@@ -1202,7 +1186,7 @@ function showStatus(messageData, type = "", isPermanent = false) {
     }
   } else {
     // Fallback para mensagens simples (strings de erro)
-    el.textContent = typeof messageData === 'string' ? messageData : (messageData.message || "Erro");
+    el.textContent = typeof messageData === 'string' ? messageData : (messageData.message || t("genericError"));
   }
 
   // Força o navegador a processar o layout para que a animação de opacidade funcione
@@ -1257,14 +1241,7 @@ function closeConfirm() {
 // ─── Submit ───────────────────────────────────────────────────────────────────
 async function handleSubmit() {
   if (!validateCurrentStep()) {
-    showStatus(
-      currentLang === "pt"
-        ? "Preencha os campos obrigatórios."
-        : currentLang === "en"
-        ? "Please fill in the required fields."
-        : "Por favor, completa los campos obligatorios.",
-      "error"
-    );
+    showStatus(t("requiredFields"), "error");
     return;
   }
 
@@ -1272,7 +1249,7 @@ async function handleSubmit() {
   renderButtons(); // Mostra o loader no botão de submit
 
   showStatus(
-    currentLang === "pt" ? "Enviando..." : currentLang === "en" ? "Sending..." : "Enviando...",
+    t("sending"),
     ""
   );
 
@@ -1430,11 +1407,7 @@ function init() {
   // Limpar formulário
   document.getElementById("clearFormBtn")?.addEventListener("click", () => {
     openConfirm(
-      currentLang === "pt"
-        ? "Tem certeza que deseja limpar todos os dados do cadastro?"
-        : currentLang === "en"
-        ? "Are you sure you want to clear all registration data?"
-        : "¿Estás seguro de que deseas borrar todos los datos del registro?",
+      t("clearFormConfirm"),
       () => {
         formData = {};
         turmasFromPartnerToken = null;
