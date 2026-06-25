@@ -30,6 +30,7 @@ const i18n = {
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>' // Ícone de checkmark
     },
     submitError: "Erro ao enviar. Tente novamente.",
+    validatingRegistration: "Validando cadastro...",
     loading: "Carregando...",
     invalidToken: "Token inválido.",
     emailBounce: "Este domínio de e-mail não é permitido.",
@@ -71,6 +72,7 @@ const i18n = {
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>'
     },
     submitError: "Error sending. Please try again.",
+    validatingRegistration: "Validating registration...",
     loading: "Loading...",
     invalidToken: "Invalid token.",
     emailBounce: "This email domain is not allowed.",
@@ -112,6 +114,7 @@ const i18n = {
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>'
     },
     submitError: "Error al enviar. Inténtalo de nuevo.",
+    validatingRegistration: "Validando registro...",
     loading: "Cargando...",
     invalidToken: "Token inválido.",
     emailBounce: "Este dominio de correo no está permitido.",
@@ -997,6 +1000,68 @@ async function validateEnrollmentName() {
   }
 }
 
+async function validateCpfAndModulos() {
+  showStatus(t("validatingRegistration"), "");
+
+  try {
+    const response = await fetch("/api/validate-cpf-modulos-flow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cpf: formData.cpf,
+        modulos: Array.isArray(formData.modulos) ? formData.modulos : []
+      })
+    });
+
+    const rawBody = await response.text();
+    let result = {};
+
+    try {
+      result = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      result = { message: rawBody };
+    }
+
+    const valid =
+      result?.valid ??
+      result?.validate ??
+      result?.approved ??
+      result?.success ??
+      result?.data;
+
+    if (!response.ok || valid === false || valid === "false") {
+      const message =
+        result?.message ||
+        result?.error ||
+        (currentLang === "pt"
+          ? "Cadastro inválido."
+          : currentLang === "en"
+          ? "Invalid registration."
+          : "Registro inválido.");
+      showStatus(message, "error");
+      return false;
+    }
+
+    if (valid !== true && valid !== "true" && valid !== undefined) {
+      const message =
+        result?.message ||
+        result?.error ||
+        (currentLang === "pt"
+          ? "Cadastro inválido."
+          : currentLang === "en"
+          ? "Invalid registration."
+          : "Registro inválido.");
+      showStatus(message, "error");
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    showStatus(error.message || t("submitError"), "error");
+    return false;
+  }
+}
+
 async function goNext() {
   if (!validateCurrentStep()) {
     showStatus(
@@ -1210,6 +1275,13 @@ async function handleSubmit() {
     currentLang === "pt" ? "Enviando..." : currentLang === "en" ? "Sending..." : "Enviando...",
     ""
   );
+
+  const cpfModulosOk = await validateCpfAndModulos();
+  if (!cpfModulosOk) {
+    isSubmittingForm = false;
+    renderButtons();
+    return;
+  }
 
   // Garantia: Certifica que campos múltiplos (como módulos) sejam enviados como Array, mesmo se vazios
   const payload = { ...formData };

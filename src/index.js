@@ -9,6 +9,7 @@ import { handleCancellationRequest } from '../worker/worker-cancellation.js';
 import { handleShortenRequest, handleRedirectRequest } from '../worker/worker-url-shortener.js';
 import { handleNameValidationRequest } from '../worker/worker-name-validator.js';
 import { handleNameValidationFlowRequest } from '../worker/worker-name-validation-flow.js';
+import { handleCpfModulosValidationFlowRequest } from '../worker/worker-cpf-modulos-validation-flow.js';
 
 
 export default {
@@ -71,7 +72,12 @@ export default {
       return handleNameValidationFlowRequest(request, env, ctx);
     }
 
-    // 6.4 Handler de Redirecionamento para URLs encurtadas (/s/[codigo])
+    // 6.4 Roteamento para a validação de CPF e módulos no Power Automate
+    if (url.pathname.replace(/\/$/, "") === "/api/validate-cpf-modulos-flow") {
+      return handleCpfModulosValidationFlowRequest(request, env, ctx);
+    }
+
+    // 6.5 Handler de Redirecionamento para URLs encurtadas (/s/[codigo])
     if (url.pathname.startsWith("/s/")) {
       return handleRedirectRequest(request, env, ctx);
     }
