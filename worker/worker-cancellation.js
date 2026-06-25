@@ -14,6 +14,25 @@ export async function handleCancellationRequest(request, env, ctx) {
     let modules = Array.isArray(body.modules) ? body.modules : [];
     const allModules = body.all_modules === true;
 
+    const normalizeModules = (items) =>
+      Array.isArray(items)
+        ? items
+            .map((item) => {
+              if (typeof item === "string") return item.trim();
+              return (
+                item?.modulo ||
+                item?.value ||
+                item?.label ||
+                item?.name ||
+                item?.NAME ||
+                ""
+              ).toString().trim();
+            })
+            .filter(Boolean)
+        : [];
+
+    modules = normalizeModules(modules);
+
     if (body.token) {
       try {
         const payloadBase64 = body.token.split(".")[1];
@@ -21,7 +40,7 @@ export async function handleCancellationRequest(request, env, ctx) {
           const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")));
           if (!email) email = decoded.email;
           if (!codigo_turma) codigo_turma = decoded.classId;
-          if (!modules.length && Array.isArray(decoded.modules)) modules = decoded.modules;
+          if (!modules.length && Array.isArray(decoded.modules)) modules = normalizeModules(decoded.modules);
         }
       } catch (e) {
         console.error("Erro ao decodificar token no worker:", e);

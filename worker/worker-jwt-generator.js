@@ -1,5 +1,22 @@
 import { SignJWT } from 'jose';
 
+function normalizeModules(modules) {
+  if (!Array.isArray(modules)) return [];
+  return modules
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+      return (
+        item?.modulo ||
+        item?.value ||
+        item?.label ||
+        item?.name ||
+        item?.NAME ||
+        ""
+      ).toString().trim();
+    })
+    .filter(Boolean);
+}
+
 export async function handleJwtGenerationRequest(request, env) {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Método não permitido. Use POST.' }), {
@@ -10,6 +27,7 @@ export async function handleJwtGenerationRequest(request, env) {
 
   try {
     const { classId, email, modules = [] } = await request.json();
+    const jwtModules = normalizeModules(modules);
 
     if (!classId || !email || !modules) {
       return new Response(JSON.stringify({ error: 'classId/email/modules são obrigatórios.' }), {
@@ -40,7 +58,7 @@ export async function handleJwtGenerationRequest(request, env) {
     const jwt = await new SignJWT({
       classId,
       email,
-      modules: Array.isArray(modules) ? modules : []
+      modules: jwtModules
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()

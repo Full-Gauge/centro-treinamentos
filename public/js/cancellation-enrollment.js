@@ -118,6 +118,7 @@ function normalizeModuleOption(moduleItem, index) {
 
   const value =
     moduleItem.value ||
+    moduleItem.modulo ||
     moduleItem.id ||
     moduleItem.moduleId ||
     moduleItem.MODULEID ||
@@ -147,7 +148,8 @@ function getSelectedModules() {
   if (selectedModuleChoice === "all") {
     return modulesForDisplay.map((moduleItem) => moduleItem.value);
   }
-  return [selectedModuleChoice];
+  const selected = modulesForDisplay.find((moduleItem) => moduleItem.value === selectedModuleChoice);
+  return [selected?.value || selectedModuleChoice];
 }
 
 function renderModulesSection() {
