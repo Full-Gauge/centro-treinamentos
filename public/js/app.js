@@ -6,7 +6,7 @@ const i18n = {
     brandCopy:
       "Desenvolvida para técnicos, instaladores e profissionais com experiência na área de HVACR, nossa Qualificação Técnica Presencial oferece uma semana de imersão em aplicações práticas, produtos Full Gauge Controls e no software Sitrad.",
     brandCopy2:
-      "O treinamento acontece de segunda a sexta-feira, das 8h30 às 17h30, em nosso Centro de Treinamentos, em Canoas/RS, e é dividido em três módulos independentes. Você pode participar da semana completa ou escolher apenas os módulos de seu interesse.",
+      "O treinamento acontece de segunda a sexta-feira, das 8h30 às 17h30, em nosso Centro de Treinamentos, em Canoas/RS, e é dividido em três módulos independentes. Você pode participar da semana completa ou escolher apenas os módulos de seu interesse.Descrição completa do curso no PDF da etapa 04.",
     brandTitleCopy: 
       "Durante o treinamento você aprenderá sobre:",
     featureOne: "Software Sitrad (básico ao avançado)",
@@ -60,7 +60,7 @@ const i18n = {
     brandCopy:
       "Designed for technicians, installers, and professionals with experience in the HVACR field, our On-Site Technical Qualification offers a week of immersion in practical applications, Full Gauge Controls products, and Sitrad software.",
     brandCopy2:
-      "The training takes place Monday through Friday, from 8:30 AM to 5:30 PM, at our Training Center in Canoas/RS, and is divided into three independent modules. You can participate in the entire week or choose only the modules that interest you.",
+      "The training takes place Monday through Friday, from 8:30 AM to 5:30 PM, at our Training Center in Canoas/RS, and is divided into three independent modules. You can participate in the entire week or choose only the modules that interest you. Full course description in the Stage 04 PDF.",
     brandTitleCopy:
       "During the training you will learn about:",
     featureOne: "Sitrad software (basic to advanced)",
@@ -114,7 +114,7 @@ const i18n = {
     brandCopy:
       "Desarrollada para técnicos, instaladores y profesionales con experiencia en el área de HVACR, nuestra Calificación Técnica Presencial ofrece una semana de inmersión en aplicaciones prácticas, productos Full Gauge Controls y el software Sitrad.",
     brandCopy2:
-      "La capacitación se realiza de lunes a viernes, de 8:30 a 17:30, en nuestro Centro de Capacitación en Canoas/RS, y está dividida en tres módulos independientes. Puede participar de la semana completa o elegir únicamente los módulos de su interés.",
+      "La capacitación se realiza de lunes a viernes, de 8:30 a 17:30, en nuestro Centro de Capacitación en Canoas/RS, y está dividida en tres módulos independientes. Puede participar de la semana completa o elegir únicamente los módulos de su interés. Descripción completa del curso en el PDF de la Etapa 04.",
     brandTitleCopy:
       "Durante la capacitación aprenderás sobre:",
     featureOne: "Software Sitrad (de básico a avanzado)",
