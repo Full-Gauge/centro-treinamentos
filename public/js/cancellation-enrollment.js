@@ -91,7 +91,8 @@ const submitBtn = cancellationForm.querySelector('button[type="submit"]');
 let emailForDisplay = null;
 let classIdForDisplay = null;
 let modulesForDisplay = [];
-let selectedModuleChoice = "all";
+let selectedModuleValues = [];
+let selectedAllModules = false;
 
 function t(key) {
   return (i18n[currentLang] || i18n.pt)[key] || i18n.pt[key] || key;
@@ -145,11 +146,14 @@ function normalizeModuleOption(moduleItem, index) {
 
 function getSelectedModules() {
   if (!modulesForDisplay.length) return [];
-  if (selectedModuleChoice === "all") {
+  if (selectedAllModules) {
     return modulesForDisplay.map((moduleItem) => moduleItem.value);
   }
-  const selected = modulesForDisplay.find((moduleItem) => moduleItem.value === selectedModuleChoice);
-  return [selected?.value || selectedModuleChoice];
+  return selectedModuleValues.slice();
+}
+
+function syncAllModulesState() {
+  selectedAllModules = modulesForDisplay.length > 0 && selectedModuleValues.length === modulesForDisplay.length;
 }
 
 function renderModulesSection() {
@@ -163,24 +167,38 @@ function renderModulesSection() {
 
   modulesSection.style.display = "block";
   modulesGroup.innerHTML = [
-    `<label class="radio-chip${selectedModuleChoice === "all" ? " radio-chip--selected" : ""}">
-      <input type="radio" name="moduleChoice" value="all"${selectedModuleChoice === "all" ? " checked" : ""}>
+    `<label class="checkbox-chip${selectedAllModules ? " checkbox-chip--selected" : ""}">
+      <input type="checkbox" name="moduleAll" value="all"${selectedAllModules ? " checked" : ""}>
       <span>${t("allModules")}</span>
     </label>`,
     ...modulesForDisplay.map((moduleItem) => {
-      const isSelected = selectedModuleChoice === moduleItem.value;
-      return `<label class="radio-chip${isSelected ? " radio-chip--selected" : ""}">
-        <input type="radio" name="moduleChoice" value="${moduleItem.value}"${isSelected ? " checked" : ""}>
+      const isSelected = selectedModuleValues.includes(moduleItem.value);
+      return `<label class="checkbox-chip${isSelected ? " checkbox-chip--selected" : ""}">
+        <input type="checkbox" name="moduleChoice" value="${moduleItem.value}"${isSelected ? " checked" : ""}>
         <span>${moduleItem.label}</span>
       </label>`;
     })
   ].join("");
 
-  modulesGroup.querySelectorAll('input[name="moduleChoice"]').forEach((radio) => {
-    radio.addEventListener("change", () => {
-      selectedModuleChoice = radio.value;
-      modulesGroup.querySelectorAll(".radio-chip").forEach((chip) => {
-        chip.classList.toggle("radio-chip--selected", chip.querySelector("input").checked);
+  modulesGroup.querySelector('input[name="moduleAll"]')?.addEventListener("change", (event) => {
+    selectedAllModules = event.target.checked;
+    selectedModuleValues = selectedAllModules ? modulesForDisplay.map((moduleItem) => moduleItem.value) : [];
+    modulesGroup.querySelectorAll('input[name="moduleChoice"]').forEach((input) => {
+      input.checked = selectedAllModules;
+    });
+    modulesGroup.querySelectorAll(".checkbox-chip").forEach((chip) => {
+      chip.classList.toggle("checkbox-chip--selected", chip.querySelector("input").checked);
+    });
+  });
+
+  modulesGroup.querySelectorAll('input[name="moduleChoice"]').forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      selectedModuleValues = Array.from(modulesGroup.querySelectorAll('input[name="moduleChoice"]:checked')).map((input) => input.value);
+      syncAllModulesState();
+      const allInput = modulesGroup.querySelector('input[name="moduleAll"]');
+      if (allInput) allInput.checked = selectedAllModules;
+      modulesGroup.querySelectorAll(".checkbox-chip").forEach((chip) => {
+        chip.classList.toggle("checkbox-chip--selected", chip.querySelector("input").checked);
       });
     });
   });
@@ -244,7 +262,8 @@ try {
     modulesForDisplay = Array.isArray(decodedPayload?.modules)
       ? decodedPayload.modules.map(normalizeModuleOption).filter(Boolean)
       : [];
-    selectedModuleChoice = "all";
+    selectedModuleValues = modulesForDisplay.map((moduleItem) => moduleItem.value);
+    selectedAllModules = true;
   }
 } catch (e) {
   console.error("Erro ao decodificar payload do JWT para exibição:", e);
@@ -300,7 +319,7 @@ cancellationForm.addEventListener("submit", async (e) => {
 
   if (modulesForDisplay.length) {
     payload.modules = getSelectedModules();
-    payload.all_modules = selectedModuleChoice === "all";
+    payload.all_modules = selectedAllModules;
   }
 
   try {
