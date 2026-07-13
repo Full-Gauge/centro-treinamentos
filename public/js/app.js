@@ -26,7 +26,7 @@ const i18n = {
     confirmConfirm: "Confirmar",
     submitSuccess: {
       title: "Cadastro enviado com sucesso!",
-      message: "Agradecemos o seu interesse! Em breve entraremos em contato com mais informações sobre a sua inscrição.",
+      message: "Agradecemos o seu interesse! Em breve entraremos em contato com mais informações sobre a sua inscrição.<br><br>Atenção: A sua inscrição só será registrada mediante a confirmação. Um link foi enviado para o seu e-mail. Caso não tenha recebido, contate o suporte",
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>' // Ícone de checkmark
     },
     submitError: "Erro ao enviar. Tente novamente.",
@@ -80,7 +80,7 @@ const i18n = {
     confirmConfirm: "Confirm",
     submitSuccess: {
       title: "Registration submitted successfully!",
-      message: "Thank you for your interest! We will contact you shortly with more information about your enrollment.",
+      message: "Thank you for your interest! We will contact you shortly with more information about your enrollment.<br><br>Attention: Your enrollment will only be registered after confirmation. A link has been sent to your email. If you did not receive it, please contact support.",
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>'
     },
     submitError: "Error sending. Please try again.",
@@ -134,7 +134,7 @@ const i18n = {
     confirmConfirm: "Confirmar",
     submitSuccess: {
       title: "¡Registro enviado con éxito!",
-      message: "¡Gracias por tu interés! Nos pondremos en contacto contigo en breve con más información sobre tu inscripción.",
+      message: "¡Gracias por tu interés! Nos pondremos en contacto contigo en breve con más información sobre tu inscripción.<br><br>Atención: Tu inscripción solo se registrará tras la confirmación. Se ha enviado un enlace a tu correo electrónico. Si no lo has recibido, contacta con soporte.",
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>'
     },
     submitError: "Error al enviar. Inténtalo de nuevo.",
