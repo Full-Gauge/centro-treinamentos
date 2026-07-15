@@ -1,5 +1,41 @@
 # Plataforma de Treinamentos - Full Gauge
 
+## Documentação do escopo
+
+O arquivo [`docs/escopo-projeto.md`](docs/escopo-projeto.md) é a referência oficial de escopo e arquitetura do projeto.
+
+Atualize esse documento sempre que uma entrega mudar:
+
+- arquitetura
+- rotas
+- contratos de payload
+- variáveis de ambiente
+- integrações
+- fluxos principais
+- critérios de aceite
+
+Não é necessário atualizar o escopo para refatorações internas, ajustes de estilo ou correções sem impacto documentado no comportamento do projeto.
+
+Depois de gerar o documento Word, copie o arquivo final para:
+
+`U:\TI\Desenvolvimentos\Em Andamento\Marketing - Plataforma Gestão CT\Documentação`
+
+### Como gerar o documento
+
+Para gerar o `.docx` a partir do escopo, rode:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\generate-project-scope-docx.ps1
+```
+
+O arquivo é salvo em:
+
+```text
+.artifacts\escopo-projeto.docx
+```
+
+Depois, copie esse arquivo para a pasta da documentação da empresa.
+
 Este projeto centraliza o fluxo de treinamentos da Full Gauge, incluindo:
 - inscrição;
 - confirmação de inscrição;
