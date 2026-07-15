@@ -227,8 +227,9 @@ function Write-DocxPackage {
     New-Item -ItemType Directory -Path $parent -Force | Out-Null
   }
 
-  if (Test-Path $TargetPath) {
-    Remove-Item -LiteralPath $TargetPath -Force
+  $tempPath = $TargetPath + ".tmp"
+  if (Test-Path $tempPath) {
+    Remove-Item -LiteralPath $tempPath -Force
   }
 
   $contentTypes = @"
@@ -247,7 +248,7 @@ function Write-DocxPackage {
 </Relationships>
 "@
 
-  $zip = [System.IO.Compression.ZipFile]::Open($TargetPath, [System.IO.Compression.ZipArchiveMode]::Create)
+  $zip = [System.IO.Compression.ZipFile]::Open($tempPath, [System.IO.Compression.ZipArchiveMode]::Create)
   try {
     $entries = @{
       "[Content_Types].xml" = $contentTypes
@@ -272,6 +273,11 @@ function Write-DocxPackage {
   } finally {
     $zip.Dispose()
   }
+
+  if (Test-Path $TargetPath) {
+    Remove-Item -LiteralPath $TargetPath -Force
+  }
+  Move-Item -LiteralPath $tempPath -Destination $TargetPath
 }
 
 function Test-DocxPackage {

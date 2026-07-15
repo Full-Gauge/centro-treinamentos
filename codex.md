@@ -1,6 +1,6 @@
 # Codex do Projeto
 
-Este arquivo resume a arquitetura real da **Plataforma de Treinamentos - Full Gauge** e guarda prompts reutilizaveis para usar no proprio Codex ao gerar documentos, revisar fluxos e orientar mudancas.
+Este arquivo resume a arquitetura real da Plataforma de Treinamentos - Full Gauge e guarda prompts reutilizaveis para usar no proprio Codex ao gerar documentos, revisar fluxos e orientar mudancas.
 
 ## 1. Visao geral
 
@@ -23,6 +23,12 @@ A aplicacao atende os fluxos de:
 - validacao de CPF e modulos
 - geracao de JWT
 - shortener de URL
+
+## 1.1 Hospedagem
+
+- Ambiente de teste: `https://fg-centro-treinamentos-dev.svc-powerplatform-dev.workers.dev/`
+- Ambiente de produção: `https://fg-centro-treinamentos-dev.svc-powerplatform-dev.workers.dev/`
+- Dashboard da hospedagem: `https://dash.cloudflare.com/`
 
 ## 2. Estrutura do repositorio
 

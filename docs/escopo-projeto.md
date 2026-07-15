@@ -2,10 +2,11 @@
 
 ## 1. Identificação
 
-- **Projeto:** Plataforma de Treinamentos - Full Gauge
-- **Versão:** 1.0
-- **Responsável:** Equipe de desenvolvimento
-- **Data:** Atualização conforme a entrega
+- Projeto: Plataforma de Treinamentos - Full Gauge
+- Código-fonte: [Full-Gauge/centro-treinamentos](https://github.com/Full-Gauge/centro-treinamentos)
+- Versão: 1.0
+- Responsável: Equipe de desenvolvimento
+- Data: Atualização conforme a entrega
 
 ## 2. Objetivo
 
@@ -184,7 +185,15 @@ Observação:
 
 - o worker de cancelamento usa `CANCELLATION_WEBHOOK_URL` e pode cair para `CONFIRMATION_WEBHOOK_URL` como fallback
 
-## 9. Interface e experiência do usuário
+## 9. Hospedagem
+
+O site e o Worker ficam hospedados no ecossistema Cloudflare. Os acessos informados para os ambientes são:
+
+- Ambiente de teste: `https://fg-centro-treinamentos-dev.svc-powerplatform-dev.workers.dev/`
+- Ambiente de produção: `https://fg-centro-treinamentos-dev.svc-powerplatform-dev.workers.dev/`
+- Dashboard da hospedagem: `https://dash.cloudflare.com/`
+
+## 10. Interface e experiência do usuário
 
 As telas do projeto foram desenhadas para cobrir contextos diferentes com a mesma base visual:
 
@@ -196,7 +205,7 @@ As telas do projeto foram desenhadas para cobrir contextos diferentes com a mesm
 - feedback visual de sucesso, erro e carregamento
 - tema claro e escuro
 
-## 10. Configuração local
+## 11. Configuração local
 
 ### Pré-requisitos
 
@@ -230,7 +239,7 @@ curl -X POST http://127.0.0.1:8787/api/cancellation \
 npx wrangler deploy
 ```
 
-## 11. Regras técnicas do projeto
+## 12. Regras técnicas do projeto
 
 - manter os contratos de payload consistentes
 - tratar `modules` como array real quando o fluxo exigir
@@ -239,7 +248,7 @@ npx wrangler deploy
 - manter os proxys de Power Automate simples e previsíveis
 - não criar uma segunda implementação para o que já existe
 
-## 12. Critérios de aceite
+## 13. Critérios de aceite
 
 - todas as páginas principais carregam corretamente
 - os fluxos de inscrição, confirmação, cancelamento e presença funcionam com os contratos esperados
@@ -248,13 +257,13 @@ npx wrangler deploy
 - o encurtador redireciona corretamente para a URL de destino
 - o sistema se mantém responsivo e utilizável em desktop e mobile
 
-## 13. Riscos e mitigação
+## 14. Riscos e mitigação
 
-- **Mudança de requisitos:** mitigar com validação recorrente do escopo e revisão antes de novas entregas
-- **Quebra de contrato de payload:** mitigar com verificação de shape no frontend e no worker
-- **Falhas de integração externa:** mitigar com fallback de webhook, tratamento de erro e logs claros
-- **Problemas de compatibilidade de interface:** mitigar com testes das telas principais e revisão do suporte a temas e idiomas
+- Mudança de requisitos: mitigar com validação recorrente do escopo e revisão antes de novas entregas
+- Quebra de contrato de payload: mitigar com verificação de shape no frontend e no worker
+- Falhas de integração externa: mitigar com fallback de webhook, tratamento de erro e logs claros
+- Problemas de compatibilidade de interface: mitigar com testes das telas principais e revisão do suporte a temas e idiomas
 
-## 14. Conclusão
+## 15. Conclusão
 
 A Plataforma de Treinamentos - Full Gauge é uma aplicação modular, baseada em Cloudflare Workers, com foco em inscrição, confirmação, cancelamento, presença, validações e automações externas. A separação entre frontend e Worker deixa o sistema fácil de manter e simples de evoluir.
