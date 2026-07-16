@@ -172,18 +172,46 @@ Esse modelo aparece nos fluxos de:
 
 ## 8. Variáveis de ambiente
 
+- As secrets devem ser alteradas via CLI do Wrangler:
+
+```bash
+npx wrangler secret put JWT_SECRET --config wrangler.jsonc
+npx wrangler secret put API_KEY --config wrangler.jsonc
+```
+
+### 8.1 Secrets do Worker
+
+- `JWT_SECRET`
+- `API_KEY`
+
+### 8.2 Variáveis do Worker
+
 - `url_registro`
+- `url_turmas`
+- `url_modulos`
+- `url_token`
+- `url_registro_presenca`
 - `ATTENDANCE_WEBHOOK_URL`
 - `CONFIRMATION_WEBHOOK_URL`
 - `CANCELLATION_WEBHOOK_URL`
-- `JWT_SECRET`
-- `API_KEY`
-- `URL_SHORTENER_KV`
 - `NAME_VALIDATION_WEBHOOK_URL`
+- `URL_VALIDATE_CPF_MODULOS`
 
-Observação:
+### 8.3 Bindings do Worker
 
-- o worker de cancelamento usa `CANCELLATION_WEBHOOK_URL` e pode cair para `CONFIRMATION_WEBHOOK_URL` como fallback
+- `URL_SHORTENER_KV`
+
+### 8.4 Segredos do deploy
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+
+Observações:
+
+- `CANCELLATION_WEBHOOK_URL` pode cair para `CONFIRMATION_WEBHOOK_URL` como fallback.
+- `ATTENDANCE_WEBHOOK_URL` pode cair para `url_registro_presenca` como fallback.
+- `URL_SHORTENER_KV` é um binding de KV, não uma secret.
+- `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` são secrets do GitHub Actions e não ficam no Worker.
 
 ## 9. Hospedagem
 
