@@ -1,3 +1,5 @@
+import { requirePowerAutomateHeaders } from "./power-automate.js";
+
 export async function handleConfirmationRequest(request, env, ctx) {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Método não permitido. Use POST.' }), {
@@ -41,9 +43,12 @@ export async function handleConfirmationRequest(request, env, ctx) {
       });
     }
 
+    const { headers, error } = requirePowerAutomateHeaders(env);
+    if (error) return error;
+
     const flowResponse = await fetch(webhookUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         email: email,
         codigo_turma: codigo_turma,

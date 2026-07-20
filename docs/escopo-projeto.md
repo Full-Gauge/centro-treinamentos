@@ -160,7 +160,7 @@ O padrão de integração do projeto é simples:
 - recebe o payload do frontend
 - reenvia o JSON ao webhook externo
 - devolve status e corpo da resposta para a interface ou para o sistema chamador
-- envia `x-api-key` quando `API_KEY` está configurada
+- exige `API_KEY` e envia `x-api-key` para webhooks do Power Automate
 
 Esse modelo aparece nos fluxos de:
 
@@ -182,7 +182,7 @@ npx wrangler secret put API_KEY --config wrangler.jsonc
 ### 8.1 Secrets do Worker
 
 - `JWT_SECRET`
-- `API_KEY`
+- `API_KEY` obrigatória para os proxies enviados ao Power Automate
 
 ### 8.2 Variáveis do Worker
 

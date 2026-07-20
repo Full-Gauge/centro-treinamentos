@@ -1,3 +1,5 @@
+import { requirePowerAutomateHeaders } from "./power-automate.js";
+
 export async function handleCpfModulosValidationFlowRequest(request, env) {
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Método não permitido. Use POST." }), {
@@ -21,13 +23,8 @@ export async function handleCpfModulosValidationFlowRequest(request, env) {
 
   try {
     const body = await request.json();
-    const headers = {
-      "Content-Type": "application/json"
-    };
-
-    if (env.API_KEY) {
-      headers["x-api-key"] = env.API_KEY;
-    }
+    const { headers, error } = requirePowerAutomateHeaders(env);
+    if (error) return error;
 
     const upstreamResponse = await fetch(targetUrl, {
       method: "POST",

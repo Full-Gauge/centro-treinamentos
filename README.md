@@ -71,7 +71,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `NAME_VALIDATION_WEBHOOK_URL`
 - `URL_VALIDATE_CPF_MODULOS`
 - `JWT_SECRET`
-- `API_KEY`
+- `API_KEY` obrigatória para os proxies enviados ao Power Automate
 - `URL_SHORTENER_KV`
 
 ### Deploy
