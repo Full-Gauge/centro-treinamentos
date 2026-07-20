@@ -1,3 +1,5 @@
+import { requirePowerAutomateHeaders } from "./power-automate.js";
+
 export async function handleRegisterRequest(request, env, ctx) {
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Método não permitido. Use POST." }), {
@@ -22,12 +24,12 @@ export async function handleRegisterRequest(request, env, ctx) {
 
   try {
     const formData = await request.json();
+    const { headers, error } = requirePowerAutomateHeaders(env);
+    if (error) return error;
 
     const upstreamResponse = await fetch(targetUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers,
       body: JSON.stringify(formData)
     });
 
