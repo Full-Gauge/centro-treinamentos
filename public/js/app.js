@@ -221,14 +221,14 @@ const STEPS = [
         type: "select",
         required: true,
         options: [
-          { value: "PAR-0002", label: "Armacell" },
-          { value: "PAR-0003", label: "Brahex" },
-          { value: "PAR-0004", label: "Bitzer" },
-          { value: "PAR-0005", label: "Chemours" },
-          { value: "PAR-0006", label: "DuFrio" },
-          { value: "PAR-0001", label: "Frigelar" },
-          { value: "PAR-0007", label: "Nacional Frio" },
-          { value: "PAR-0008", label: "Soma" }
+          { value: "PAR-0002", label: "Brahex" },
+          { value: "PAR-0003", label: "Bitzer" },
+          { value: "PAR-0004", label: "Chemours" },
+          { value: "PAR-0005", label: "DUFRIO" },
+          { value: "PAR-0006", label: "Refrimate - Nacional Frio" },
+          { value: "PAR-0001", label: "Armacell Isolamento" },
+          { value: "PAR-0007", label: "FRIGELAR" },
+          { value: "PAR-0008", label: "SOMA" }
         ],
       },
       {
