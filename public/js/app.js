@@ -174,9 +174,9 @@ const STEPS = [
   {
     title: { pt: "Relação conosco", en: "Relationship with us", es: "Relación con nosotros" },
     description: {
-      pt: "Informações principais de identificação. Registre-se como Parceiro apenas se você recebeu um Token de indicação de uma empresa parceira.",
-      en: "Main identification information. Register as a Partner only if you received an indication token from a partner company.",
-      es: "Información principal de identificación. Regístrese como Socio solo si recibió un token de indicación de una empresa asociada.",
+      pt: "Informações principais de identificação. Registre-se como Parceiro apenas se você recebeu um Token de indicação.",
+      en: "Main identification information. Register as a Partner only if you received an indication token.",
+      es: "Información principal de identificación. Regístrese como Socio solo si recibió un token de indicación.",
     },
     fields: [
       {
