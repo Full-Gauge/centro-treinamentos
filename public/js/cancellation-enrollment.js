@@ -262,8 +262,8 @@ try {
     modulesForDisplay = Array.isArray(decodedPayload?.modules)
       ? decodedPayload.modules.map(normalizeModuleOption).filter(Boolean)
       : [];
-    selectedModuleValues = modulesForDisplay.map((moduleItem) => moduleItem.value);
-    selectedAllModules = true;
+    selectedModuleValues = [];
+    selectedAllModules = false;
   }
 } catch (e) {
   console.error("Erro ao decodificar payload do JWT para exibição:", e);
