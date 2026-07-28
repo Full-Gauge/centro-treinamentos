@@ -174,9 +174,9 @@ const STEPS = [
   {
     title: { pt: "Relação conosco", en: "Relationship with us", es: "Relación con nosotros" },
     description: {
-      pt: "Informações principais de identificação.",
-      en: "Main identification information.",
-      es: "Información principal de identificación.",
+      pt: "Informações principais de identificação. Registre-se como Parceiro apenas se você recebeu um Token de indicação de uma empresa parceira.",
+      en: "Main identification information. Register as a Partner only if you received an indication token from a partner company.",
+      es: "Información principal de identificación. Regístrese como Socio solo si recibió un token de indicación de una empresa asociada.",
     },
     fields: [
       {
@@ -186,8 +186,8 @@ const STEPS = [
         required: true,
         full: true,
         options: [
-          { value: "PARCEIRO", label: { pt: "Parceiro", en: "Partner", es: "Socio" } },
           { value: "GERAL", label: { pt: "Geral",en: "General",es: "General"} },
+          { value: "PARCEIRO", label: { pt: "Parceiro", en: "Partner", es: "Socio" } },
         ],
       },
       { id: "token", label: { pt: "Qual o token enviado pelo parceiro? *", en: "Which token is sent by the partner? *", es: "¿Qué token es enviado por el socio? *" }, type: "text", required: true, validateToken: true, uppercase: true },
