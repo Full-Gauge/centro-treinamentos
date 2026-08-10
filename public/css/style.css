@@ -970,17 +970,6 @@ body[data-theme="dark"] .status-message.error {
   font-weight: 600;
 }
 
-.modules-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 1fr);
-  gap: 0.9rem;
-  align-items: start;
-}
-
-.modules-options {
-  min-width: 0;
-}
-
 .modules-description-panel {
   min-width: 0;
   padding: 0.9rem 1rem 1rem;
@@ -1031,10 +1020,6 @@ body[data-theme="dark"] .status-message.error {
 }
 
 @media (max-width: 860px) {
-  .modules-layout {
-    grid-template-columns: 1fr;
-  }
-
   .modules-description-panel {
     max-height: none;
   }
