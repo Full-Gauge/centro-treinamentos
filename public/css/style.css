@@ -980,8 +980,6 @@ body[data-theme="dark"] .status-message.error {
   display: grid;
   gap: 0.7rem;
   align-content: start;
-  max-height: 18rem;
-  overflow: auto;
 }
 
 .modules-description-header {
