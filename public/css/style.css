@@ -970,6 +970,51 @@ body[data-theme="dark"] .status-message.error {
   font-weight: 600;
 }
 
+.modules-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.9fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.modules-options {
+  min-width: 0;
+}
+
+.modules-description-panel {
+  min-width: 0;
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid var(--line-200);
+  background: color-mix(in srgb, var(--panel) 92%, var(--fg-green-100));
+  display: grid;
+  gap: 0.75rem;
+}
+
+.module-description-item {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.module-description-item strong {
+  color: var(--fg-green-700);
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.module-description-text {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ink-700);
+  white-space: normal;
+}
+
+@media (max-width: 860px) {
+  .modules-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

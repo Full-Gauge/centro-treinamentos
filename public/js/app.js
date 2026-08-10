@@ -356,6 +356,19 @@ function getTermsLinkLabel() {
   return STEPS[STEPS.length - 1].termsLink.label[currentLang] || STEPS[STEPS.length - 1].termsLink.label.pt;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function lineBreaksToHtml(value) {
+  return escapeHtml(value).replace(/\r\n|\r|\n/g, "<br>");
+}
+
 function clearRequiredEmptyState(fieldId) {
   const wrap = document.getElementById(`field-wrap-${fieldId}`);
   const input = document.getElementById(fieldId);
@@ -565,6 +578,36 @@ function renderFields() {
               </label>`;
             })
             .join("");
+
+          if (f.id === "modulos") {
+            const descriptions = (f.options || [])
+              .map((o) => {
+                const isObj = typeof o === "object" && o !== null;
+                const optVal = isObj ? o.value : o;
+                let optLabel = isObj ? o.label : o;
+                if (optLabel && typeof optLabel === "object") optLabel = optLabel[currentLang] || optLabel.pt || optVal;
+                const description = isObj ? o.description : "";
+                if (!description) return "";
+                return `<div class="module-description-item">
+                  <strong>${escapeHtml(optLabel)}</strong>
+                  <div class="module-description-text">${lineBreaksToHtml(description)}</div>
+                </div>`;
+              })
+              .filter(Boolean)
+              .join("");
+
+            return `<div class="field-wrap ${fullClass}" id="field-wrap-${f.id}">
+              <label>${label}</label>
+              <div class="modules-layout">
+                <div class="checkbox-group modules-options" id="${f.id}-group">
+                  ${chips || `<p class="helper">${t("noItemsAvailable")}</p>`}
+                </div>
+                <div class="modules-description-panel" aria-label="${label} - descrições">
+                  ${descriptions || `<p class="helper">${t("noItemsAvailable")}</p>`}
+                </div>
+              </div>
+            </div>`;
+          }
 
           return `<div class="field-wrap ${fullClass}" id="field-wrap-${f.id}">
             <label>${label}</label>
@@ -1393,11 +1436,13 @@ async function fetchModulosData(classId) {
         const field = modulosStep.fields.find(f => f.id === 'modulos');
         
         // Mapeia os dados vindo da API (ajuste as chaves conforme o retorno do seu backend)
-        field.options = Array.isArray(data.data) 
-          ? data.data.map(m => ({ 
-              value: m.id || m.FG_MODULEID, 
-              label: (m.id || m.FG_MODULEID) + " - " + (m.name || m.NAME) 
-            })) 
+        const modulosData = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+        field.options = modulosData.length > 0
+          ? modulosData.map((m) => ({
+              value: m.id || m.FG_MODULEID,
+              label: (m.id || m.FG_MODULEID) + " - " + (m.name || m.NAME),
+              description: m.description || m.DESCRIPTION || ""
+            }))
           : [];
           
         if (STEPS[currentStep] === modulosStep) renderFields();
