@@ -1,0 +1,16 @@
+{
+  "name": "fg-centro-treinamentos-dev",
+  "compatibility_date": "2026-05-27",
+  "main": "src/index.js",
+  "assets": {
+    "directory": "public",
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {},
+  "kv_namespaces": [
+    {
+      "binding": "URL_SHORTENER_KV",
+      "id": "dba5af53bc924d55b24e47eb07fa4f56"
+    }
+  ]
+}
