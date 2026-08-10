@@ -170,6 +170,17 @@ const DISPOSABLE_DOMAINS = [
   "mailinator.com", "guerrillamail.com", "10minutemail.com", "tempmail.com", "throwawaymail.com"
 ];
 
+const DEFAULT_EMPRESA_OPTIONS = [
+  { value: "PAR-0002", label: "Brahex" },
+  { value: "PAR-0003", label: "Bitzer" },
+  { value: "PAR-0004", label: "Chemours" },
+  { value: "PAR-0005", label: "DUFRIO" },
+  { value: "PAR-0006", label: "Refrimate - Nacional Frio" },
+  { value: "PAR-0001", label: "Armacell Isolamento" },
+  { value: "PAR-0007", label: "FRIGELAR" },
+  { value: "PAR-0008", label: "SOMA" }
+];
+
 const STEPS = [
   {
     title: { pt: "Relação conosco", en: "Relationship with us", es: "Relación con nosotros" },
@@ -220,16 +231,7 @@ const STEPS = [
         label: { pt: "Empresa *", en: "Company *", es: "Empresa *" },
         type: "select",
         required: true,
-        options: [
-          { value: "PAR-0002", label: "Brahex" },
-          { value: "PAR-0003", label: "Bitzer" },
-          { value: "PAR-0004", label: "Chemours" },
-          { value: "PAR-0005", label: "DUFRIO" },
-          { value: "PAR-0006", label: "Refrimate - Nacional Frio" },
-          { value: "PAR-0001", label: "Armacell Isolamento" },
-          { value: "PAR-0007", label: "FRIGELAR" },
-          { value: "PAR-0008", label: "SOMA" }
-        ],
+        options: DEFAULT_EMPRESA_OPTIONS,
       },
       {
         id: "segmento",
@@ -325,10 +327,12 @@ let formData = {};
 let pendingAction = null;
 let isFetchingTurmas = false;
 let isFetchingModulos = false;
+let isFetchingEmpresas = false;
 let isValidatingToken = false;
 let isSubmittingForm = false;
 let turmasFromPartnerToken = null;
 let allTurmasOptions = [];
+let allEmpresaOptions = DEFAULT_EMPRESA_OPTIONS.slice();
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 function t(key) {
@@ -541,7 +545,7 @@ function renderFields() {
       const fullClass = f.full ? "full" : "";
 
       if (fieldType === "select") {
-        const isLoading = (f.id === "turmas" && isFetchingTurmas) || (f.id === "modulos" && isFetchingModulos);
+        const isLoading = (f.id === "turmas" && isFetchingTurmas) || (f.id === "modulos" && isFetchingModulos) || (f.id === "empresa" && isFetchingEmpresas);
         const isLocked = (f.id === "empresa" && formData.empresaLocked) || (f.id === "turmas" && formData.turmasLocked);
         const helperText = f.id === "turmas" && formData.turmasLocked ? `<p class="helper helper--locked">${t("partnerClassLocked")}</p>` : "";
         
@@ -1346,6 +1350,35 @@ async function fetchTurmasData() {
   }
 }
 
+async function fetchEmpresasData() {
+  isFetchingEmpresas = true;
+  const empresaStep = STEPS.find((s) => s.fields.some((f) => f.id === "empresa"));
+  if (STEPS[currentStep] === empresaStep) renderFields();
+
+  try {
+    const response = await fetch('/api/parceiros?v=' + Date.now());
+
+    if (response.ok) {
+      const data = await response.json();
+      allEmpresaOptions = Array.isArray(data)
+        ? data.map((item) => ({ value: item.id, label: item.name }))
+        : [];
+
+      const field = empresaStep?.fields.find((f) => f.id === "empresa");
+      if (field) {
+        field.options = allEmpresaOptions;
+      }
+
+      if (STEPS[currentStep] === empresaStep) renderFields();
+    }
+  } catch (err) {
+    console.error("Erro ao carregar empresas:", err);
+  } finally {
+    isFetchingEmpresas = false;
+    if (STEPS[currentStep] === empresaStep) renderFields();
+  }
+}
+
 async function fetchModulosData(classId) {
   isFetchingModulos = true;
   const modulosStep = STEPS.find(s => s.fields.some(f => f.id === 'modulos'));
@@ -1387,6 +1420,7 @@ function init() {
   if (statusMessageWrapper) {
     statusMessageWrapper.style.display = 'none';
   }
+  fetchEmpresasData();
   fetchTurmasData();
 
   // Navegação

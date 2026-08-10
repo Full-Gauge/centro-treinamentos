@@ -10,6 +10,7 @@ import { handleShortenRequest, handleRedirectRequest } from '../worker/worker-ur
 import { handleNameValidationRequest } from '../worker/worker-name-validator.js';
 import { handleNameValidationFlowRequest } from '../worker/worker-name-validation-flow.js';
 import { handleCpfModulosValidationFlowRequest } from '../worker/worker-cpf-modulos-validation-flow.js';
+import { handleParceirosRequest } from '../worker/worker-parceiros.js';
 
 
 export default {
@@ -24,6 +25,11 @@ export default {
     // 2. Roteamento para a API de Módulos
     if (url.pathname.replace(/\/$/, "") === "/api/modulos") {
       return handleModulosRequest(request, env, ctx);
+    }
+
+    // 2.1 Roteamento para a API de Parceiros
+    if (url.pathname.replace(/\/$/, "") === "/api/parceiros") {
+      return handleParceirosRequest(request, env, ctx);
     }
 
     // 3. Roteamento para a API de Registro
