@@ -602,7 +602,7 @@ function renderFields() {
                 <div class="checkbox-group modules-options" id="${f.id}-group">
                   ${chips || `<p class="helper">${t("noItemsAvailable")}</p>`}
                 </div>
-                <div class="field-wrap modules-description-panel" aria-label="${label} - descrições" aria-live="polite">
+                <div class="modules-description-panel" aria-label="${label} - descrições" aria-live="polite">
                   <div class="modules-description-header">
                     <strong>Informações do módulo</strong>
                   </div>
