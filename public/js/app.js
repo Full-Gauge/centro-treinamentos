@@ -41,6 +41,7 @@ const i18n = {
     nameValidationFailed: "Não foi possível validar o nome.",
     validateNameError: "Erro ao validar o nome: {message}",
     invalidEmail: "Informe um e-mail válido.",
+    invalidCpf: "Informe um CPF válido.",
     noItemsAvailable: "Nenhum item disponível",
     clearFormConfirm: "Tem certeza que deseja limpar todos os dados do cadastro?",
     loading: "Carregando...",
@@ -95,6 +96,7 @@ const i18n = {
     nameValidationFailed: "Name validation failed.",
     validateNameError: "Error validating name: {message}",
     invalidEmail: "Enter a valid e-mail address.",
+    invalidCpf: "Enter a valid CPF.",
     noItemsAvailable: "No items available",
     clearFormConfirm: "Are you sure you want to clear all registration data?",
     loading: "Loading...",
@@ -149,6 +151,7 @@ const i18n = {
     nameValidationFailed: "No se pudo validar el nombre.",
     validateNameError: "Error al validar el nombre: {message}",
     invalidEmail: "Ingrese un correo electrónico válido.",
+    invalidCpf: "Ingrese un CPF válido.",
     noItemsAvailable: "No hay elementos disponibles",
     clearFormConfirm: "¿Estás seguro de que deseas borrar todos los datos del registro?",
     loading: "Cargando...",
@@ -225,6 +228,7 @@ const STEPS = [
         type: "text",
         required: true,
         mask: "cpf",
+        validateCpf: true,
       },
       {
         id: "empresa",
@@ -381,6 +385,20 @@ function clearRequiredEmptyState(fieldId) {
 function isDisposableEmail(email) {
   const domain = email.split('@')[1]?.toLowerCase();
   return DISPOSABLE_DOMAINS.includes(domain);
+}
+
+function isValidCpf(value) {
+  const digits = String(value).replace(/\D/g, "");
+  if (digits.length !== 11 || /^([0-9])\1{10}$/.test(digits)) return false;
+
+  const calculateDigit = (length) => {
+    let sum = 0;
+    for (let i = 0; i < length; i++) sum += Number(digits[i]) * (length + 1 - i);
+    const remainder = (sum * 10) % 11;
+    return remainder === 10 ? 0 : remainder;
+  };
+
+  return calculateDigit(9) === Number(digits[9]) && calculateDigit(10) === Number(digits[10]);
 }
 
 function applyMask(value, mask) {
@@ -680,10 +698,10 @@ function renderFields() {
           name="${f.id}"
           value="${f.uppercase ? val.toUpperCase() : val}"
           ${f.required ? "required" : ""}
-          ${(f.validateEmail || f.validateToken) ? `aria-describedby="${errorId}"` : ""}
+          ${(f.validateEmail || f.validateToken || f.validateCpf) ? `aria-describedby="${errorId}"` : ""}
           autocomplete="off"
           ${f.uppercase ? 'style="text-transform: uppercase;"' : ''}>
-        ${(f.validateEmail || f.validateToken) ? `<span class="input-error-msg" id="${errorId}" role="alert"></span>` : ""}
+        ${(f.validateEmail || f.validateToken || f.validateCpf) ? `<span class="input-error-msg" id="${errorId}" role="alert"></span>` : ""}
       </div>`;
     })
     .join("");
@@ -783,6 +801,12 @@ function renderFields() {
           el.classList.remove("invalid");
           if (errSpan) errSpan.textContent = "";
         }
+      }
+
+      if (f.validateCpf && isValidCpf(v)) {
+        el.classList.remove("invalid");
+        const errSpan = document.getElementById(`${f.id}-error`);
+        if (errSpan) errSpan.textContent = "";
       }
 
       // Limpa erro de token em tempo real
@@ -983,6 +1007,13 @@ function validateCurrentStep() {
       } else {
         if (errSpan) errSpan.textContent = "";
       }
+    }
+
+    if (f.validateCpf && el.value.trim() && !isValidCpf(el.value)) {
+      el.classList.add("invalid");
+      const errSpan = document.getElementById(`${f.id}-error`);
+      if (errSpan) errSpan.textContent = t("invalidCpf");
+      valid = false;
     }
 
     if (f.validateToken && el.value.trim()) {
