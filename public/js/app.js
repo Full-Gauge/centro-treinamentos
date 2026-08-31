@@ -231,6 +231,12 @@ const STEPS = [
         validateCpf: true,
       },
       {
+        id: "estrangeiro",
+        label: { pt: "Estrangeiro", en: "Foreigner", es: "Extranjero" },
+        type: "checkbox",
+        full: true,
+      },
+      {
         id: "empresa",
         label: { pt: "Empresa *", en: "Company *", es: "Empresa *" },
         type: "select",
@@ -572,6 +578,9 @@ function renderFields() {
       const fieldType = (f.id === "empresa" && formData.relacao === "GERAL") ? "text" : f.type;
 
       const label = f.label[currentLang] || f.label.pt;
+      const fieldLabel = f.id === "cpf" && formData.estrangeiro
+        ? label.replace(/\s*\*$/, "")
+        : label;
       const val = formData[f.id] ?? "";
       const fullClass = f.full ? "full" : "";
 
@@ -691,13 +700,14 @@ function renderFields() {
             // Campo normal (text, email, tel, number, etc)
       const errorId = `${f.id}-error`;
       return `<div class="field-wrap ${fullClass}">
-        <label for="${f.id}">${label}</label>
+        <label for="${f.id}">${fieldLabel}</label>
         <input
           type="${fieldType}"
           id="${f.id}"
           name="${f.id}"
           value="${f.uppercase ? val.toUpperCase() : val}"
-          ${f.required ? "required" : ""}
+          ${f.required && !(f.id === "cpf" && formData.estrangeiro) ? "required" : ""}
+          ${f.id === "cpf" && formData.estrangeiro ? "disabled" : ""}
           ${(f.validateEmail || f.validateToken || f.validateCpf) ? `aria-describedby="${errorId}"` : ""}
           autocomplete="off"
           ${f.uppercase ? 'style="text-transform: uppercase;"' : ''}>
@@ -779,6 +789,12 @@ function renderFields() {
       if (fieldType === "checkbox") {
         formData[f.id] = el.checked;
         el.closest(".checkbox-chip")?.classList.toggle("checkbox-chip--selected", el.checked);
+
+        if (f.id === "estrangeiro") {
+          if (el.checked) formData.cpf = "";
+          render();
+          return;
+        }
         
         // Se estivermos na última etapa, atualizamos o estado do botão de submit em tempo real
         const isLast = currentStep === STEPS.length - 1;
@@ -985,7 +1001,7 @@ function validateCurrentStep() {
         ? (!Array.isArray(formData[f.id]) || formData[f.id].length === 0)
         : !el.value.trim();
 
-      if (f.required && isEmpty) {
+      if (f.required && !(f.id === "cpf" && formData.estrangeiro) && isEmpty) {
         el.classList.add("invalid");
         el.classList.add("required-empty");
         valid = false;
@@ -1009,7 +1025,7 @@ function validateCurrentStep() {
       }
     }
 
-    if (f.validateCpf && el.value.trim() && !isValidCpf(el.value)) {
+    if (f.validateCpf && !formData.estrangeiro && el.value.trim() && !isValidCpf(el.value)) {
       el.classList.add("invalid");
       const errSpan = document.getElementById(`${f.id}-error`);
       if (errSpan) errSpan.textContent = t("invalidCpf");
@@ -1040,7 +1056,8 @@ async function validateEnrollmentName() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: formData.fullName,
-        cpf: formData.cpf,
+        cpf: formData.estrangeiro ? "" : formData.cpf,
+        estrangeiro: formData.estrangeiro === true,
         email: formData.email,
         empresa: formData.empresa,
         relacao: formData.relacao
@@ -1088,6 +1105,8 @@ async function validateEnrollmentName() {
 }
 
 async function validateCpfAndModulos() {
+  if (formData.estrangeiro) return true;
+
   showStatus(t("validatingRegistration"), "");
 
   try {
