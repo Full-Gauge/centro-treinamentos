@@ -99,9 +99,13 @@ Quando a arquitetura mudar, atualize primeiro:
 
 Assim o documento continua sendo um mapa fiel do projeto.
 
-## 6. Skill de agente (Ponytail)
+## 6. Skills de agente
 
-O repositório inclui a skill de agente **Ponytail** em `.agents/ponytail.md`. É um ruleset de código mínimo (reuso antes de abstrair, sem dependência nova, deleção antes de adição) e não faz parte do escopo funcional.
+As skills de agente ficam em `.agents/` e não fazem parte do escopo funcional. Não precisam ser atualizadas nas mudanças de escopo.
 
-- não precisa ser atualizada nas mudanças de escopo
-- para desativá-la, remova o arquivo `.agents/ponytail.md`
+- `.agents/ponytail.md`: ruleset de código mínimo (reuso antes de abstrair, sem dependência nova, deleção antes de adição).
+- `.agents/projeto-convencoes.md`: contratos de payload, rotas, variáveis e regras de reuso do projeto.
+- `.agents/seguranca-secrets.md`: cuidados com secrets, JWT, entrada e CORS.
+- `.agents/cloudflare-workers.md`: padrões de handler, cache de borda, KV, estáticos e deploy.
+
+Para desativar uma skill, remova o arquivo correspondente em `.agents/`.

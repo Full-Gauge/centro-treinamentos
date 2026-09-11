@@ -9,10 +9,12 @@ LEIA ANTES DE COMEÇAR (arquivos .md)
 - README.md - visão geral, variáveis de ambiente e deploy.
 - codex.md - guia interno e regras.
 - docs/escopo-projeto.md - fonte oficial de escopo e arquitetura.
-- .agents/ponytail.md - skill de estilo (código mínimo); leia e siga.
+- Todas as skills em .agents/*.md - leia e siga:
+  ponytail (código mínimo), projeto-convencoes (contratos e rotas),
+  seguranca-secrets (secrets, JWT, entrada), cloudflare-workers (padrões da stack).
 
 REGRAS
-- Baseie-se nos .md lidos e no código real; não invente recursos.
+- Baseie-se nos .md e nas skills lidos e no código real; não invente recursos.
 - Mantenha os contratos de payload (modules como array real, all_modules boolean).
 - Reutilize o que já existe; sem duplicar lógica nem criar abstrações não pedidas.
 - Nunca exponha secrets (API_KEY e JWT_SECRET ficam no Worker).

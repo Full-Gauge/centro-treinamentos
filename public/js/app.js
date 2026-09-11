@@ -54,6 +54,10 @@ const i18n = {
     modulesInfo: "O curso completo é composto por {count} módulos. Você pode se inscrever em todos eles na mesma turma ou em turmas diferentes, desde que não repita um módulo.",
     termsLinkMobileLabel: "Baixar Termos de Uso",
     partnerClassLocked: "Turma vinculada ao token do parceiro.",
+    payNow: "Pagar agora",
+    generatingPayment: "Gerando link de pagamento...",
+    paymentError: "Não foi possível gerar o link de pagamento. Tente novamente.",
+    paymentPending: "Seu cadastro foi enviado. Use o botão abaixo para concluir o pagamento.",
   },
   en: {
     brandEyebrow: "FULL GAUGE CONTROLS TRAINING CENTER",
@@ -109,6 +113,10 @@ const i18n = {
     modulesInfo: "The full course is made up of {count} modules. You can enroll in all of them in the same class or across different classes, as long as you do not repeat a module.",
     termsLinkMobileLabel: "Download Terms of Use",
     partnerClassLocked: "Class linked to the partner token.",
+    payNow: "Pay now",
+    generatingPayment: "Generating payment link...",
+    paymentError: "Could not generate the payment link. Please try again.",
+    paymentPending: "Your registration was submitted. Use the button below to complete the payment.",
   },
   es: {
     brandEyebrow: "CENTRO DE CAPACITACIÓN FULL GAUGE CONTROLS",
@@ -164,6 +172,10 @@ const i18n = {
     modulesInfo: "El curso completo está compuesto por {count} módulos. Puedes inscribirte en todos ellos en la misma clase o en clases diferentes, siempre que no repitas un módulo.",
     termsLinkMobileLabel: "Descargar Términos de Uso",
     partnerClassLocked: "Clase vinculada al token del socio.",
+    payNow: "Pagar ahora",
+    generatingPayment: "Generando enlace de pago...",
+    paymentError: "No se pudo generar el enlace de pago. Inténtelo de nuevo.",
+    paymentPending: "Su registro fue enviado. Use el botón a continuación para completar el pago.",
   },
 };
 
@@ -193,6 +205,17 @@ const STEPS = [
       es: "Información principal de identificación. Regístrese como Socio solo si recibió un token de indicación.",
     },
     fields: [
+      {
+        id: "tipoPessoa",
+        label: { pt: "Tipo de pessoa *", en: "Person type *", es: "Tipo de persona *" },
+        type: "radio",
+        required: true,
+        full: true,
+        options: [
+          { value: "PF", label: { pt: "Pessoa Física", en: "Individual", es: "Persona Física" } },
+          { value: "PJ", label: { pt: "Pessoa Jurídica", en: "Legal entity", es: "Persona Jurídica" } },
+        ],
+      },
       {
         id: "relacao",
         label: { pt: "Relação *", en: "Relationship *", es: "Relacion *" },
@@ -327,6 +350,27 @@ const STEPS = [
         url: "/docs/termo-de-uso.pdf",
         label: { pt: "Leia os Termos de Uso", en: "Read Terms of Use", es: "Leer Términos de Uso" }
     },
+  },
+  {
+    title: { pt: "Pagamento", en: "Payment", es: "Pago" },
+    description: {
+      pt: "Escolha a forma de pagamento para gerar o link do iPag.",
+      en: "Choose the payment method to generate the iPag link.",
+      es: "Elija el método de pago para generar el enlace de iPag.",
+    },
+    fields: [
+      {
+        id: "formaPagamento",
+        label: { pt: "Forma de pagamento *", en: "Payment method *", es: "Método de pago *" },
+        type: "radio",
+        required: true,
+        full: true,
+        options: [
+          { value: "pix", label: { pt: "Pix", en: "Pix", es: "Pix" } },
+          { value: "creditcard", label: { pt: "Cartão de crédito", en: "Credit card", es: "Tarjeta de crédito" } },
+        ],
+      },
+    ],
   }
 ];
 
@@ -363,7 +407,8 @@ function getTermsLinkLabel() {
   if (isMobileDevice()) {
     return t("termsLinkMobileLabel");
   }
-  return STEPS[STEPS.length - 1].termsLink.label[currentLang] || STEPS[STEPS.length - 1].termsLink.label.pt;
+  const termsStep = STEPS.find((s) => s.termsLink);
+  return termsStep.termsLink.label[currentLang] || termsStep.termsLink.label.pt;
 }
 
 function escapeHtml(value) {
@@ -540,7 +585,8 @@ function renderFields() {
   if (!container) return;
 
   // Verifica se é a etapa de termos e se há um link para exibir
-  const isTermsStep = currentStep === STEPS.length - 1;
+  const termsStepIndex = STEPS.findIndex((s) => !!s.termsLink);
+  const isTermsStep = currentStep === termsStepIndex;
   let termsLinkHtml = '';
   let checkboxesInitiallyDisabled = false;
 
@@ -917,7 +963,8 @@ function renderButtons() {
     }
     
     // Desabilita o botão se houver checkboxes obrigatórios não marcados (termos)
-    const termsAccepted = step.fields.every(f => f.type !== "checkbox" || !f.required || formData[f.id] === true);
+    const termsStep = STEPS.find((s) => s.termsLink);
+    const termsAccepted = !termsStep || termsStep.fields.every(f => f.type !== "checkbox" || !f.required || formData[f.id] === true);
     submitBtn.disabled = isLast && !termsAccepted;
   }
   if (prevBtn) prevBtn.textContent = t("previous");
@@ -1372,7 +1419,7 @@ async function handleSubmit() {
     });
     if (res.ok) {
       isSubmittingForm = false; // Esconde o loader
-      handleSuccessfulSubmission(); // Chama a nova função para lidar com o sucesso
+      await handleSuccessfulSubmission(); // Chama a nova função para lidar com o sucesso
     } else {
       showStatus(t("submitError"), "error");
       isSubmittingForm = false; // Esconde o loader
@@ -1385,10 +1432,60 @@ async function handleSubmit() {
   }
 }
 
+// Gera o link de pagamento no iPag quando o cadastro é de Pessoa Física
+async function generatePaymentLink() {
+  try {
+    showStatus(t("generatingPayment"), "");
+    const res = await fetch("/api/payment-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: formData.fullName,
+        cpfCnpj: formData.cpf,
+        email: formData.email,
+        phone: formData.telefone,
+        paymentMethod: formData.formaPagamento
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.link) return "";
+    return data.link;
+  } catch {
+    return "";
+  }
+}
+
+// Injeta o botão de pagamento do iPag na mensagem de sucesso
+function renderPaymentLinkButton(link) {
+  const textWrapper = document.querySelector("#statusMessage .status-text-wrapper");
+  if (!textWrapper || !link) return;
+
+  const restartBtn = textWrapper.querySelector(".status-restart-btn");
+
+  const hint = document.createElement("p");
+  hint.className = "status-description";
+  hint.textContent = t("paymentPending");
+
+  const payButton = document.createElement("a");
+  payButton.href = link;
+  payButton.target = "_blank";
+  payButton.rel = "noopener noreferrer";
+  payButton.className = "primary-btn";
+  payButton.style.marginTop = "1rem";
+  payButton.style.display = "inline-flex";
+  payButton.textContent = t("payNow");
+
+  textWrapper.insertBefore(hint, restartBtn);
+  textWrapper.insertBefore(payButton, restartBtn);
+}
+
 // Nova função para lidar com o envio bem-sucedido: esconde o formulário e mostra a mensagem permanente
-function handleSuccessfulSubmission() {
+async function handleSuccessfulSubmission() {
   const wizardContent = document.getElementById("wizardContent");
   const statusMessageWrapper = document.getElementById("statusMessageWrapper");
+
+  const isIndividual = formData.tipoPessoa === "PF";
+  const paymentLink = isIndividual ? await generatePaymentLink() : "";
 
   if (wizardContent) {
     wizardContent.style.display = 'none'; // Oculta todo o conteúdo do wizard
@@ -1398,6 +1495,20 @@ function handleSuccessfulSubmission() {
     // Pequeno delay para garantir que a transição CSS funcione após a mudança de display
     requestAnimationFrame(() => {
       showStatus(i18n[currentLang].submitSuccess, "success", true); // Exibe a mensagem de sucesso permanentemente
+
+      if (isIndividual) {
+        if (paymentLink) {
+          renderPaymentLinkButton(paymentLink);
+        } else {
+          const textWrapper = document.querySelector("#statusMessage .status-text-wrapper");
+          if (textWrapper) {
+            const warn = document.createElement("p");
+            warn.className = "status-description payment-error";
+            warn.textContent = t("paymentError");
+            textWrapper.appendChild(warn);
+          }
+        }
+      }
 
       // Dispara a animação de confete
       if (window.confetti) {
@@ -1612,8 +1723,8 @@ function init() {
             termCosts: true
           };
 
-          // Força a visita aos termos se estiver na última etapa para habilitar os checkboxes
-          if (currentStep === STEPS.length - 1) formData.termsLinkVisited = true;
+          // Força a visita aos termos se estiver na etapa de termos para habilitar os checkboxes
+          if (STEPS[currentStep]?.termsLink) formData.termsLinkVisited = true;
 
           step.fields.forEach(f => {
             if (samples[f.id] !== undefined) {

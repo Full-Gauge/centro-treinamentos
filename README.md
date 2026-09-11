@@ -13,6 +13,7 @@ Plataforma de treinamentos da Full Gauge com:
 - geração de links com JWT
 - encurtamento e redirecionamento de URLs
 - consulta de turmas, módulos e parceiros
+- geração de link de pagamento (Pix e cartão) via iPag
 
 O sistema roda em Cloudflare Workers, com frontend estático em `public/` e rotas serverless em `src/index.js`.
 
@@ -37,6 +38,8 @@ Secrets do Worker devem ser alteradas via CLI do Wrangler:
 ```powershell
 npx wrangler secret put JWT_SECRET --config wrangler.jsonc
 npx wrangler secret put API_KEY --config wrangler.jsonc
+npx wrangler secret put IPAG_API_ID --config wrangler.jsonc
+npx wrangler secret put IPAG_API_KEY --config wrangler.jsonc
 ```
 
 Depois de gerar o documento Word, copie o arquivo final para:
@@ -72,8 +75,13 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `CANCELLATION_WEBHOOK_URL`
 - `NAME_VALIDATION_WEBHOOK_URL`
 - `URL_VALIDATE_CPF_MODULOS`
+- `IPAG_BASE_URL` (opcional)
+- `IPAG_DEFAULT_AMOUNT` (opcional; valor do link quando não enviado)
+- `IPAG_DEFAULT_DESCRIPTION` (opcional)
+- `IPAG_LINK_EXPIRES_DAYS` (opcional; padrão 7)
 - `JWT_SECRET`
 - `API_KEY` obrigatória para os proxies enviados ao Power Automate
+- `IPAG_API_ID` e `IPAG_API_KEY` (secrets) para o iPag
 - `URL_SHORTENER_KV`
 
 ### Deploy
@@ -101,7 +109,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `codex.md`: guia interno, regras e prompts para o próprio Codex
 - `scripts/generate-project-scope-docx.ps1`: geração do DOCX em `.artifacts\escopo-projeto.docx`
 - `wrangler.dev.jsonc` / `wrangler.prod.jsonc`: configs de deploy por ambiente
-- `.agents/ponytail.md`: skill de agente (Ponytail) de código mínimo
+- `.agents/*.md`: skills do projeto (Ponytail, convenções, segurança e Cloudflare Workers)
 
 ## Configuração local
 

@@ -55,6 +55,7 @@ A arquitetura combina:
 - `worker/worker-name-validation-flow.js`: proxy para Power Automate de nome
 - `worker/worker-cpf-modulos-validation-flow.js`: proxy para Power Automate de CPF + módulos
 - `worker/power-automate.js`: helper compartilhado que valida `API_KEY` e monta o header `x-api-key` dos webhooks
+- `worker/worker-ipag.js`: geração de links de pagamento no iPag (Pix e cartão) via Basic Auth
 
 ## 5. Fluxos funcionais
 
@@ -148,6 +149,17 @@ Pontos principais:
 - cache de borda por 30 minutos via `caches.default`
 - alimenta a lista de parceiros exibida no fluxo de inscrição
 
+### 5.9 Pagamento (iPag)
+
+O fluxo de pagamento gera um link de checkout no iPag para Pix e cartão.
+
+Pontos principais:
+
+- etapa final do wizard (`public/js/app.js`) escolhe a forma de pagamento (Pix ou cartão)
+- quando o cadastro é Pessoa Física (`tipoPessoa === "PF"`), o front chama `POST /api/payment-link`
+- `worker/worker-ipag.js` monta o payload e chama `POST /service/v2/payment_links` do iPag com Basic Auth
+- retorna `{ link }`, exibido como botão "Pagar agora" na tela de sucesso
+
 ## 6. Rotas de API
 
 - `GET/POST /api/turmas`
@@ -164,6 +176,7 @@ Pontos principais:
 - `GET/POST /api/validate-name`
 - `POST /api/validate-name-flow`
 - `POST /api/validate-cpf-modulos-flow`
+- `POST /api/payment-link`
 
 ## 7. Integração com Power Automate
 
@@ -183,6 +196,8 @@ Esse modelo aparece nos fluxos de:
 - cancelamento
 - inscrição
 
+O fluxo de pagamento usa o mesmo padrão de proxy, mas com Basic Auth (`IPAG_API_ID`/`IPAG_API_KEY`) em vez de `x-api-key`.
+
 ## 8. Variáveis de ambiente
 
 - As secrets devem ser alteradas via CLI do Wrangler:
@@ -196,6 +211,7 @@ npx wrangler secret put API_KEY --config wrangler.jsonc
 
 - `JWT_SECRET`
 - `API_KEY` obrigatória para os proxies enviados ao Power Automate
+- `IPAG_API_ID` e `IPAG_API_KEY` para autenticar (Basic Auth) na API do iPag
 
 ### 8.2 Variáveis do Worker
 
@@ -210,6 +226,8 @@ npx wrangler secret put API_KEY --config wrangler.jsonc
 - `CANCELLATION_WEBHOOK_URL`
 - `NAME_VALIDATION_WEBHOOK_URL`
 - `URL_VALIDATE_CPF_MODULOS`
+- `IPAG_BASE_URL` (opcional; padrão `https://sandbox.ipag.com.br`)
+- `IPAG_DEFAULT_AMOUNT`, `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS` (opcionais do link iPag)
 
 ### 8.3 Bindings do Worker
 

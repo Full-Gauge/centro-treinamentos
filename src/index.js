@@ -11,6 +11,7 @@ import { handleNameValidationRequest } from '../worker/worker-name-validator.js'
 import { handleNameValidationFlowRequest } from '../worker/worker-name-validation-flow.js';
 import { handleCpfModulosValidationFlowRequest } from '../worker/worker-cpf-modulos-validation-flow.js';
 import { handleParceirosRequest } from '../worker/worker-parceiros.js';
+import { handlePaymentLinkRequest } from '../worker/worker-ipag.js';
 
 
 export default {
@@ -81,6 +82,11 @@ export default {
     // 6.4 Roteamento para a validação de CPF e módulos no Power Automate
     if (url.pathname.replace(/\/$/, "") === "/api/validate-cpf-modulos-flow") {
       return handleCpfModulosValidationFlowRequest(request, env, ctx);
+    }
+
+    // 6.6 Roteamento para a geração de link de pagamento (iPag)
+    if (url.pathname.replace(/\/$/, "") === "/api/payment-link") {
+      return handlePaymentLinkRequest(request, env, ctx);
     }
 
     // 6.5 Handler de Redirecionamento para URLs encurtadas (/s/[codigo])
