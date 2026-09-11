@@ -12,6 +12,7 @@ Plataforma de treinamentos da Full Gauge com:
 - registro de presença
 - geração de links com JWT
 - encurtamento e redirecionamento de URLs
+- consulta de turmas, módulos e parceiros
 
 O sistema roda em Cloudflare Workers, com frontend estático em `public/` e rotas serverless em `src/index.js`.
 
@@ -63,6 +64,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `url_registro`
 - `url_turmas`
 - `url_modulos`
+- `url_parceiros`
 - `url_token`
 - `url_registro_presenca`
 - `ATTENDANCE_WEBHOOK_URL`
@@ -95,8 +97,11 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 ## Guia rápido
 
 - `docs/escopo-projeto.md`: escopo técnico e arquitetura
+- `docs/prompt-padrao.md`: prompt padrão para o agente neste projeto
 - `codex.md`: guia interno, regras e prompts para o próprio Codex
 - `scripts/generate-project-scope-docx.ps1`: geração do DOCX em `.artifacts\escopo-projeto.docx`
+- `wrangler.dev.jsonc` / `wrangler.prod.jsonc`: configs de deploy por ambiente
+- `.agents/ponytail.md`: skill de agente (Ponytail) de código mínimo
 
 ## Configuração local
 
@@ -107,6 +112,14 @@ npx wrangler dev
 
 ## Deploy
 
+O deploy é feito pelo GitHub Actions (`.github/workflows/deploy.yml`) no push para `dev` ou `main`:
+
+- `dev` → `wrangler.dev.jsonc` (Worker `fg-centro-treinamentos-dev`)
+- `main` → `wrangler.prod.jsonc` (Worker `fg-centro-treinamentos`)
+
+Deploy manual, escolhendo a config do ambiente:
+
 ```bash
-npx wrangler deploy
+npx wrangler deploy --config wrangler.dev.jsonc
+npx wrangler deploy --config wrangler.prod.jsonc
 ```

@@ -43,6 +43,7 @@ A arquitetura combina:
 - `src/index.js`: roteamento principal das rotas de API
 - `worker/workers-turmas.js`: consulta de turmas
 - `worker/worker-modulos.js`: consulta de módulos
+- `worker/worker-parceiros.js`: consulta de parceiros
 - `worker/worker-register.js`: cadastro principal
 - `worker/worker-token.js`: validação de token
 - `worker/worker-attendance.js`: registro de presença
@@ -53,6 +54,7 @@ A arquitetura combina:
 - `worker/worker-name-validator.js`: validação local de nome
 - `worker/worker-name-validation-flow.js`: proxy para Power Automate de nome
 - `worker/worker-cpf-modulos-validation-flow.js`: proxy para Power Automate de CPF + módulos
+- `worker/power-automate.js`: helper compartilhado que valida `API_KEY` e monta o header `x-api-key` dos webhooks
 
 ## 5. Fluxos funcionais
 
@@ -136,10 +138,21 @@ O projeto também expõe validações de apoio:
 
 Essas rotas mantêm a camada do Worker fina e funcionam como ponte para validações locais e fluxos externos.
 
+### 5.8 Consulta de parceiros
+
+A busca de parceiros usa `worker/worker-parceiros.js` e a rota `/api/parceiros`.
+
+Pontos principais:
+
+- consulta `url_parceiros` e normaliza a lista para `{ id, name }`
+- cache de borda por 30 minutos via `caches.default`
+- alimenta a lista de parceiros exibida no fluxo de inscrição
+
 ## 6. Rotas de API
 
 - `GET/POST /api/turmas`
 - `GET/POST /api/modulos`
+- `GET/POST /api/parceiros`
 - `POST /api/register`
 - `POST /api/validate-token`
 - `POST /api/confirmation`
@@ -189,6 +202,7 @@ npx wrangler secret put API_KEY --config wrangler.jsonc
 - `url_registro`
 - `url_turmas`
 - `url_modulos`
+- `url_parceiros`
 - `url_token`
 - `url_registro_presenca`
 - `ATTENDANCE_WEBHOOK_URL`
@@ -237,7 +251,7 @@ As telas do projeto foram desenhadas para cobrir contextos diferentes com a mesm
 
 ### Pré-requisitos
 
-- Node.js 18+
+- Node.js 18+ (o workflow de deploy usa Node 22)
 - Wrangler CLI
 - acesso à Cloudflare para deploy
 
@@ -263,8 +277,16 @@ curl -X POST http://127.0.0.1:8787/api/cancellation \
 
 ### Deploy
 
+O GitHub Actions (`.github/workflows/deploy.yml`) publica no push para `dev` ou `main`:
+
+- `dev` → `wrangler.dev.jsonc` (Worker `fg-centro-treinamentos-dev`)
+- `main` → `wrangler.prod.jsonc` (Worker `fg-centro-treinamentos`)
+
+Deploy manual, escolhendo a config do ambiente:
+
 ```bash
-npx wrangler deploy
+npx wrangler deploy --config wrangler.dev.jsonc
+npx wrangler deploy --config wrangler.prod.jsonc
 ```
 
 ## 12. Regras técnicas do projeto

@@ -49,6 +49,8 @@ Depois, copie esse arquivo para a pasta da documentacao da empresa.
 
 ## 4. Prompts reutilizaveis para o proprio Codex
 
+O prompt padrao consolidado (contexto + regras + estilo) esta em `docs/prompt-padrao.md`. Os prompts abaixo sao variacoes por tarefa.
+
 ### Prompt 1: resumo tecnico do projeto
 
 ```text
@@ -96,3 +98,10 @@ Quando a arquitetura mudar, atualize primeiro:
 - contratos no frontend correspondente
 
 Assim o documento continua sendo um mapa fiel do projeto.
+
+## 6. Skill de agente (Ponytail)
+
+O repositório inclui a skill de agente **Ponytail** em `.agents/ponytail.md`. É um ruleset de código mínimo (reuso antes de abstrair, sem dependência nova, deleção antes de adição) e não faz parte do escopo funcional.
+
+- não precisa ser atualizada nas mudanças de escopo
+- para desativá-la, remova o arquivo `.agents/ponytail.md`
