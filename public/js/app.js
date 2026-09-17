@@ -47,6 +47,8 @@ const i18n = {
     validateNameError: "Erro ao validar o nome: {message}",
     invalidEmail: "Informe um e-mail válido.",
     invalidCpf: "Informe um CPF válido.",
+    invalidCnpj: "Informe um CNPJ válido.",
+    invalidPhone: "Informe um telefone válido.",
     noItemsAvailable: "Nenhum item disponível",
     clearFormConfirm: "Tem certeza que deseja limpar todos os dados do cadastro?",
     loading: "Carregando...",
@@ -113,6 +115,8 @@ const i18n = {
     validateNameError: "Error validating name: {message}",
     invalidEmail: "Enter a valid e-mail address.",
     invalidCpf: "Enter a valid CPF.",
+    invalidCnpj: "Enter a valid CNPJ.",
+    invalidPhone: "Enter a valid phone number.",
     noItemsAvailable: "No items available",
     clearFormConfirm: "Are you sure you want to clear all registration data?",
     loading: "Loading...",
@@ -179,6 +183,8 @@ const i18n = {
     validateNameError: "Error al validar el nombre: {message}",
     invalidEmail: "Ingrese un correo electrónico válido.",
     invalidCpf: "Ingrese un CPF válido.",
+    invalidCnpj: "Ingrese un CNPJ válido.",
+    invalidPhone: "Ingrese un teléfono válido.",
     noItemsAvailable: "No hay elementos disponibles",
     clearFormConfirm: "¿Estás seguro de que deseas borrar todos los datos del registro?",
     loading: "Cargando...",
@@ -219,32 +225,22 @@ const DEFAULT_EMPRESA_OPTIONS = [
 
 const STEPS = [
   {
-    title: { pt: "Relação conosco", en: "Relationship with us", es: "Relación con nosotros" },
+    title: { pt: "Como você deseja se cadastrar?", en: "How would you like to register?", es: "¿Cómo deseas registrarte?" },
     description: {
-      pt: "Informações principais de identificação. Registre-se como Parceiro apenas se você recebeu um Token de indicação.",
-      en: "Main identification information. Register as a Partner only if you received an indication token.",
-      es: "Información principal de identificación. Regístrese como Socio solo si recibió un token de indicación.",
+      pt: "Escolha uma opção para continuar para o cadastro.",
+      en: "Choose an option to continue to registration.",
+      es: "Elige una opción para continuar con el registro.",
     },
     fields: [
       {
-        id: "tipoPessoa",
-        label: { pt: "Tipo de pessoa *", en: "Person type *", es: "Tipo de persona *" },
+        id: "relacao",
+        label: { pt: "Tipo de cadastro *", en: "Registration type *", es: "Tipo de registro *" },
         type: "radio",
         required: true,
         full: true,
         options: [
           { value: "PF", label: { pt: "Pessoa Física", en: "Individual", es: "Persona Física" } },
           { value: "PJ", label: { pt: "Pessoa Jurídica", en: "Legal entity", es: "Persona Jurídica" } },
-        ],
-      },
-      {
-        id: "relacao",
-        label: { pt: "Relação *", en: "Relationship *", es: "Relacion *" },
-        type: "radio",
-        required: true,
-        full: true,
-        options: [
-          { value: "GERAL", label: { pt: "Geral",en: "General",es: "General"} },
           { value: "PARCEIRO", label: { pt: "Parceiro", en: "Partner", es: "Socio" } },
         ],
       },
@@ -265,6 +261,14 @@ const STEPS = [
         type: "text",
         required: true,
         full: true,
+      },
+      {
+        id: "razaoSocial",
+        label: { pt: "Razão Social *", en: "Legal name *", es: "Razón social *" },
+        type: "text",
+        required: true,
+        full: true,
+        onlyFor: "PJ",
       },
       {
         id: "cpf",
@@ -308,11 +312,12 @@ const STEPS = [
         required: true,
       },
       {
-        id: "telefone",
+    id: "telefone",
         label: { pt: "Telefone / WhatsApp *", en: "Phone / WhatsApp *", es: "Teléfono / WhatsApp *" },
         type: "tel",
         required: true,
         mask: "phone",
+        validatePhone: true,
       },
       {
         id: "email",
@@ -332,6 +337,17 @@ const STEPS = [
     },
     fields: [
       { id: "turmas", label: { pt: "Turmas *", en: "Classes *", es: "Clases *" }, type: "select", options: [], required: true },
+      {
+        id: "vagasDesejadas",
+        label: { pt: "Vagas desejadas *", en: "Requested seats *", es: "Cupos deseados *" },
+        type: "select",
+        required: true,
+        options: Array.from({ length: 10 }, (_, index) => ({
+          value: String(index + 1),
+          label: `${index + 1} ${index === 0 ? "vaga" : "vagas"}`
+        })),
+        onlyFor: "PJ",
+      },
       { id: "modulos", label: { pt: "Módulos *", en: "Modules *", es: "Módulos *" }, type: "select", options: [] ,required: true, multiple: true},
     ],
   },
@@ -474,6 +490,25 @@ function isValidCpf(value) {
   return calculateDigit(9) === Number(digits[9]) && calculateDigit(10) === Number(digits[10]);
 }
 
+function isValidCnpj(value) {
+  const digits = String(value).replace(/\D/g, "");
+  if (digits.length !== 14 || /^([0-9])\1{13}$/.test(digits)) return false;
+
+  const calculateDigit = (length) => {
+    const weights = length === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const sum = weights.reduce((total, weight, index) => total + Number(digits[index]) * weight, 0);
+    const remainder = sum % 11;
+    return remainder < 2 ? 0 : 11 - remainder;
+  };
+
+  return calculateDigit(12) === Number(digits[12]) && calculateDigit(13) === Number(digits[13]);
+}
+
+function isValidPhone(value) {
+  const digits = String(value).replace(/\D/g, "");
+  return (digits.length === 10 || digits.length === 11) && !/^([0-9])\1+$/.test(digits);
+}
+
 function applyMask(value, mask) {
   const digits = value.replace(/\D/g, "");
   if (mask === "cpf") {
@@ -482,6 +517,13 @@ function applyMask(value, mask) {
       .replace(/^(\d{3})(\d)/, "$1.$2")
       .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
       .replace(/\.(\d{3})(\d)/, ".$1-$2");
+  }
+  if (mask === "cnpj") {
+    return digits.slice(0, 14).replace(
+      /^(\d{0,2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2})$/,
+      (_, part1, part2, part3, part4, part5) =>
+        [part1, part2 && `.${part2}`, part3 && `.${part3}`, part4 && `/${part4}`, part5 && `-${part5}`].join("")
+    );
   }
   if (mask === "phone") {
     if (digits.length <= 10) {
@@ -651,13 +693,24 @@ function renderFields() {
     .map((f) => {
       // O campo token só deve aparecer se a relação for PARCEIRO
       if (f.id === "token" && formData.relacao !== "PARCEIRO") return "";
+      if (f.onlyFor && formData.tipoPessoa !== f.onlyFor) return "";
+      if (f.id === "vagasDesejadas" && !formData.turmas) return "";
+      if (f.id === "estrangeiro" && formData.tipoPessoa === "PJ") return "";
+      if (f.id === "empresa" && formData.tipoPessoa === "PJ") return "";
       const fieldType = (f.id === "empresa" && formData.relacao === "GERAL") ? "text" : f.type;
 
-      const label = f.label[currentLang] || f.label.pt;
+      const isCnpjField = f.id === "cpf" && formData.tipoPessoa === "PJ";
+      const label = isCnpjField
+        ? { pt: "CNPJ *", en: "CNPJ *", es: "CNPJ *" }[currentLang]
+        : f.id === "fullName" && formData.tipoPessoa === "PJ"
+          ? { pt: "Nome do responsável *", en: "Responsible person *", es: "Nombre del responsable *" }[currentLang]
+          : (f.label[currentLang] || f.label.pt);
       const fieldLabel = f.id === "cpf" && formData.estrangeiro
         ? label.replace(/\s*\*$/, "")
         : label;
-      const val = formData[f.id] ?? "";
+      const val = f.id === "relacao"
+        ? (formData.relacao === "PARCEIRO" ? "PARCEIRO" : (formData.tipoPessoa || ""))
+        : (formData[f.id] ?? "");
       const fullClass = f.full ? "full" : "";
 
       if (fieldType === "select") {
@@ -784,10 +837,10 @@ function renderFields() {
           value="${f.uppercase ? val.toUpperCase() : val}"
           ${f.required && !(f.id === "cpf" && formData.estrangeiro) ? "required" : ""}
           ${f.id === "cpf" && formData.estrangeiro ? "disabled" : ""}
-          ${(f.validateEmail || f.validateToken || f.validateCpf) ? `aria-describedby="${errorId}"` : ""}
+          ${(f.validateEmail || f.validateToken || f.validateCpf || f.validatePhone || isCnpjField) ? `aria-describedby="${errorId}"` : ""}
           autocomplete="off"
           ${f.uppercase ? 'style="text-transform: uppercase;"' : ''}>
-        ${(f.validateEmail || f.validateToken || f.validateCpf) ? `<span class="input-error-msg" id="${errorId}" role="alert"></span>` : ""}
+        ${(f.validateEmail || f.validateToken || f.validateCpf || f.validatePhone || isCnpjField) ? `<span class="input-error-msg" id="${errorId}" role="alert"></span>` : ""}
       </div>`;
     })
     .join("");
@@ -807,12 +860,12 @@ function renderFields() {
           if (wrap) wrap.classList.remove("invalid-group");
 
           if (f.id === "relacao") {
-            // Ao mudar a relação, limpa o formulário mantendo apenas a nova seleção
+            const isPartner = radio.value === "PARCEIRO";
             formData = {
-              ...(formData.tipoPessoa ? { tipoPessoa: formData.tipoPessoa } : {}),
-              [f.id]: radio.value
+              tipoPessoa: radio.value,
+              relacao: isPartner ? "PARCEIRO" : "GERAL"
             };
-            if (radio.value !== "PARCEIRO") {
+            if (!isPartner) {
               turmasFromPartnerToken = null;
               updateTurmasFieldOptions();
             }
@@ -856,8 +909,10 @@ function renderFields() {
       if (wrap) wrap.classList.remove("invalid-group"); // Remove o erro ao interagir
       el.classList.remove("invalid");
       let v = el.value;
-      if (f.mask) {
-        v = applyMask(v, f.mask);
+      const isCnpjField = f.id === "cpf" && formData.tipoPessoa === "PJ";
+      const inputMask = isCnpjField ? "cnpj" : f.mask;
+      if (inputMask) {
+        v = applyMask(v, inputMask);
         el.value = v;
       }
       if (f.uppercase) {
@@ -880,10 +935,9 @@ function renderFields() {
         if (isLast) renderButtons();
       } else if (f.id === "turmas" && v) {
         // Lógica específica para turmas: limpa módulos e busca novos dados
-        formData["modulos"] = []; 
-        fetchModulosData(v);
-        // Garante que o valor seja salvo
         formData[f.id] = v;
+        formData["modulos"] = [];
+        fetchModulosData(v);
       } else {
         formData[f.id] = v;
       }
@@ -898,7 +952,19 @@ function renderFields() {
         }
       }
 
-      if (f.validateCpf && isValidCpf(v)) {
+      if (f.validateCpf && !isCnpjField && isValidCpf(v)) {
+        el.classList.remove("invalid");
+        const errSpan = document.getElementById(`${f.id}-error`);
+        if (errSpan) errSpan.textContent = "";
+      }
+
+      if (f.validatePhone && isValidPhone(v)) {
+        el.classList.remove("invalid");
+        const errSpan = document.getElementById(`${f.id}-error`);
+        if (errSpan) errSpan.textContent = "";
+      }
+
+      if (isCnpjField && isValidCnpj(v)) {
         el.classList.remove("invalid");
         const errSpan = document.getElementById(`${f.id}-error`);
         if (errSpan) errSpan.textContent = "";
@@ -1059,6 +1125,7 @@ function validateCurrentStep() {
 
     const el = document.getElementById(f.id);
     if (!el) return;
+    const isCnpjField = f.id === "cpf" && formData.tipoPessoa === "PJ";
     el.classList.remove("invalid");
     el.removeAttribute("data-error");
 
@@ -1105,10 +1172,24 @@ function validateCurrentStep() {
       }
     }
 
-    if (f.validateCpf && !formData.estrangeiro && el.value.trim() && !isValidCpf(el.value)) {
+    if (f.validateCpf && !isCnpjField && !formData.estrangeiro && el.value.trim() && !isValidCpf(el.value)) {
       el.classList.add("invalid");
       const errSpan = document.getElementById(`${f.id}-error`);
       if (errSpan) errSpan.textContent = t("invalidCpf");
+      valid = false;
+    }
+
+    if (f.validatePhone && el.value.trim() && !isValidPhone(el.value)) {
+      el.classList.add("invalid");
+      const errSpan = document.getElementById(`${f.id}-error`);
+      if (errSpan) errSpan.textContent = t("invalidPhone");
+      valid = false;
+    }
+
+    if (isCnpjField && el.value.trim() && !isValidCnpj(el.value)) {
+      el.classList.add("invalid");
+      const errSpan = document.getElementById(`${f.id}-error`);
+      if (errSpan) errSpan.textContent = t("invalidCnpj");
       valid = false;
     }
 
@@ -1322,7 +1403,7 @@ async function generatePaymentLink() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: formData.fullName,
+        name: formData.tipoPessoa === "PJ" ? formData.razaoSocial : formData.fullName,
         cpfCnpj: formData.cpf,
         email: formData.email,
         phone: formData.telefone,
@@ -1625,7 +1706,8 @@ function init() {
         btn.onclick = () => {
           const step = STEPS[currentStep];
           const samples = {
-            relacao: relType,
+            relacao: relType === "PARCEIRO" ? "PARCEIRO" : "GERAL",
+            tipoPessoa: relType,
             token: relType === "PARCEIRO" ? "FULLGAUGE-6EY380IL10CCP3ZANSZZ" : "Full Gauge Controls",
             fullName: "Usuário de Teste FG",
             cpf: "956.863.230-11",
@@ -1658,7 +1740,8 @@ function init() {
         controlGroup.prepend(btn);
       };
 
-      createFillBtn('Fill General', 'GERAL');
+      createFillBtn('Fill Individual', 'PF');
+      createFillBtn('Fill Legal Entity', 'PJ');
       createFillBtn('Fill Partner', 'PARCEIRO');
     }
   }

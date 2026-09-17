@@ -1,3 +1,5 @@
+import { requirePowerAutomateHeaders } from "./power-automate.js";
+
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -5,17 +7,52 @@ function jsonResponse(payload, status = 200) {
   });
 }
 
+async function createHmacSignature(rawBody, secret) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(rawBody));
+
+  return Array.from(new Uint8Array(signature), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("");
+}
+
+function hexToBytes(value) {
+  if (!/^[0-9a-f]{64}$/i.test(value)) return null;
+
+  return value.match(/.{2}/g).map((byte) => Number.parseInt(byte, 16));
+}
+
+function signaturesMatch(expected, received) {
+  const expectedBytes = hexToBytes(expected);
+  const receivedBytes = hexToBytes(String(received || "").trim());
+
+  if (!expectedBytes || !receivedBytes) return false;
+
+  let difference = 0;
+  for (let index = 0; index < expectedBytes.length; index += 1) {
+    difference |= expectedBytes[index] ^ receivedBytes[index];
+  }
+
+  return difference === 0;
+}
+
 function getPaymentDetails(payload) {
   const attributes = payload?.attributes || {};
   const status = attributes.status || {};
-  const statusMessage = String(status.message || "").trim().toUpperCase();
 
   return {
     transactionId: payload?.id ?? "",
     transactionUuid: payload?.uuid ?? "",
     orderId: attributes.order_id ?? "",
     resource: payload?.resource,
-    captured: Number(status.code) === 8 || statusMessage === "CAPTURED"
+    statusCode: Number(status.code)
   };
 }
 
@@ -33,6 +70,23 @@ export async function handleIpagPaymentConfirmed(request, env) {
   }
 
   const rawBody = await request.text();
+  const receivedSignature = request.headers.get("X-Ipag-Signature");
+  if (!env.IPAG_API_KEY) {
+    return jsonResponse(
+      { success: false, error: "iPag webhook signature validation is not configured" },
+      500
+    );
+  }
+
+  if (!receivedSignature) {
+    return jsonResponse({ success: false, error: "Invalid iPag webhook signature" }, 401);
+  }
+
+  const expectedSignature = await createHmacSignature(rawBody, env.IPAG_API_KEY);
+  if (!signaturesMatch(expectedSignature, receivedSignature)) {
+    return jsonResponse({ success: false, error: "Invalid iPag webhook signature" }, 401);
+  }
+
   let payload;
   try {
     payload = JSON.parse(rawBody);
@@ -43,17 +97,22 @@ export async function handleIpagPaymentConfirmed(request, env) {
   const ipagEvent = request.headers.get("X-Ipag-Event");
   const details = getPaymentDetails(payload);
   if (
-    (ipagEvent && ipagEvent !== "TransactionCaptured") ||
+    ipagEvent !== "TransactionCaptured" ||
     details.resource !== "transactions" ||
-    !details.captured
+    details.statusCode !== 8
   ) {
     return jsonResponse({ success: false, error: "Invalid payment confirmation event" }, 400);
   }
 
-  const forwardedHeaders = new Headers({
-    "Content-Type": request.headers.get("Content-Type") || "application/json",
-    "X-CT-Source": "ipag-webhook"
-  });
+  const powerAutomateHeaders = requirePowerAutomateHeaders(env);
+  if (powerAutomateHeaders.error) return powerAutomateHeaders.error;
+
+  const forwardedHeaders = new Headers(powerAutomateHeaders.headers);
+  forwardedHeaders.set(
+    "Content-Type",
+    request.headers.get("Content-Type") || "application/json"
+  );
+  forwardedHeaders.set("X-CT-Source", "ipag-webhook");
 
   for (const headerName of ["X-Ipag-Signature", "X-Ipag-Event", "X-Ipag-Timestamps"]) {
     const value = request.headers.get(headerName);

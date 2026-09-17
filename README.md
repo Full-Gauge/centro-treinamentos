@@ -84,7 +84,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `IPAG_LINK_EXPIRES_DAYS` (opcional; padrão 7)
 - `JWT_SECRET`
 - `API_KEY` obrigatória para os proxies enviados ao Power Automate
-- `IPAG_API_ID` e `IPAG_API_KEY` (secrets) para o iPag
+- `IPAG_API_ID` e `IPAG_API_KEY` (secrets) para o iPag; `IPAG_API_KEY` também valida o HMAC-SHA256 do webhook
 - `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL` (secret) para confirmações `TransactionCaptured` do iPag
 - `URL_SHORTENER_KV`
 
@@ -100,7 +100,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `URL_SHORTENER_KV` é um binding de KV, não uma secret.
 - `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` são usados apenas se o deploy for executado por CI; o fluxo padrão deste projeto é o deploy manual pelo Wrangler.
 
-O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirmed`. Cadastre a URL completa do Worker no iPag.
+O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirmed`. Cadastre a URL completa do Worker no iPag. O Worker valida a assinatura HMAC-SHA256 sobre o corpo bruto, exige `X-Ipag-Event: TransactionCaptured` e `attributes.status.code = 8`, e então encaminha o payload ao Power Automate com `x-api-key`.
 
 ## Hospedagem
 

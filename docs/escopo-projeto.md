@@ -61,13 +61,15 @@ A arquitetura combina:
 
 ### 5.1 Inscrição de treinamentos
 
-O fluxo principal roda em `public/index.html` com lógica em `public/js/app.js`. Ele funciona como um wizard com etapas, validação de campos e separação entre público geral e parceiros.
+O fluxo principal roda em `public/index.html` com lógica em `public/js/app.js`. Ele funciona como um wizard com etapas, validação de campos e três entradas na primeira etapa: Pessoa Física, Pessoa Jurídica e Parceiro.
 
 Pontos principais:
 
-- validação de token de parceiro via `/api/validate-token`
+- validação de token de parceiro via `/api/validate-token` quando a opção Parceiro é escolhida
 - preenchimento automático de dados quando o token é válido
-- máscara e validação de CPF, telefone e e-mail
+- na etapa 2, Pessoa Jurídica informa razão social, responsável e CNPJ para o iPag; Pessoa Física informa CPF
+- após a escolha da turma, Pessoa Jurídica pode selecionar as vagas desejadas em um combobox; a consulta de disponibilidade será adicionada depois
+- máscara e validação de CPF/CNPJ, telefone e e-mail
 - aceite do termo de uso antes do envio
 - validação adicional antes do envio final quando aplicável
 
@@ -155,9 +157,9 @@ O fluxo de pagamento gera um link de checkout no iPag para Pix e cartão.
 
 Pontos principais:
 
-- etapa de pagamento do wizard (`public/js/app.js`) escolhe a forma de pagamento (Pix ou cartão) para Pessoa Física
-- quando o cadastro é Pessoa Física (`tipoPessoa === "PF"`), o front chama `POST /api/payment-link`
-- Pessoa Jurídica conclui o cadastro após aceitar os termos, sem criar link no iPag
+- etapa de pagamento do wizard (`public/js/app.js`) escolhe a forma de pagamento (Pix ou cartão) para Pessoa Física, Pessoa Jurídica e Parceiro
+- ao finalizar a etapa 5, o front chama `POST /api/payment-link`
+- o cadastro é enviado após o cliente clicar no link de pagamento
 - `worker/worker-ipag.js` monta o payload e chama `POST /service/v2/payment_links` do iPag com Basic Auth
 - retorna `{ link }`, exibido como botão "Pagar agora" na tela de sucesso
 
@@ -215,7 +217,7 @@ Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` 
 
 - `JWT_SECRET`
 - `API_KEY` obrigatória para os proxies enviados ao Power Automate
-- `IPAG_API_ID` e `IPAG_API_KEY` para autenticar (Basic Auth) na API do iPag
+- `IPAG_API_ID` e `IPAG_API_KEY` para autenticar (Basic Auth) na API do iPag; `IPAG_API_KEY` também é usada para validar o HMAC-SHA256 do webhook
 - `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL` para encaminhar confirmações `TransactionCaptured` ao Power Automate
 
 ### 8.2 Variáveis do Worker
@@ -235,7 +237,7 @@ Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` 
 - `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS` (opcionais do link iPag)
 - o valor do link iPag está temporariamente fixado em `R$ 1.000,00` no Worker
 
-O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida eventos capturados, preserva o body bruto e encaminha o payload ao Power Automate. Retorna `200` somente para respostas `2xx` do Power Automate; falhas de encaminhamento retornam `502` para permitir retry do iPag.
+O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured` e `attributes.status.code = 8`, preserva o body e encaminha o payload ao Power Automate com `x-api-key`. Retorna `200` somente para respostas `2xx` do Power Automate; falhas de encaminhamento retornam `502` para permitir retry do iPag.
 
 ### 8.3 Bindings do Worker
 
