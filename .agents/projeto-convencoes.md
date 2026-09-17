@@ -45,12 +45,13 @@ Siga estas regras em toda alteração neste repositório.
 - URLs: `url_registro`, `url_turmas`, `url_modulos`, `url_parceiros`, `url_token`, `url_registro_presenca`
 - Webhooks: `ATTENDANCE_WEBHOOK_URL`, `CONFIRMATION_WEBHOOK_URL`, `CANCELLATION_WEBHOOK_URL`, `NAME_VALIDATION_WEBHOOK_URL`, `URL_VALIDATE_CPF_MODULOS`
 - iPag: `IPAG_BASE_URL` (opcional), `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS`; o valor atual do link é fixo em R$ 1.000,00 no Worker
-- Secrets: `JWT_SECRET`, `API_KEY`, `IPAG_API_ID`, `IPAG_API_KEY`
+- Webhook iPag: `POST /api/webhooks/ipag/payment-confirmed` usa `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`
+- Secrets: `JWT_SECRET`, `API_KEY`, `IPAG_API_ID`, `IPAG_API_KEY`, `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`
 - Binding KV: `URL_SHORTENER_KV`
 
 ## Regras
 - Reutilize o que já existe (ex.: `worker/power-automate.js`). Não crie uma segunda implementação.
 - Não duplique lógica entre frontend e worker nem entre workers (hoje `normalizeModules` está repetido em `worker-cancellation.js` e `worker-jwt-generator.js`: se tocar, compartilhe a função).
 - Preserve o fluxo real das telas; não invente rotas nem recursos.
-- Pessoa Física (`tipoPessoa = PF`) usa a etapa de pagamento; Pessoa Jurídica (`tipoPessoa = PJ`) não gera link iPag.
+- Pessoa Física e Pessoa Jurídica usam a etapa de pagamento e podem gerar link iPag.
 - Ao mudar arquitetura, rota, contrato de payload ou variável, atualize `docs/escopo-projeto.md`.

@@ -40,6 +40,7 @@ npx wrangler secret put JWT_SECRET --config wrangler.dev.jsonc
 npx wrangler secret put API_KEY --config wrangler.dev.jsonc
 npx wrangler secret put IPAG_API_ID --config wrangler.dev.jsonc
 npx wrangler secret put IPAG_API_KEY --config wrangler.dev.jsonc
+npx wrangler secret put POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL --config wrangler.dev.jsonc
 ```
 
 Para produção, repita o comando trocando `wrangler.dev.jsonc` por `wrangler.prod.jsonc`.
@@ -84,6 +85,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `JWT_SECRET`
 - `API_KEY` obrigatória para os proxies enviados ao Power Automate
 - `IPAG_API_ID` e `IPAG_API_KEY` (secrets) para o iPag
+- `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL` (secret) para confirmações `TransactionCaptured` do iPag
 - `URL_SHORTENER_KV`
 
 ### Deploy
@@ -97,6 +99,8 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `ATTENDANCE_WEBHOOK_URL` pode cair para `url_registro_presenca` como fallback.
 - `URL_SHORTENER_KV` é um binding de KV, não uma secret.
 - `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` são usados apenas se o deploy for executado por CI; o fluxo padrão deste projeto é o deploy manual pelo Wrangler.
+
+O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirmed`. Cadastre a URL completa do Worker no iPag.
 
 ## Hospedagem
 

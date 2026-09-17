@@ -12,6 +12,7 @@ import { handleNameValidationFlowRequest } from '../worker/worker-name-validatio
 import { handleCpfModulosValidationFlowRequest } from '../worker/worker-cpf-modulos-validation-flow.js';
 import { handleParceirosRequest } from '../worker/worker-parceiros.js';
 import { handlePaymentLinkRequest } from '../worker/worker-ipag.js';
+import { handleIpagPaymentConfirmed } from '../worker/worker-ipag-payment-confirmed.js';
 
 
 export default {
@@ -87,6 +88,11 @@ export default {
     // 6.6 Roteamento para a geração de link de pagamento (iPag)
     if (url.pathname.replace(/\/$/, "") === "/api/payment-link") {
       return handlePaymentLinkRequest(request, env, ctx);
+    }
+
+    // 6.7 Webhook de confirmação de pagamento do iPag
+    if (url.pathname.replace(/\/$/, "") === "/api/webhooks/ipag/payment-confirmed") {
+      return handleIpagPaymentConfirmed(request, env, ctx);
     }
 
     // 6.5 Handler de Redirecionamento para URLs encurtadas (/s/[codigo])

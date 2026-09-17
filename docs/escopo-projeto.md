@@ -206,6 +206,7 @@ O fluxo de pagamento usa o mesmo padrão de proxy, mas com Basic Auth (`IPAG_API
 ```bash
 npx wrangler secret put JWT_SECRET --config wrangler.dev.jsonc
 npx wrangler secret put API_KEY --config wrangler.dev.jsonc
+npx wrangler secret put POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL --config wrangler.dev.jsonc
 ```
 
 Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` para publicar um ambiente.
@@ -215,6 +216,7 @@ Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` 
 - `JWT_SECRET`
 - `API_KEY` obrigatória para os proxies enviados ao Power Automate
 - `IPAG_API_ID` e `IPAG_API_KEY` para autenticar (Basic Auth) na API do iPag
+- `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL` para encaminhar confirmações `TransactionCaptured` ao Power Automate
 
 ### 8.2 Variáveis do Worker
 
@@ -232,6 +234,8 @@ Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` 
 - `IPAG_BASE_URL` (opcional; padrão `https://sandbox.ipag.com.br`)
 - `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS` (opcionais do link iPag)
 - o valor do link iPag está temporariamente fixado em `R$ 1.000,00` no Worker
+
+O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida eventos capturados, preserva o body bruto e encaminha o payload ao Power Automate. Retorna `200` somente para respostas `2xx` do Power Automate; falhas de encaminhamento retornam `502` para permitir retry do iPag.
 
 ### 8.3 Bindings do Worker
 
