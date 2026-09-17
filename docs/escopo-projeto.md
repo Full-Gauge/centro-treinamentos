@@ -155,8 +155,9 @@ O fluxo de pagamento gera um link de checkout no iPag para Pix e cartão.
 
 Pontos principais:
 
-- etapa final do wizard (`public/js/app.js`) escolhe a forma de pagamento (Pix ou cartão)
+- etapa de pagamento do wizard (`public/js/app.js`) escolhe a forma de pagamento (Pix ou cartão) para Pessoa Física
 - quando o cadastro é Pessoa Física (`tipoPessoa === "PF"`), o front chama `POST /api/payment-link`
+- Pessoa Jurídica conclui o cadastro após aceitar os termos, sem criar link no iPag
 - `worker/worker-ipag.js` monta o payload e chama `POST /service/v2/payment_links` do iPag com Basic Auth
 - retorna `{ link }`, exibido como botão "Pagar agora" na tela de sucesso
 

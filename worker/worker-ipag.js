@@ -75,7 +75,8 @@ export async function handlePaymentLinkRequest(request, env) {
     const externalCode = String(body.externalCode ?? `FG-${Date.now()}`);
     const expiresAt = body.expiresAt || defaultExpiresAt(Number(env.IPAG_LINK_EXPIRES_DAYS || 7));
 
-    if (!name || !taxReceipt || !amount || Number(amount) <= 0) {
+    const parsedAmount = Number(amount);
+    if (!name || !taxReceipt || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       return jsonResponse(
         { error: "Campos obrigatórios: name, cpfCnpj e amount (maior que zero)." },
         400
@@ -120,8 +121,7 @@ export async function handlePaymentLinkRequest(request, env) {
       return jsonResponse(
         {
           error: "Falha ao gerar o link de pagamento no iPag.",
-          upstreamStatus: upstream.status,
-          upstreamBody: raw
+          upstreamStatus: upstream.status
         },
         upstream.status
       );

@@ -52,4 +52,5 @@ Siga estas regras em toda alteração neste repositório.
 - Reutilize o que já existe (ex.: `worker/power-automate.js`). Não crie uma segunda implementação.
 - Não duplique lógica entre frontend e worker nem entre workers (hoje `normalizeModules` está repetido em `worker-cancellation.js` e `worker-jwt-generator.js`: se tocar, compartilhe a função).
 - Preserve o fluxo real das telas; não invente rotas nem recursos.
+- Pessoa Física (`tipoPessoa = PF`) usa a etapa de pagamento; Pessoa Jurídica (`tipoPessoa = PJ`) não gera link iPag.
 - Ao mudar arquitetura, rota, contrato de payload ou variável, atualize `docs/escopo-projeto.md`.

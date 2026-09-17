@@ -778,7 +778,10 @@ function renderFields() {
 
           if (f.id === "relacao") {
             // Ao mudar a relação, limpa o formulário mantendo apenas a nova seleção
-            formData = { [f.id]: radio.value };
+            formData = {
+              ...(formData.tipoPessoa ? { tipoPessoa: formData.tipoPessoa } : {}),
+              [f.id]: radio.value
+            };
             if (radio.value !== "PARCEIRO") {
               turmasFromPartnerToken = null;
               updateTurmasFieldOptions();
@@ -1276,6 +1279,14 @@ async function goNext() {
   }
 
   clearStatus();
+
+  // Pessoa Jurídica não usa o fluxo de pagamento do iPag.
+  const termsStepIndex = STEPS.findIndex((step) => step.termsLink);
+  if (currentStep === termsStepIndex && formData.tipoPessoa !== "PF") {
+    await handleSubmit();
+    return;
+  }
+
   if (currentStep < STEPS.length - 1) {
     currentStep++;
     render();
