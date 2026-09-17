@@ -68,7 +68,7 @@ export async function handlePaymentLinkRequest(request, env) {
     const body = await request.json();
     const name = String(body.name ?? body.fullName ?? "").trim();
     const taxReceipt = String(body.cpfCnpj ?? body.cpf ?? body.tax_receipt ?? "").trim();
-    const amount = String(body.amount ?? env.IPAG_DEFAULT_AMOUNT ?? "1000.00").replace(",", ".");
+    const amount = String(body.amount ?? "1000.00").replace(",", ".");
     const description =
       body.description || env.IPAG_DEFAULT_DESCRIPTION || "Inscrição - Centro de Treinamentos Full Gauge";
     const paymentMethod = normalizePaymentMethod(body.paymentMethod ?? body.formaPagamento);

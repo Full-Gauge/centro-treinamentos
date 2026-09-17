@@ -58,6 +58,8 @@ const i18n = {
     generatingPayment: "Gerando link de pagamento...",
     paymentError: "Não foi possível gerar o link de pagamento. Tente novamente.",
     paymentPending: "Seu cadastro foi enviado. Use o botão abaixo para concluir o pagamento.",
+    courseAmount: "Valor do curso",
+    paymentSecurity: "Pagamento seguro processado pelo iPag",
   },
   en: {
     brandEyebrow: "FULL GAUGE CONTROLS TRAINING CENTER",
@@ -117,6 +119,8 @@ const i18n = {
     generatingPayment: "Generating payment link...",
     paymentError: "Could not generate the payment link. Please try again.",
     paymentPending: "Your registration was submitted. Use the button below to complete the payment.",
+    courseAmount: "Course amount",
+    paymentSecurity: "Secure payment processed by iPag",
   },
   es: {
     brandEyebrow: "CENTRO DE CAPACITACIÓN FULL GAUGE CONTROLS",
@@ -176,6 +180,8 @@ const i18n = {
     generatingPayment: "Generando enlace de pago...",
     paymentError: "No se pudo generar el enlace de pago. Inténtelo de nuevo.",
     paymentPending: "Su registro fue enviado. Use el botón a continuación para completar el pago.",
+    courseAmount: "Valor del curso",
+    paymentSecurity: "Pago seguro procesado por iPag",
   },
 };
 
@@ -387,6 +393,7 @@ let isSubmittingForm = false;
 let turmasFromPartnerToken = null;
 let allTurmasOptions = [];
 let allEmpresaOptions = DEFAULT_EMPRESA_OPTIONS.slice();
+const COURSE_AMOUNT = 1000;
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 function t(key) {
@@ -1004,8 +1011,7 @@ function validateCurrentStep() {
       const checked = group.querySelector(`input[name="${f.id}"]:checked`);
       if (wrap) wrap.classList.remove("invalid-group");
       wrap?.classList.remove("required-empty-group");
-      const paymentNotRequiredForCompany = f.id === "formaPagamento" && formData.tipoPessoa !== "PF";
-      if (f.required && !checked && !paymentNotRequiredForCompany) {
+      if (f.required && !checked) {
         if (wrap) wrap.classList.add("invalid-group");
         wrap?.classList.add("required-empty-group");
         valid = false;
@@ -1285,7 +1291,7 @@ async function handleSubmit() {
   renderButtons();
 }
 
-// Gera o link de pagamento no iPag quando o cadastro é de Pessoa Física
+// Gera o link de pagamento no iPag para Pessoa Física ou Jurídica.
 async function generatePaymentLink() {
   try {
     showStatus(t("generatingPayment"), "");
@@ -1315,6 +1321,17 @@ function renderPaymentLinkButton(link) {
 
   const restartBtn = textWrapper.querySelector(".status-restart-btn");
 
+  const paymentSummary = document.createElement("div");
+  paymentSummary.className = "payment-summary";
+  paymentSummary.innerHTML = `
+    <div class="payment-summary-label">${t("courseAmount")}</div>
+    <div class="payment-summary-value">${new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    }).format(COURSE_AMOUNT)}</div>
+    <div class="payment-summary-note">${t("paymentSecurity")}</div>
+  `;
+
   const hint = document.createElement("p");
   hint.className = "status-description";
   hint.textContent = t("paymentPending");
@@ -1328,6 +1345,7 @@ function renderPaymentLinkButton(link) {
   payButton.style.display = "inline-flex";
   payButton.textContent = t("payNow");
 
+  textWrapper.insertBefore(paymentSummary, restartBtn);
   textWrapper.insertBefore(hint, restartBtn);
   textWrapper.insertBefore(payButton, restartBtn);
 }
@@ -1337,8 +1355,7 @@ async function handleSuccessfulSubmission() {
   const wizardContent = document.getElementById("wizardContent");
   const statusMessageWrapper = document.getElementById("statusMessageWrapper");
 
-  const isIndividual = formData.tipoPessoa === "PF";
-  const paymentLink = isIndividual ? await generatePaymentLink() : "";
+  const paymentLink = await generatePaymentLink();
 
   if (wizardContent) wizardContent.style.display = "block";
   if (statusMessageWrapper) {
@@ -1347,17 +1364,15 @@ async function handleSuccessfulSubmission() {
     requestAnimationFrame(() => {
       showStatus(i18n[currentLang].submitSuccess, "success", true); // Exibe a mensagem de sucesso permanentemente
 
-      if (isIndividual) {
-        if (paymentLink) {
-          renderPaymentLinkButton(paymentLink);
-        } else {
-          const textWrapper = document.querySelector("#statusMessage .status-text-wrapper");
-          if (textWrapper) {
-            const warn = document.createElement("p");
-            warn.className = "status-description payment-error";
-            warn.textContent = t("paymentError");
-            textWrapper.appendChild(warn);
-          }
+      if (paymentLink) {
+        renderPaymentLinkButton(paymentLink);
+      } else {
+        const textWrapper = document.querySelector("#statusMessage .status-text-wrapper");
+        if (textWrapper) {
+          const warn = document.createElement("p");
+          warn.className = "status-description payment-error";
+          warn.textContent = t("paymentError");
+          textWrapper.appendChild(warn);
         }
       }
 
