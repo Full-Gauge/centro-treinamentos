@@ -44,7 +44,7 @@ Siga estas regras em toda alteração neste repositório.
 ## Variáveis de ambiente
 - URLs: `url_registro`, `url_turmas`, `url_modulos`, `url_parceiros`, `url_token`, `url_registro_presenca`
 - Webhooks: `ATTENDANCE_WEBHOOK_URL`, `CONFIRMATION_WEBHOOK_URL`, `CANCELLATION_WEBHOOK_URL`, `NAME_VALIDATION_WEBHOOK_URL`, `URL_VALIDATE_CPF_MODULOS`
-- iPag: `IPAG_BASE_URL` (opcional), `IPAG_DEFAULT_AMOUNT`, `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS`
+- iPag: `IPAG_BASE_URL` (opcional), `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS`; o valor atual do link é fixo em R$ 1.000,00 no Worker
 - Secrets: `JWT_SECRET`, `API_KEY`, `IPAG_API_ID`, `IPAG_API_KEY`
 - Binding KV: `URL_SHORTENER_KV`
 

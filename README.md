@@ -33,14 +33,16 @@ Atualize esse documento sempre que uma entrega mudar:
 
 Não é necessário atualizar o escopo para refatorações internas, ajustes de estilo ou correções sem impacto documentado no comportamento do projeto.
 
-Secrets do Worker devem ser alteradas via CLI do Wrangler:
+Secrets do Worker devem ser alteradas via CLI do Wrangler, usando a configuração do ambiente correto:
 
 ```powershell
-npx wrangler secret put JWT_SECRET --config wrangler.jsonc
-npx wrangler secret put API_KEY --config wrangler.jsonc
-npx wrangler secret put IPAG_API_ID --config wrangler.jsonc
-npx wrangler secret put IPAG_API_KEY --config wrangler.jsonc
+npx wrangler secret put JWT_SECRET --config wrangler.dev.jsonc
+npx wrangler secret put API_KEY --config wrangler.dev.jsonc
+npx wrangler secret put IPAG_API_ID --config wrangler.dev.jsonc
+npx wrangler secret put IPAG_API_KEY --config wrangler.dev.jsonc
 ```
+
+Para produção, repita o comando trocando `wrangler.dev.jsonc` por `wrangler.prod.jsonc`.
 
 Depois de gerar o documento Word, copie o arquivo final para:
 
@@ -76,7 +78,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `NAME_VALIDATION_WEBHOOK_URL`
 - `URL_VALIDATE_CPF_MODULOS`
 - `IPAG_BASE_URL` (opcional)
-- `IPAG_DEFAULT_AMOUNT` (opcional; valor do link quando não enviado)
+- valor do link iPag temporariamente fixado em `R$ 1.000,00` no Worker
 - `IPAG_DEFAULT_DESCRIPTION` (opcional)
 - `IPAG_LINK_EXPIRES_DAYS` (opcional; padrão 7)
 - `JWT_SECRET`
@@ -94,7 +96,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `CANCELLATION_WEBHOOK_URL` pode cair para `CONFIRMATION_WEBHOOK_URL` como fallback.
 - `ATTENDANCE_WEBHOOK_URL` pode cair para `url_registro_presenca` como fallback.
 - `URL_SHORTENER_KV` é um binding de KV, não uma secret.
-- `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` são secrets do GitHub Actions.
+- `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` são usados apenas se o deploy for executado por CI; o fluxo padrão deste projeto é o deploy manual pelo Wrangler.
 
 ## Hospedagem
 
@@ -115,19 +117,19 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 
 ```bash
 npm install
-npx wrangler dev
+npx wrangler dev --config wrangler.dev.jsonc
 ```
 
-## Deploy
+## Deploy manual
 
-O deploy é feito pelo GitHub Actions (`.github/workflows/deploy.yml`) no push para `dev` ou `main`:
-
-- `dev` → `wrangler.dev.jsonc` (Worker `fg-centro-treinamentos-dev`)
-- `main` → `wrangler.prod.jsonc` (Worker `fg-centro-treinamentos`)
-
-Deploy manual, escolhendo a config do ambiente:
+Não há deploy automático por push. Publique somente executando explicitamente o comando correspondente ao ambiente:
 
 ```bash
+# Desenvolvimento
 npx wrangler deploy --config wrangler.dev.jsonc
+
+# Produção
 npx wrangler deploy --config wrangler.prod.jsonc
 ```
+
+`wrangler.dev.jsonc` publica no Worker `fg-centro-treinamentos-dev`. `wrangler.prod.jsonc` publica no Worker `fg-centro-treinamentos`.

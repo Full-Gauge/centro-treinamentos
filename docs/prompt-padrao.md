@@ -23,7 +23,7 @@ REGRAS
 AO CONCLUIR
 - Liste os arquivos alterados e atualize os .md afetados quando a mudança tocar arquitetura,
   rotas, contratos ou variáveis de ambiente.
-- Rode o teste local quando possível: npx wrangler dev.
+- Rode o teste local quando possível: npx wrangler dev --config wrangler.dev.jsonc.
 ```
 
 ## Variações por tarefa

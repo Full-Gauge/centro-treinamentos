@@ -201,12 +201,14 @@ O fluxo de pagamento usa o mesmo padrão de proxy, mas com Basic Auth (`IPAG_API
 
 ## 8. Variáveis de ambiente
 
-- As secrets devem ser alteradas via CLI do Wrangler:
+- As secrets devem ser alteradas via CLI do Wrangler, sempre indicando o arquivo do ambiente:
 
 ```bash
-npx wrangler secret put JWT_SECRET --config wrangler.jsonc
-npx wrangler secret put API_KEY --config wrangler.jsonc
+npx wrangler secret put JWT_SECRET --config wrangler.dev.jsonc
+npx wrangler secret put API_KEY --config wrangler.dev.jsonc
 ```
+
+Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` para publicar um ambiente.
 
 ### 8.1 Secrets do Worker
 
@@ -228,7 +230,8 @@ npx wrangler secret put API_KEY --config wrangler.jsonc
 - `NAME_VALIDATION_WEBHOOK_URL`
 - `URL_VALIDATE_CPF_MODULOS`
 - `IPAG_BASE_URL` (opcional; padrão `https://sandbox.ipag.com.br`)
-- `IPAG_DEFAULT_AMOUNT`, `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS` (opcionais do link iPag)
+- `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS` (opcionais do link iPag)
+- o valor do link iPag está temporariamente fixado em `R$ 1.000,00` no Worker
 
 ### 8.3 Bindings do Worker
 
@@ -244,7 +247,7 @@ Observações:
 - `CANCELLATION_WEBHOOK_URL` pode cair para `CONFIRMATION_WEBHOOK_URL` como fallback.
 - `ATTENDANCE_WEBHOOK_URL` pode cair para `url_registro_presenca` como fallback.
 - `URL_SHORTENER_KV` é um binding de KV, não uma secret.
-- `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` são secrets do GitHub Actions e não ficam no Worker.
+- `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` só são necessários para CI; o deploy padrão é manual pelo Wrangler.
 
 ## 9. Hospedagem
 
@@ -283,7 +286,7 @@ npm install
 ### Execução local
 
 ```bash
-npx wrangler dev
+npx wrangler dev --config wrangler.dev.jsonc
 ```
 
 ### Teste rápido de API
@@ -294,17 +297,15 @@ curl -X POST http://127.0.0.1:8787/api/cancellation \
   -d '{"token":"SEU_JWT","cancellation":"Sim"}'
 ```
 
-### Deploy
+### Deploy manual
 
-O GitHub Actions (`.github/workflows/deploy.yml`) publica no push para `dev` ou `main`:
-
-- `dev` → `wrangler.dev.jsonc` (Worker `fg-centro-treinamentos-dev`)
-- `main` → `wrangler.prod.jsonc` (Worker `fg-centro-treinamentos`)
-
-Deploy manual, escolhendo a config do ambiente:
+Não há deploy automático por push. O desenvolvedor deve publicar explicitamente o ambiente desejado:
 
 ```bash
+# Desenvolvimento
 npx wrangler deploy --config wrangler.dev.jsonc
+
+# Produção
 npx wrangler deploy --config wrangler.prod.jsonc
 ```
 
