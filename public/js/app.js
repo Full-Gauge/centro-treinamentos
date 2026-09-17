@@ -1412,7 +1412,7 @@ async function handleSuccessfulSubmission() {
     statusMessageWrapper.style.display = 'block'; // Garante que o wrapper da mensagem de status esteja visível
     // Pequeno delay para garantir que a transição CSS funcione após a mudança de display
     requestAnimationFrame(() => {
-      showStatus(i18n[currentLang].paymentReady, "success");
+      showStatus(i18n[currentLang].paymentReady, "success", true);
 
       if (paymentLink) {
         renderPaymentLinkButton(paymentLink);
