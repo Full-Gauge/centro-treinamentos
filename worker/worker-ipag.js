@@ -133,7 +133,7 @@ export async function handlePaymentLinkRequest(request, env) {
     link: data?.links?.payment || "",
     uuid: attributes.uuid || "",
     externalCode: attributes.external_code || externalCode,
-    paymentReference: attributes.uuid || externalCode,
+    paymentReference: attributes.external_code || externalCode,
     amount: attributes.amount ?? amount,
       paymentMethod,
       upstreamStatus: upstream.status

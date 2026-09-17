@@ -164,6 +164,25 @@ Pontos principais:
 - `worker/worker-ipag.js` monta o payload e chama `POST /service/v2/payment_links` do iPag com Basic Auth
 - retorna `{ link, paymentReference }`, exibido como botão "Pagar agora"
 
+### 5.10 Fluxo ponta a ponta do checkout
+
+```text
+1. Cliente escolhe PF, PJ ou Parceiro
+2. Preenche cadastro, turma, módulos e, para PJ, vagas desejadas
+3. Aceita os termos
+4. PF/PJ escolhe Pix ou cartão
+5. Worker cria o link de R$ 1.000,00 no iPag
+6. Cliente clica em "Pagar agora"
+7. Worker envia o cadastro e a tela mostra "Inscrição reservada"
+8. Tela consulta GET /api/payment-status a cada 5 segundos
+9. iPag envia POST /api/webhooks/ipag/payment-confirmed
+10. Worker valida assinatura, evento e status capturado
+11. Worker registra a confirmação e envia o evento ao Power Automate
+12. Tela recebe status confirmed e mostra "Inscrição realizada com sucesso"
+```
+
+O clique no link não confirma o pagamento. Ele apenas reserva a inscrição e inicia a espera. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`). Parceiros não passam pelo checkout pago.
+
 ## 6. Rotas de API
 
 - `GET/POST /api/turmas`
@@ -181,6 +200,8 @@ Pontos principais:
 - `POST /api/validate-name-flow`
 - `POST /api/validate-cpf-modulos-flow`
 - `POST /api/payment-link`
+- `POST /api/webhooks/ipag/payment-confirmed`
+- `GET /api/payment-status?reference=...`
 
 ## 7. Integração com Power Automate
 
@@ -210,6 +231,7 @@ O fluxo de pagamento usa o mesmo padrão de proxy, mas com Basic Auth (`IPAG_API
 npx wrangler secret put JWT_SECRET --config wrangler.dev.jsonc
 npx wrangler secret put API_KEY --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL --config wrangler.dev.jsonc
+npx wrangler secret put POWER_AUTOMATE_WEBHOOK_TOKEN --config wrangler.dev.jsonc
 ```
 
 Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` para publicar um ambiente.
@@ -220,6 +242,7 @@ Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` 
 - `API_KEY` obrigatória para os proxies enviados ao Power Automate
 - `IPAG_API_ID` e `IPAG_API_KEY` para autenticar (Basic Auth) na API do iPag; `IPAG_API_KEY` também é usada para validar o HMAC-SHA256 do webhook
 - `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL` para encaminhar confirmações `TransactionCaptured` ao Power Automate
+- `POWER_AUTOMATE_WEBHOOK_TOKEN` enviado no header `X-CT-Webhook-Token` ao Power Automate
 
 ### 8.2 Variáveis do Worker
 
@@ -238,15 +261,29 @@ Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` 
 - `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS` (opcionais do link iPag)
 - o valor do link iPag está temporariamente fixado em `R$ 1.000,00` no Worker
 
-O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured` e `attributes.status.code = 8`, preserva o body e encaminha o payload ao Power Automate com `x-api-key`. Retorna `200` somente para respostas `2xx` do Power Automate; falhas de encaminhamento retornam `502` para permitir retry do iPag.
+O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Para o Power Automate, envia somente `event`, `transaction_uuid`, `name`, `email`, `order_id`, `amount`, `status`, `payment_method`, `installments`, `captured_at` e `acquirer`, além dos headers `x-api-key` e `X-CT-Webhook-Token`. Retorna `200` somente para respostas `2xx` do Power Automate; falhas de encaminhamento retornam `502` para permitir retry do iPag.
 
 Após o encaminhamento bem-sucedido, o webhook grava a confirmação no KV. A tela consulta `GET /api/payment-status?reference=...` em intervalos de 5 segundos e só exibe "inscrição realizada com sucesso" após encontrar o status `confirmed`.
 
-### 8.3 Bindings do Worker
+### 8.3 Idempotência obrigatória do pagamento
+
+O mesmo webhook pode ser reenviado pelo iPag. Portanto, o fluxo deve ser idempotente e não pode enviar dois e-mails para a mesma transação.
+
+- chave única: `transaction_uuid` do iPag, combinada com o evento `TransactionCaptured`
+- registro oficial: D1, em tabela de eventos de pagamento com chave primária única
+- duplicidade: retornar `200` sem reenviar ao Power Automate
+- falhas: manter o evento em estado `processing` ou `failed` para permitir reprocessamento seguro
+- Power Automate: deve repetir a validação por `transaction_uuid` ou `order_id` antes de enviar e-mail
+- KV continua reservado para o status consultado pela tela; não é a fonte de garantia de unicidade
+
+O binding e a migration do D1 já estão criados e aplicados no ambiente dev. O ambiente prod ainda precisa do banco, binding e migration equivalentes antes da publicação. O KV permanece reservado para o status da tela, não para garantir unicidade.
+
+### 8.4 Bindings do Worker
 
 - `URL_SHORTENER_KV`
+- `PAYMENTS_DB` (D1 de idempotência; configurado no dev)
 
-### 8.4 Segredos do deploy
+### 8.5 Segredos do deploy
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`

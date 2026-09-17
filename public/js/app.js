@@ -1434,7 +1434,7 @@ async function generatePaymentLink() {
     if (!res.ok || !data.link) return null;
     return {
       link: data.link,
-      reference: data.paymentReference || data.uuid || data.externalCode || ""
+      reference: data.paymentReference || data.externalCode || ""
     };
   } catch {
     return null;
