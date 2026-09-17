@@ -31,9 +31,15 @@ const i18n = {
     },
     paymentReady: {
       title: "Pagamento necessário",
-      message: "Confira o valor e clique em Pagar agora. Depois do clique, seu cadastro será enviado.",
+      message: "Confira o valor e clique em Pagar agora. Sua inscrição será reservada e ficará aguardando a confirmação do pagamento.",
       icon: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>'
     },
+    paymentReserved: {
+      title: "Inscrição reservada",
+      message: "Seu cadastro foi recebido e sua vaga está reservada. Estamos aguardando a confirmação do pagamento.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg>'
+    },
+    paymentWaiting: "Aguardando a confirmação do pagamento pelo iPag...",
     submitError: "Erro ao enviar. Tente novamente.",
     validatingRegistration: "Validando cadastro...",
     validatingName: "Validando nome...",
@@ -99,9 +105,15 @@ const i18n = {
     },
     paymentReady: {
       title: "Payment required",
-      message: "Check the amount and click Pay now. Your registration will be sent after the click.",
+      message: "Check the amount and click Pay now. Your enrollment will be reserved while payment confirmation is pending.",
       icon: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>'
     },
+    paymentReserved: {
+      title: "Enrollment reserved",
+      message: "Your registration was received and your seat is reserved. We are waiting for payment confirmation.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg>'
+    },
+    paymentWaiting: "Waiting for payment confirmation from iPag...",
     submitError: "Error sending. Please try again.",
     validatingRegistration: "Validating registration...",
     validatingName: "Validating name...",
@@ -167,9 +179,15 @@ const i18n = {
     },
     paymentReady: {
       title: "Pago necesario",
-      message: "Confirma el valor y haz clic en Pagar ahora. Tu registro se enviará después del clic.",
+      message: "Confirma el valor y haz clic en Pagar ahora. Tu inscripción quedará reservada mientras esperamos la confirmación del pago.",
       icon: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>'
     },
+    paymentReserved: {
+      title: "Inscripción reservada",
+      message: "Recibimos tu registro y tu cupo está reservado. Estamos esperando la confirmación del pago.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg>'
+    },
+    paymentWaiting: "Esperando la confirmación del pago por iPag...",
     submitError: "Error al enviar. Inténtalo de nuevo.",
     validatingRegistration: "Validando registro...",
     validatingName: "Validando nombre...",
@@ -425,6 +443,8 @@ let turmasFromPartnerToken = null;
 let allTurmasOptions = [];
 let allEmpresaOptions = DEFAULT_EMPRESA_OPTIONS.slice();
 const COURSE_AMOUNT = 1000;
+let paymentStatusTimer = null;
+let paymentReference = "";
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 function t(key) {
@@ -1411,15 +1431,18 @@ async function generatePaymentLink() {
       })
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.link) return "";
-    return data.link;
+    if (!res.ok || !data.link) return null;
+    return {
+      link: data.link,
+      reference: data.paymentReference || data.uuid || data.externalCode || ""
+    };
   } catch {
-    return "";
+    return null;
   }
 }
 
 // Injeta o botão de pagamento do iPag na mensagem de sucesso
-function renderPaymentLinkButton(link) {
+function renderPaymentLinkButton(link, reference) {
   const textWrapper = document.querySelector("#statusMessage .status-text-wrapper");
   if (!textWrapper || !link) return;
 
@@ -1437,7 +1460,7 @@ function renderPaymentLinkButton(link) {
   `;
 
   const hint = document.createElement("p");
-  hint.className = "status-description";
+  hint.className = "status-description payment-waiting-hint";
   hint.textContent = t("paymentPending");
 
   const payButton = document.createElement("a");
@@ -1451,7 +1474,7 @@ function renderPaymentLinkButton(link) {
   payButton.addEventListener("click", (event) => {
     event.preventDefault();
     window.open(link, "_blank", "noopener,noreferrer");
-    submitRegistrationAfterPaymentClick(payButton);
+    submitRegistrationAfterPaymentClick(payButton, reference);
   });
 
   textWrapper.insertBefore(paymentSummary, restartBtn);
@@ -1459,7 +1482,53 @@ function renderPaymentLinkButton(link) {
   textWrapper.insertBefore(payButton, restartBtn);
 }
 
-async function submitRegistrationAfterPaymentClick(payButton) {
+function updatePaymentReservationStatus(payButton) {
+  const title = document.querySelector("#statusMessage .status-title");
+  const description = document.querySelector("#statusMessage .status-description");
+  const hint = document.querySelector("#statusMessage .payment-waiting-hint");
+
+  if (title) title.textContent = t("paymentReserved").title;
+  if (description) description.textContent = t("paymentReserved").message;
+  if (hint) hint.textContent = t("paymentWaiting");
+  if (payButton) {
+    payButton.style.pointerEvents = "none";
+    payButton.setAttribute("aria-disabled", "true");
+    payButton.textContent = t("paymentWaiting");
+  }
+}
+
+function stopPaymentStatusPolling() {
+  if (paymentStatusTimer) {
+    clearTimeout(paymentStatusTimer);
+    paymentStatusTimer = null;
+  }
+}
+
+function startPaymentStatusPolling(reference) {
+  stopPaymentStatusPolling();
+
+  const poll = async () => {
+    try {
+      const response = await fetch(`/api/payment-status?reference=${encodeURIComponent(reference)}`);
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok && data.confirmed === true) {
+        stopPaymentStatusPolling();
+        showStatus(i18n[currentLang].submitSuccess, "success", true);
+        return;
+      }
+    } catch {
+      // Mantém a reserva aguardando e tenta novamente no próximo ciclo.
+    }
+
+    paymentStatusTimer = setTimeout(poll, 5000);
+  };
+
+  poll();
+}
+
+async function submitRegistrationAfterPaymentClick(payButton, reference) {
+  updatePaymentReservationStatus(payButton);
   payButton.style.pointerEvents = "none";
   payButton.setAttribute("aria-disabled", "true");
   payButton.textContent = t("sending");
@@ -1475,7 +1544,7 @@ async function submitRegistrationAfterPaymentClick(payButton) {
     });
 
     if (!response.ok) throw new Error("Falha ao enviar cadastro");
-    showStatus(i18n[currentLang].submitSuccess, "success", true);
+    startPaymentStatusPolling(reference);
   } catch {
     showStatus(t("submitError"), "error");
   }
@@ -1486,7 +1555,7 @@ async function handleSuccessfulSubmission() {
   const wizardContent = document.getElementById("wizardContent");
   const statusMessageWrapper = document.getElementById("statusMessageWrapper");
 
-  const paymentLink = await generatePaymentLink();
+  const payment = await generatePaymentLink();
 
   if (wizardContent) wizardContent.style.display = "block";
   if (statusMessageWrapper) {
@@ -1495,8 +1564,9 @@ async function handleSuccessfulSubmission() {
     requestAnimationFrame(() => {
       showStatus(i18n[currentLang].paymentReady, "success", true);
 
-      if (paymentLink) {
-        renderPaymentLinkButton(paymentLink);
+      if (payment) {
+        paymentReference = payment.reference;
+        renderPaymentLinkButton(payment.link, payment.reference);
       } else {
         const textWrapper = document.querySelector("#statusMessage .status-text-wrapper");
         if (textWrapper) {

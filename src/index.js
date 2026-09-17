@@ -13,6 +13,7 @@ import { handleCpfModulosValidationFlowRequest } from '../worker/worker-cpf-modu
 import { handleParceirosRequest } from '../worker/worker-parceiros.js';
 import { handlePaymentLinkRequest } from '../worker/worker-ipag.js';
 import { handleIpagPaymentConfirmed } from '../worker/worker-ipag-payment-confirmed.js';
+import { handleIpagPaymentStatusRequest } from '../worker/worker-ipag-payment-status.js';
 
 
 export default {
@@ -93,6 +94,11 @@ export default {
     // 6.7 Webhook de confirmação de pagamento do iPag
     if (url.pathname.replace(/\/$/, "") === "/api/webhooks/ipag/payment-confirmed") {
       return handleIpagPaymentConfirmed(request, env, ctx);
+    }
+
+    // 6.8 Consulta do estado da reserva/pagamento iPag
+    if (url.pathname.replace(/\/$/, "") === "/api/payment-status") {
+      return handleIpagPaymentStatusRequest(request, env, ctx);
     }
 
     // 6.5 Handler de Redirecionamento para URLs encurtadas (/s/[codigo])

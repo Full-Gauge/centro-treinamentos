@@ -129,11 +129,12 @@ export async function handlePaymentLinkRequest(request, env) {
 
     const attributes = data?.attributes || {};
     return jsonResponse({
-      success: true,
-      link: data?.links?.payment || "",
-      uuid: attributes.uuid || "",
-      externalCode: attributes.external_code || externalCode,
-      amount: attributes.amount ?? amount,
+    success: true,
+    link: data?.links?.payment || "",
+    uuid: attributes.uuid || "",
+    externalCode: attributes.external_code || externalCode,
+    paymentReference: attributes.uuid || externalCode,
+    amount: attributes.amount ?? amount,
       paymentMethod,
       upstreamStatus: upstream.status
     });

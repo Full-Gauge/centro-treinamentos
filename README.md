@@ -100,7 +100,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `URL_SHORTENER_KV` é um binding de KV, não uma secret.
 - `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` são usados apenas se o deploy for executado por CI; o fluxo padrão deste projeto é o deploy manual pelo Wrangler.
 
-O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirmed`. Cadastre a URL completa do Worker no iPag. O Worker valida a assinatura HMAC-SHA256 sobre o corpo bruto, exige `X-Ipag-Event: TransactionCaptured` e `attributes.status.code = 8`, e então encaminha o payload ao Power Automate com `x-api-key`.
+O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirmed`. Cadastre a URL completa do Worker no iPag. O Worker valida a assinatura HMAC-SHA256 sobre o corpo bruto, exige `X-Ipag-Event: TransactionCaptured` e `attributes.status.code = 8`, e então encaminha o payload ao Power Automate com `x-api-key`. Após a confirmação, a tela consulta `GET /api/payment-status?reference=...` até mostrar a inscrição como realizada com sucesso.
 
 ## Hospedagem
 

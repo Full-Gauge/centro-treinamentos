@@ -49,11 +49,15 @@ function getPaymentDetails(payload) {
 
   return {
     transactionId: payload?.id ?? "",
-    transactionUuid: payload?.uuid ?? "",
+    transactionUuid: payload?.uuid ?? attributes.uuid ?? "",
     orderId: attributes.order_id ?? "",
     resource: payload?.resource,
     statusCode: Number(status.code)
   };
+}
+
+function getPaymentReference(details) {
+  return String(details.transactionUuid || details.orderId || details.transactionId || "").trim();
 }
 
 export async function handleIpagPaymentConfirmed(request, env) {
@@ -127,6 +131,21 @@ export async function handleIpagPaymentConfirmed(request, env) {
     });
 
     if (response.ok) {
+      const paymentReference = getPaymentReference(details);
+      if (env.URL_SHORTENER_KV && paymentReference) {
+        await env.URL_SHORTENER_KV.put(
+          `ipag-payment:${paymentReference}`,
+          JSON.stringify({
+            status: "confirmed",
+            transactionId: details.transactionId,
+            transactionUuid: details.transactionUuid,
+            orderId: details.orderId,
+            confirmedAt: new Date().toISOString()
+          }),
+          { expirationTtl: 60 * 60 * 24 * 7 }
+        );
+      }
+
       console.log(
         `[IPAG] TransactionCaptured forwarded successfully transactionId=${details.transactionId} orderId=${details.orderId}`
       );

@@ -159,9 +159,10 @@ Pontos principais:
 
 - etapa de pagamento do wizard (`public/js/app.js`) escolhe a forma de pagamento (Pix ou cartão) para Pessoa Física, Pessoa Jurídica e Parceiro
 - ao finalizar a etapa 5, o front chama `POST /api/payment-link`
-- o cadastro é enviado após o cliente clicar no link de pagamento
+- ao clicar no link, o cadastro é enviado e a inscrição fica reservada com status pendente
+- a tela consulta `GET /api/payment-status` até o webhook confirmar o pagamento
 - `worker/worker-ipag.js` monta o payload e chama `POST /service/v2/payment_links` do iPag com Basic Auth
-- retorna `{ link }`, exibido como botão "Pagar agora" na tela de sucesso
+- retorna `{ link, paymentReference }`, exibido como botão "Pagar agora"
 
 ## 6. Rotas de API
 
@@ -238,6 +239,8 @@ Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` 
 - o valor do link iPag está temporariamente fixado em `R$ 1.000,00` no Worker
 
 O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured` e `attributes.status.code = 8`, preserva o body e encaminha o payload ao Power Automate com `x-api-key`. Retorna `200` somente para respostas `2xx` do Power Automate; falhas de encaminhamento retornam `502` para permitir retry do iPag.
+
+Após o encaminhamento bem-sucedido, o webhook grava a confirmação no KV. A tela consulta `GET /api/payment-status?reference=...` em intervalos de 5 segundos e só exibe "inscrição realizada com sucesso" após encontrar o status `confirmed`.
 
 ### 8.3 Bindings do Worker
 
