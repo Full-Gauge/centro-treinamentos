@@ -873,6 +873,51 @@ body[data-theme="dark"] .status-restart-btn:focus-visible {
   opacity: 0.82;
 }
 
+.payment-step-summary {
+  margin-bottom: 1.1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--fg-green-500) 42%, var(--line-200));
+  border-radius: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--fg-green-100) 72%, var(--panel)), var(--panel));
+  box-shadow: 0 10px 24px rgba(0, 74, 43, 0.08);
+}
+
+.payment-step-summary-label {
+  color: var(--fg-green-700);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.payment-step-summary strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--fg-green-700);
+  font-size: clamp(1.65rem, 4vw, 2.2rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.payment-step-summary p {
+  margin: 0.3rem 0 0;
+  color: var(--ink-500);
+  font-size: 0.8rem;
+}
+
+body[data-theme="dark"] .payment-step-summary {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--fg-green-700) 22%, var(--panel)), var(--panel));
+}
+
+body[data-theme="dark"] .payment-step-summary-label,
+body[data-theme="dark"] .payment-step-summary strong {
+  color: var(--fg-green-500);
+}
+
+body[data-theme="dark"] .payment-step-summary p {
+  color: var(--ink-500);
+}
+
 .status-message.error {
   background: linear-gradient(135deg, rgba(199, 56, 56, 0.14), rgba(199, 56, 56, 0.08));
   border-color: rgba(199, 56, 56, 0.85);

@@ -29,6 +29,11 @@ const i18n = {
       message: "Agradecemos o seu interesse! Em breve entraremos em contato com mais informações sobre a sua inscrição.<br><br>Atenção: A sua inscrição só será registrada mediante a confirmação. Um link foi enviado para o seu e-mail. Caso não tenha recebido, contate o suporte",
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>' // Ícone de checkmark
     },
+    paymentReady: {
+      title: "Pagamento necessário",
+      message: "Confira o valor e clique em Pagar agora. Depois do clique, seu cadastro será enviado.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>'
+    },
     submitError: "Erro ao enviar. Tente novamente.",
     validatingRegistration: "Validando cadastro...",
     validatingName: "Validando nome...",
@@ -57,7 +62,7 @@ const i18n = {
     payNow: "Pagar agora",
     generatingPayment: "Gerando link de pagamento...",
     paymentError: "Não foi possível gerar o link de pagamento. Tente novamente.",
-    paymentPending: "Seu cadastro foi enviado. Use o botão abaixo para concluir o pagamento.",
+    paymentPending: "Clique no botão abaixo para abrir o pagamento e concluir seu cadastro.",
     courseAmount: "Valor do curso",
     paymentSecurity: "Pagamento seguro processado pelo iPag",
   },
@@ -90,6 +95,11 @@ const i18n = {
       message: "Thank you for your interest! We will contact you shortly with more information about your enrollment.<br><br>Attention: Your enrollment will only be registered after confirmation. A link has been sent to your email. If you did not receive it, please contact support.",
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>'
     },
+    paymentReady: {
+      title: "Payment required",
+      message: "Check the amount and click Pay now. Your registration will be sent after the click.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>'
+    },
     submitError: "Error sending. Please try again.",
     validatingRegistration: "Validating registration...",
     validatingName: "Validating name...",
@@ -118,7 +128,7 @@ const i18n = {
     payNow: "Pay now",
     generatingPayment: "Generating payment link...",
     paymentError: "Could not generate the payment link. Please try again.",
-    paymentPending: "Your registration was submitted. Use the button below to complete the payment.",
+    paymentPending: "Click the button below to open the payment and complete your registration.",
     courseAmount: "Course amount",
     paymentSecurity: "Secure payment processed by iPag",
   },
@@ -151,6 +161,11 @@ const i18n = {
       message: "¡Gracias por tu interés! Nos pondremos en contacto contigo en breve con más información sobre tu inscripción.<br><br>Atención: Tu inscripción solo se registrará tras la confirmación. Se ha enviado un enlace a tu correo electrónico. Si no lo has recibido, contacta con soporte.",
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>'
     },
+    paymentReady: {
+      title: "Pago necesario",
+      message: "Confirma el valor y haz clic en Pagar ahora. Tu registro se enviará después del clic.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>'
+    },
     submitError: "Error al enviar. Inténtalo de nuevo.",
     validatingRegistration: "Validando registro...",
     validatingName: "Validando nombre...",
@@ -179,7 +194,7 @@ const i18n = {
     payNow: "Pagar ahora",
     generatingPayment: "Generando enlace de pago...",
     paymentError: "No se pudo generar el enlace de pago. Inténtelo de nuevo.",
-    paymentPending: "Su registro fue enviado. Use el botón a continuación para completar el pago.",
+    paymentPending: "Haz clic en el botón para abrir el pago y completar tu registro.",
     courseAmount: "Valor del curso",
     paymentSecurity: "Pago seguro procesado por iPag",
   },
@@ -624,7 +639,15 @@ function renderFields() {
     }
   }
 
-  container.innerHTML = termsLinkHtml + step.fields
+  const paymentStepHtml = currentStep === STEPS.length - 1
+    ? `<div class="payment-step-summary full">
+        <div class="payment-step-summary-label">${t("courseAmount")}</div>
+        <strong>${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(COURSE_AMOUNT)}</strong>
+        <p>${t("paymentSecurity")}</p>
+      </div>`
+    : "";
+
+  container.innerHTML = paymentStepHtml + termsLinkHtml + step.fields
     .map((f) => {
       // O campo token só deve aparecer se a relação for PARCEIRO
       if (f.id === "token" && formData.relacao !== "PARCEIRO") return "";
@@ -1344,10 +1367,37 @@ function renderPaymentLinkButton(link) {
   payButton.style.marginTop = "1rem";
   payButton.style.display = "inline-flex";
   payButton.textContent = t("payNow");
+  payButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    window.open(link, "_blank", "noopener,noreferrer");
+    submitRegistrationAfterPaymentClick(payButton);
+  });
 
   textWrapper.insertBefore(paymentSummary, restartBtn);
   textWrapper.insertBefore(hint, restartBtn);
   textWrapper.insertBefore(payButton, restartBtn);
+}
+
+async function submitRegistrationAfterPaymentClick(payButton) {
+  payButton.style.pointerEvents = "none";
+  payButton.setAttribute("aria-disabled", "true");
+  payButton.textContent = t("sending");
+
+  const payload = { ...formData };
+  if (!Array.isArray(payload.modulos)) payload.modulos = [];
+
+  try {
+    const response = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error("Falha ao enviar cadastro");
+    showStatus(i18n[currentLang].submitSuccess, "success", true);
+  } catch {
+    showStatus(t("submitError"), "error");
+  }
 }
 
 // Mantém a etapa de pagamento visível na tela principal após o cadastro.
@@ -1362,7 +1412,7 @@ async function handleSuccessfulSubmission() {
     statusMessageWrapper.style.display = 'block'; // Garante que o wrapper da mensagem de status esteja visível
     // Pequeno delay para garantir que a transição CSS funcione após a mudança de display
     requestAnimationFrame(() => {
-      showStatus(i18n[currentLang].submitSuccess, "success", true); // Exibe a mensagem de sucesso permanentemente
+      showStatus(i18n[currentLang].paymentReady, "success");
 
       if (paymentLink) {
         renderPaymentLinkButton(paymentLink);
@@ -1578,15 +1628,15 @@ function init() {
             relacao: relType,
             token: relType === "PARCEIRO" ? "FULLGAUGE-6EY380IL10CCP3ZANSZZ" : "Full Gauge Controls",
             fullName: "Usuário de Teste FG",
-            cpf: "123.456.789-00",
-            empresa: relType === "PARCEIRO" ? "PAR-0001" : "",
+            cpf: "956.863.230-11",
+            empresa: relType === "PARCEIRO" ? "PAR-0001" : "fqwfqwfqwf",
             segmento: "Refrigeração",
             atuacao: "Industrial",
             cidade: "Canoas",
             telefone: "(51) 98888-7777",
             email: "ian.campillay@fullgauge.com.br",
             termImage: true,
-            termCosts: true
+            termCosts: true,
           };
 
           // Força a visita aos termos se estiver na etapa de termos para habilitar os checkboxes
