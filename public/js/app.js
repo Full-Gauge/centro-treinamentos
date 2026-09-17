@@ -1098,111 +1098,6 @@ function validateCurrentStep() {
 }
 
 // ─── Navegação ────────────────────────────────────────────────────────────────
-async function validateEnrollmentName() {
-  showStatus(t("validatingName"), "");
-
-  try {
-    const response = await fetch("/api/validate-name-flow", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: formData.fullName,
-        cpf: formData.estrangeiro ? "" : formData.cpf,
-        estrangeiro: formData.estrangeiro === true,
-        email: formData.email,
-        empresa: formData.empresa,
-        relacao: formData.relacao
-      })
-    });
-
-    const rawBody = await response.text();
-    let result = {};
-
-    try {
-      result = rawBody ? JSON.parse(rawBody) : {};
-    } catch {
-      result = { message: rawBody };
-    }
-
-    const validate =
-      result?.validate ??
-      result?.valid ??
-      result?.approved ??
-      result?.success ??
-      result?.data;
-
-    if (!response.ok) {
-      const message = result?.message || result?.error || t("nameValidationFailed");
-      showStatus(message, "error");
-      return false;
-    }
-
-    if (validate === false) {
-      showStatus(t("duplicateCpfError"), "error");
-      return false;
-    }
-
-    if (validate !== true) {
-      const message = result?.message || result?.error || t("nameValidationFailed");
-      showStatus(message, "error");
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    showStatus(formatMessage(t("validateNameError"), { message: error.message }), "error");
-    return false;
-  }
-}
-
-async function validateCpfAndModulos() {
-  if (formData.estrangeiro) return true;
-
-  showStatus(t("validatingRegistration"), "");
-
-  try {
-    const response = await fetch("/api/validate-cpf-modulos-flow", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        cpf: formData.cpf,
-        modulos: Array.isArray(formData.modulos) ? formData.modulos : []
-      })
-    });
-
-    const rawBody = await response.text();
-    let result = {};
-
-    try {
-      result = rawBody ? JSON.parse(rawBody) : {};
-    } catch {
-      result = { message: rawBody };
-    }
-
-    const valid =
-      result?.valid ??
-      result?.validate ??
-      result?.approved ??
-      result?.success ??
-      result?.data;
-
-    if (!response.ok || valid === false || valid === "false") {
-      showStatus(t("duplicateCpfModuleError"), "error");
-      return false;
-    }
-
-    if (valid !== true && valid !== "true" && valid !== undefined) {
-      showStatus(t("duplicateCpfModuleError"), "error");
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    showStatus(error.message || t("submitError"), "error");
-    return false;
-  }
-}
-
 async function goNext() {
   if (!validateCurrentStep()) {
     showStatus(t("requiredFields"), "error");
@@ -1261,20 +1156,6 @@ async function goNext() {
       showStatus(t("submitError"), "error");
       isValidatingToken = false;
       renderButtons();
-      return;
-    }
-  }
-
-  if (currentStep === 1) {
-    isSubmittingForm = true;
-    renderButtons();
-
-    const nameOk = await validateEnrollmentName();
-
-    isSubmittingForm = false;
-    renderButtons();
-
-    if (!nameOk) {
       return;
     }
   }
@@ -1399,42 +1280,9 @@ async function handleSubmit() {
   isSubmittingForm = true;
   renderButtons(); // Mostra o loader no botão de submit
 
-  showStatus(
-    t("sending"),
-    ""
-  );
-
-  const cpfModulosOk = await validateCpfAndModulos();
-  if (!cpfModulosOk) {
-    isSubmittingForm = false;
-    renderButtons();
-    return;
-  }
-
-  // Garantia: Certifica que campos múltiplos (como módulos) sejam enviados como Array, mesmo se vazios
-  const payload = { ...formData };
-  if (!Array.isArray(payload.modulos)) payload.modulos = [];
-
-  try {
-    // Substitua a URL abaixo pelo seu endpoint real
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      isSubmittingForm = false; // Esconde o loader
-      await handleSuccessfulSubmission(); // Chama a nova função para lidar com o sucesso
-    } else {
-      showStatus(t("submitError"), "error");
-      isSubmittingForm = false; // Esconde o loader
-      renderButtons(); // Re-renderiza para remover o loader
-    }
-  } catch {
-    showStatus(t("submitError"), "error");
-    isSubmittingForm = false; // Esconde o loader
-    renderButtons(); // Re-renderiza para remover o loader
-  }
+  await handleSuccessfulSubmission();
+  isSubmittingForm = false;
+  renderButtons();
 }
 
 // Gera o link de pagamento no iPag quando o cadastro é de Pessoa Física
