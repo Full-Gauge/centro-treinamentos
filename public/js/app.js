@@ -1004,7 +1004,8 @@ function validateCurrentStep() {
       const checked = group.querySelector(`input[name="${f.id}"]:checked`);
       if (wrap) wrap.classList.remove("invalid-group");
       wrap?.classList.remove("required-empty-group");
-      if (f.required && !checked) {
+      const paymentNotRequiredForCompany = f.id === "formaPagamento" && formData.tipoPessoa !== "PF";
+      if (f.required && !checked && !paymentNotRequiredForCompany) {
         if (wrap) wrap.classList.add("invalid-group");
         wrap?.classList.add("required-empty-group");
         valid = false;
@@ -1280,13 +1281,6 @@ async function goNext() {
 
   clearStatus();
 
-  // Pessoa Jurídica não usa o fluxo de pagamento do iPag.
-  const termsStepIndex = STEPS.findIndex((step) => step.termsLink);
-  if (currentStep === termsStepIndex && formData.tipoPessoa !== "PF") {
-    await handleSubmit();
-    return;
-  }
-
   if (currentStep < STEPS.length - 1) {
     currentStep++;
     render();
@@ -1490,7 +1484,7 @@ function renderPaymentLinkButton(link) {
   textWrapper.insertBefore(payButton, restartBtn);
 }
 
-// Nova função para lidar com o envio bem-sucedido: esconde o formulário e mostra a mensagem permanente
+// Mantém a etapa de pagamento visível na tela principal após o cadastro.
 async function handleSuccessfulSubmission() {
   const wizardContent = document.getElementById("wizardContent");
   const statusMessageWrapper = document.getElementById("statusMessageWrapper");
@@ -1498,9 +1492,7 @@ async function handleSuccessfulSubmission() {
   const isIndividual = formData.tipoPessoa === "PF";
   const paymentLink = isIndividual ? await generatePaymentLink() : "";
 
-  if (wizardContent) {
-    wizardContent.style.display = 'none'; // Oculta todo o conteúdo do wizard
-  }
+  if (wizardContent) wizardContent.style.display = "block";
   if (statusMessageWrapper) {
     statusMessageWrapper.style.display = 'block'; // Garante que o wrapper da mensagem de status esteja visível
     // Pequeno delay para garantir que a transição CSS funcione após a mudança de display
