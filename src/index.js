@@ -14,6 +14,7 @@ import { handleParceirosRequest } from '../worker/worker-parceiros.js';
 import { handlePaymentLinkRequest } from '../worker/worker-ipag.js';
 import { handleIpagPaymentConfirmed } from '../worker/worker-ipag-payment-confirmed.js';
 import { handleIpagPaymentStatusRequest } from '../worker/worker-ipag-payment-status.js';
+import { publicTurnstileConfig } from '../worker/worker-turnstile.js';
 
 
 export default {
@@ -89,6 +90,10 @@ export default {
     // 6.6 Roteamento para a geração de link de pagamento (iPag)
     if (url.pathname.replace(/\/$/, "") === "/api/payment-link") {
       return handlePaymentLinkRequest(request, env, ctx);
+    }
+
+    if (url.pathname.replace(/\/$/, "") === "/api/public-config") {
+      return publicTurnstileConfig(env);
     }
 
     // 6.7 Webhook de confirmação de pagamento do iPag

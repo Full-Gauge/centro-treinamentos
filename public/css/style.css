@@ -423,6 +423,23 @@ body[data-theme="dark"] .required-legend {
   grid-column: 1 / -1;
 }
 
+.payment-step-summary.full,
+.turnstile-payment-wrap.full {
+  grid-column: 1 / -1;
+}
+
+.turnstile-payment-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 65px;
+  margin: -0.35rem 0 0.35rem;
+}
+
+.turnstile-payment-wrap .cf-turnstile {
+  max-width: 100%;
+}
+
 label {
   font-weight: 700;
   font-size: 0.82rem;

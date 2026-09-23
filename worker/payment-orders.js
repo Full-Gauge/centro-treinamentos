@@ -9,8 +9,10 @@ export async function createPaymentOrder(env, data) {
     .prepare(
       `INSERT INTO payment_orders
         (id, payment_reference, name, email, tax_receipt, phone, relation_type,
-         person_type, class_id, desired_slots, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'link_pending', ?, ?)`
+         person_type, class_id, desired_slots, billing_street, billing_number,
+         billing_district, billing_complement, billing_city, billing_state,
+         billing_country, billing_zipcode, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'link_pending', ?, ?)`
     )
     .bind(
       data.id,
@@ -23,6 +25,14 @@ export async function createPaymentOrder(env, data) {
       data.personType || null,
       data.classId || null,
       data.desiredSlots ?? null,
+      data.billingAddress.street,
+      data.billingAddress.number,
+      data.billingAddress.district,
+      data.billingAddress.complement || null,
+      data.billingAddress.city,
+      data.billingAddress.state,
+      data.billingAddress.country,
+      data.billingAddress.zipcode,
       now,
       now
     )

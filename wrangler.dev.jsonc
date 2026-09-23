@@ -6,7 +6,9 @@
     "directory": "public",
     "not_found_handling": "single-page-application"
   },
-  "vars": {},
+  "vars": {
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFBCTjEf47eLeri4"
+  },
   "kv_namespaces": [
     {
       "binding": "URL_SHORTENER_KV",

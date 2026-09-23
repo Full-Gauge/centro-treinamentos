@@ -55,6 +55,7 @@ const i18n = {
     invalidCpf: "Informe um CPF válido.",
     invalidCnpj: "Informe um CNPJ válido.",
     invalidPhone: "Informe um telefone válido.",
+    invalidCep: "Informe um CEP válido.",
     noItemsAvailable: "Nenhum item disponível",
     clearFormConfirm: "Tem certeza que deseja limpar todos os dados do cadastro?",
     loading: "Carregando...",
@@ -70,6 +71,7 @@ const i18n = {
     payNow: "Pagar agora",
     generatingPayment: "Gerando link de pagamento...",
     paymentError: "Não foi possível gerar o link de pagamento. Tente novamente.",
+    humanVerificationRequired: "Confirme que você é humano para continuar.",
     paymentPending: "Clique no botão abaixo para abrir o pagamento e concluir seu cadastro.",
     courseAmount: "Valor do curso",
     paymentSecurity: "Pagamento seguro processado pelo iPag",
@@ -129,6 +131,7 @@ const i18n = {
     invalidCpf: "Enter a valid CPF.",
     invalidCnpj: "Enter a valid CNPJ.",
     invalidPhone: "Enter a valid phone number.",
+    invalidCep: "Enter a valid ZIP code.",
     noItemsAvailable: "No items available",
     clearFormConfirm: "Are you sure you want to clear all registration data?",
     loading: "Loading...",
@@ -144,6 +147,7 @@ const i18n = {
     payNow: "Pay now",
     generatingPayment: "Generating payment link...",
     paymentError: "Could not generate the payment link. Please try again.",
+    humanVerificationRequired: "Please confirm that you are human to continue.",
     paymentPending: "Click the button below to open the payment and complete your registration.",
     courseAmount: "Course amount",
     paymentSecurity: "Secure payment processed by iPag",
@@ -203,6 +207,7 @@ const i18n = {
     invalidCpf: "Ingrese un CPF válido.",
     invalidCnpj: "Ingrese un CNPJ válido.",
     invalidPhone: "Ingrese un teléfono válido.",
+    invalidCep: "Ingrese un código postal válido.",
     noItemsAvailable: "No hay elementos disponibles",
     clearFormConfirm: "¿Estás seguro de que deseas borrar todos los datos del registro?",
     loading: "Cargando...",
@@ -218,6 +223,7 @@ const i18n = {
     payNow: "Pagar ahora",
     generatingPayment: "Generando enlace de pago...",
     paymentError: "No se pudo generar el enlace de pago. Inténtelo de nuevo.",
+    humanVerificationRequired: "Confirma que eres una persona para continuar.",
     paymentPending: "Haz clic en el botón para abrir el pago y completar tu registro.",
     courseAmount: "Valor del curso",
     paymentSecurity: "Pago seguro procesado por iPag",
@@ -239,6 +245,40 @@ const DEFAULT_EMPRESA_OPTIONS = [
   { value: "PAR-0001", label: "Armacell Isolamento" },
   { value: "PAR-0007", label: "FRIGELAR" },
   { value: "PAR-0008", label: "SOMA" }
+];
+
+const BRAZIL_STATE_OPTIONS = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
+  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+];
+
+const COUNTRY_OPTIONS = [
+  { value: "BR", label: { pt: "Brasil", en: "Brazil", es: "Brasil" } },
+  { value: "AR", label: { pt: "Argentina", en: "Argentina", es: "Argentina" } },
+  { value: "BO", label: { pt: "Bolívia", en: "Bolivia", es: "Bolivia" } },
+  { value: "CL", label: { pt: "Chile", en: "Chile", es: "Chile" } },
+  { value: "CO", label: { pt: "Colômbia", en: "Colombia", es: "Colombia" } },
+  { value: "EC", label: { pt: "Equador", en: "Ecuador", es: "Ecuador" } },
+  { value: "MX", label: { pt: "México", en: "Mexico", es: "México" } },
+  { value: "PY", label: { pt: "Paraguai", en: "Paraguay", es: "Paraguay" } },
+  { value: "PE", label: { pt: "Peru", en: "Peru", es: "Perú" } },
+  { value: "UY", label: { pt: "Uruguai", en: "Uruguay", es: "Uruguay" } },
+  { value: "VE", label: { pt: "Venezuela", en: "Venezuela", es: "Venezuela" } },
+  { value: "US", label: { pt: "Estados Unidos", en: "United States", es: "Estados Unidos" } },
+  { value: "CA", label: { pt: "Canadá", en: "Canada", es: "Canadá" } },
+  { value: "PT", label: { pt: "Portugal", en: "Portugal", es: "Portugal" } },
+  { value: "ES", label: { pt: "Espanha", en: "Spain", es: "España" } },
+  { value: "FR", label: { pt: "França", en: "France", es: "Francia" } },
+  { value: "DE", label: { pt: "Alemanha", en: "Germany", es: "Alemania" } },
+  { value: "IT", label: { pt: "Itália", en: "Italy", es: "Italia" } },
+  { value: "GB", label: { pt: "Reino Unido", en: "United Kingdom", es: "Reino Unido" } },
+  { value: "AO", label: { pt: "Angola", en: "Angola", es: "Angola" } },
+  { value: "MZ", label: { pt: "Moçambique", en: "Mozambique", es: "Mozambique" } },
+  { value: "ZA", label: { pt: "África do Sul", en: "South Africa", es: "Sudáfrica" } },
+  { value: "CN", label: { pt: "China", en: "China", es: "China" } },
+  { value: "IN", label: { pt: "Índia", en: "India", es: "India" } },
+  { value: "JP", label: { pt: "Japão", en: "Japan", es: "Japón" } },
+  { value: "AU", label: { pt: "Austrália", en: "Australia", es: "Australia" } }
 ];
 
 const STEPS = [
@@ -344,6 +384,58 @@ const STEPS = [
         required: true,
         validateEmail: true,
       },
+      {
+        id: "enderecoCobranca",
+        label: { pt: "Rua / Logradouro *", en: "Street *", es: "Calle *" },
+        type: "text",
+        required: true,
+        full: true,
+      },
+      {
+        id: "numeroEnderecoCobranca",
+        label: { pt: "Número *", en: "Number *", es: "Número *" },
+        type: "text",
+        required: true,
+      },
+      {
+        id: "bairroCobranca",
+        label: { pt: "Bairro *", en: "District *", es: "Barrio *" },
+        type: "text",
+        required: true,
+      },
+      {
+        id: "complementoCobranca",
+        label: { pt: "Complemento", en: "Complement", es: "Complemento" },
+        type: "text",
+      },
+      {
+        id: "cidadeCobranca",
+        label: { pt: "Cidade *", en: "City *", es: "Ciudad *" },
+        type: "text",
+        required: true,
+      },
+      {
+        id: "estadoCobranca",
+        label: { pt: "Estado *", en: "State *", es: "Estado *" },
+        type: "select",
+        required: true,
+        options: BRAZIL_STATE_OPTIONS,
+      },
+      {
+        id: "paisCobranca",
+        label: { pt: "País *", en: "Country *", es: "País *" },
+        type: "select",
+        required: true,
+        options: COUNTRY_OPTIONS,
+      },
+      {
+        id: "cepCobranca",
+        label: { pt: "CEP *", en: "ZIP code *", es: "Código postal *" },
+        type: "text",
+        required: true,
+        mask: "cep",
+        validateCep: true,
+      },
     ],
   },
   {
@@ -445,6 +537,9 @@ let allEmpresaOptions = DEFAULT_EMPRESA_OPTIONS.slice();
 const COURSE_AMOUNT = 1000;
 let paymentStatusTimer = null;
 let paymentReference = "";
+let turnstileSiteKey = "";
+let turnstileToken = "";
+let turnstileWidgetId = null;
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 function t(key) {
@@ -510,6 +605,30 @@ function isValidCpf(value) {
   return calculateDigit(9) === Number(digits[9]) && calculateDigit(10) === Number(digits[10]);
 }
 
+function mountTurnstileWidget() {
+  const widget = document.getElementById("turnstile-payment-widget");
+  if (!widget || !turnstileSiteKey || widget.dataset.rendered === "true") return;
+  if (!window.turnstile) {
+    window.setTimeout(mountTurnstileWidget, 500);
+    return;
+  }
+
+  turnstileWidgetId = window.turnstile.render(widget, {
+    sitekey: turnstileSiteKey,
+    action: "payment-link",
+    callback: (token) => {
+      turnstileToken = token;
+    },
+    "expired-callback": () => {
+      turnstileToken = "";
+    },
+    "error-callback": () => {
+      turnstileToken = "";
+    }
+  });
+  widget.dataset.rendered = "true";
+}
+
 function isValidCnpj(value) {
   const digits = String(value).replace(/\D/g, "");
   if (digits.length !== 14 || /^([0-9])\1{13}$/.test(digits)) return false;
@@ -550,6 +669,9 @@ function applyMask(value, mask) {
       return digits.replace(/^(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3").trim();
     }
     return digits.slice(0, 11).replace(/^(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").trim();
+  }
+  if (mask === "cep") {
+    return digits.slice(0, 8).replace(/^(\d{5})(\d{0,3})/, "$1-$2").replace(/-$/, "");
   }
   return value;
 }
@@ -706,7 +828,8 @@ function renderFields() {
         <div class="payment-step-summary-label">${t("courseAmount")}</div>
         <strong>${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(COURSE_AMOUNT)}</strong>
         <p>${t("paymentSecurity")}</p>
-      </div>`
+      </div>
+      ${turnstileSiteKey ? `<div class="turnstile-payment-wrap full"><div id="turnstile-payment-widget" class="cf-turnstile" data-sitekey="${escapeHtml(turnstileSiteKey)}"></div></div>` : ""}`
     : "";
 
   container.innerHTML = paymentStepHtml + termsLinkHtml + step.fields
@@ -864,6 +987,8 @@ function renderFields() {
       </div>`;
     })
     .join("");
+
+  mountTurnstileWidget();
 
   // === EVENT LISTENERS (corrigido) ===
   step.fields.forEach((f) => {
@@ -1206,6 +1331,13 @@ function validateCurrentStep() {
       valid = false;
     }
 
+    if (f.validateCep && el.value.trim() && !/^\d{5}-?\d{3}$/.test(el.value.trim())) {
+      el.classList.add("invalid");
+      const errSpan = document.getElementById(`${f.id}-error`);
+      if (errSpan) errSpan.textContent = t("invalidCep");
+      valid = false;
+    }
+
     if (isCnpjField && el.value.trim() && !isValidCnpj(el.value)) {
       el.classList.add("invalid");
       const errSpan = document.getElementById(`${f.id}-error`);
@@ -1417,6 +1549,11 @@ async function handleSubmit() {
 
 // Gera o link de pagamento no iPag para Pessoa Física ou Jurídica.
 async function generatePaymentLink() {
+  if (!turnstileToken) {
+    showStatus(t("humanVerificationRequired"), "error");
+    return null;
+  }
+
   try {
     showStatus(t("generatingPayment"), "");
     const res = await fetch("/api/payment-link", {
@@ -1431,17 +1568,37 @@ async function generatePaymentLink() {
         relacao: formData.relacao,
         tipoPessoa: formData.tipoPessoa,
         turmas: formData.turmas,
-        vagasDesejadas: formData.vagasDesejadas
+        vagasDesejadas: formData.vagasDesejadas,
+        enderecoCobranca: formData.enderecoCobranca,
+        numeroEnderecoCobranca: formData.numeroEnderecoCobranca,
+        bairroCobranca: formData.bairroCobranca,
+        complementoCobranca: formData.complementoCobranca,
+        cidadeCobranca: formData.cidadeCobranca,
+        estadoCobranca: formData.estadoCobranca,
+        paisCobranca: formData.paisCobranca,
+        cepCobranca: formData.cepCobranca,
+        turnstileToken
       })
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.link) return null;
+    if (!res.ok || !data.link) {
+      resetTurnstileWidget();
+      return null;
+    }
     return {
       link: data.link,
       reference: data.paymentReference || data.externalCode || ""
     };
   } catch {
+    resetTurnstileWidget();
     return null;
+  }
+}
+
+function resetTurnstileWidget() {
+  turnstileToken = "";
+  if (window.turnstile && turnstileWidgetId !== null) {
+    window.turnstile.reset(turnstileWidgetId);
   }
 }
 
@@ -1692,7 +1849,17 @@ async function fetchModulosData(classId) {
 }
 
 // ─── Inicialização ────────────────────────────────────────────────────────────
-function init() {
+async function init() {
+  try {
+    const response = await fetch("/api/public-config", { cache: "no-store" });
+    if (response.ok) {
+      const config = await response.json();
+      turnstileSiteKey = String(config.turnstileSiteKey || "").trim();
+    }
+  } catch (error) {
+    console.error("Erro ao carregar configuração pública:", error);
+  }
+
   render();
 
   // Oculta o wrapper da mensagem de status na inicialização

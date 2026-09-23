@@ -163,6 +163,7 @@ Pontos principais:
 - a tela consulta `GET /api/payment-status` até o webhook confirmar o pagamento
 - `worker/worker-ipag.js` monta o payload e chama `POST /service/v2/payment_links` do iPag com Basic Auth
 - retorna `{ link, paymentReference }`, exibido como botão "Pagar agora"
+- coleta o endereço de cobrança no cadastro e envia os campos para `customer.address` do iPag
 - cria a reserva local em `payment_orders` no D1 antes de chamar o iPag
 - atualiza a reserva para `registration_submitted` após o envio do cadastro
 - atualiza a reserva para `paid` após a confirmação válida do webhook
@@ -254,6 +255,8 @@ Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` 
 - `IPAG_API_ID` e `IPAG_API_KEY` para autenticar (Basic Auth) na API do iPag; `IPAG_API_KEY` também é usada para validar o HMAC-SHA256 do webhook
 - `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL` para encaminhar confirmações `TransactionCaptured` ao Power Automate
 - `POWER_AUTOMATE_WEBHOOK_TOKEN` enviado no header `X-CT-Webhook-Token` ao Power Automate
+- `TURNSTILE_SECRET_KEY` para validar tokens humanos no Worker
+- `TURNSTILE_SITE_KEY` retornada pelo endpoint público de configuração e usada pelo frontend
 
 ### 8.2 Variáveis do Worker
 

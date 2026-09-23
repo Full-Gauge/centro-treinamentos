@@ -1,6 +1,7 @@
 // Integração com o iPag para gerar links de pagamento (Pix e cartão de crédito).
 // Referência: POST /service/v2/payment_links em https://developers.ipag.com.br/pt-br/payment-link/reference
 import { createPaymentOrder, updatePaymentOrder } from "./payment-orders.js";
+import { verifyTurnstileToken } from "./worker-turnstile.js";
 
 const IPAG_SANDBOX_BASE = "https://sandbox.ipag.com.br";
 
@@ -40,6 +41,30 @@ function defaultExpiresAt(days) {
   return formatIpagDate(new Date(Date.now() + days * 86400000));
 }
 
+function getBillingAddress(body) {
+  const address = {
+    street: String(body.enderecoCobranca || "").trim(),
+    number: String(body.numeroEnderecoCobranca || "").trim(),
+    district: String(body.bairroCobranca || "").trim(),
+    complement: String(body.complementoCobranca || "").trim(),
+    city: String(body.cidadeCobranca || "").trim(),
+    state: String(body.estadoCobranca || "").trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2),
+    country: String(body.paisCobranca || "BR").trim().toUpperCase().slice(0, 2),
+    zipcode: String(body.cepCobranca || "").replace(/\D/g, "").slice(0, 8)
+  };
+
+  const isValid =
+    address.street &&
+    address.number &&
+    address.district &&
+    address.city &&
+    address.state.length === 2 &&
+    address.country.length === 2 &&
+    address.zipcode.length === 8;
+
+  return isValid ? address : null;
+}
+
 export async function handlePaymentLinkRequest(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, {
@@ -67,6 +92,14 @@ export async function handlePaymentLinkRequest(request, env) {
 
   try {
     const body = await request.json();
+    const turnstile = await verifyTurnstileToken(
+      request,
+      body.turnstileToken,
+      env,
+      "payment-link"
+    );
+    if (!turnstile.ok) return jsonResponse({ error: turnstile.error }, turnstile.status);
+
     const name = String(body.name ?? body.fullName ?? "").trim();
     const taxReceipt = String(body.cpfCnpj ?? body.cpf ?? body.tax_receipt ?? "").trim();
     const amount = "1000.00";
@@ -79,9 +112,10 @@ export async function handlePaymentLinkRequest(request, env) {
     const parsedAmount = Number(amount);
     const email = String(body.email || "").trim();
     const phone = String(body.phone ?? "").replace(/\D/g, "");
-    if (!name || !taxReceipt || !Number.isFinite(parsedAmount) || !email.includes("@") || phone.length < 10) {
+    const billingAddress = getBillingAddress(body);
+    if (!name || !taxReceipt || !Number.isFinite(parsedAmount) || !email.includes("@") || phone.length < 10 || !billingAddress) {
       return jsonResponse(
-        { error: "Campos obrigatórios: name, cpfCnpj, email e telefone válidos." },
+        { error: "Preencha nome, CPF/CNPJ, e-mail, telefone e endereço de cobrança válidos." },
         400
       );
     }
@@ -96,7 +130,8 @@ export async function handlePaymentLinkRequest(request, env) {
         name,
         cpf_cnpj: taxReceipt,
         email,
-        phone
+        phone,
+        address: billingAddress
       },
       checkout_settings: {
         payment_method: paymentMethod
@@ -121,7 +156,8 @@ export async function handlePaymentLinkRequest(request, env) {
         desiredSlots:
           Number.isInteger(Number(body.vagasDesejadas)) && Number(body.vagasDesejadas) > 0
             ? Number(body.vagasDesejadas)
-            : null
+            : null,
+        billingAddress
       });
     } catch (error) {
       console.error(`[IPAG] Failed to reserve payment order error=${error?.message || "database error"}`);

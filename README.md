@@ -43,6 +43,8 @@ npx wrangler secret put IPAG_API_ID --config wrangler.dev.jsonc
 npx wrangler secret put IPAG_API_KEY --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_WEBHOOK_TOKEN --config wrangler.dev.jsonc
+npx wrangler secret put TURNSTILE_SECRET_KEY --config wrangler.dev.jsonc
+npx wrangler secret put TURNSTILE_SITE_KEY --config wrangler.dev.jsonc
 ```
 
 Para produção, repita o comando trocando `wrangler.dev.jsonc` por `wrangler.prod.jsonc`.
