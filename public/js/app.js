@@ -749,8 +749,8 @@ function renderFields() {
               const isSelected = Array.isArray(val) ? val.includes(optVal) : false;
               
               return `<label class="checkbox-chip${isSelected ? " checkbox-chip--selected" : ""}">
-                <input type="checkbox" name="${f.id}" value="${optVal}"${isSelected ? " checked" : ""}>
-                <span>${optLabel}</span>
+                <input type="checkbox" name="${escapeHtml(f.id)}" value="${escapeHtml(optVal)}"${isSelected ? " checked" : ""}>
+                <span>${escapeHtml(optLabel)}</span>
               </label>`;
             })
             .join("");
@@ -804,7 +804,7 @@ function renderFields() {
             
             // Suporte para traduções ou labels simples vindo da API
             if (optLabel && typeof optLabel === "object") optLabel = optLabel[currentLang] || optLabel.pt || optVal;
-            return `<option value="${optVal}"${val === optVal ? " selected" : ""}>${optLabel}</option>`;
+            return `<option value="${escapeHtml(optVal)}"${val === optVal ? " selected" : ""}>${escapeHtml(optLabel)}</option>`;
           })
           .join("");
         return `<div class="field-wrap ${fullClass} ${isLoading ? 'loading-select' : ''} ${isLocked ? 'field-wrap--locked' : ''}">
@@ -854,7 +854,7 @@ function renderFields() {
           type="${fieldType}"
           id="${f.id}"
           name="${f.id}"
-          value="${f.uppercase ? val.toUpperCase() : val}"
+          value="${escapeHtml(f.uppercase ? val.toUpperCase() : val)}"
           ${f.required && !(f.id === "cpf" && formData.estrangeiro) ? "required" : ""}
           ${f.id === "cpf" && formData.estrangeiro ? "disabled" : ""}
           ${(f.validateEmail || f.validateToken || f.validateCpf || f.validatePhone || isCnpjField) ? `aria-describedby="${errorId}"` : ""}
@@ -1427,7 +1427,11 @@ async function generatePaymentLink() {
         cpfCnpj: formData.cpf,
         email: formData.email,
         phone: formData.telefone,
-        paymentMethod: formData.formaPagamento
+        paymentMethod: formData.formaPagamento,
+        relacao: formData.relacao,
+        tipoPessoa: formData.tipoPessoa,
+        turmas: formData.turmas,
+        vagasDesejadas: formData.vagasDesejadas
       })
     });
     const data = await res.json().catch(() => ({}));
@@ -1535,6 +1539,7 @@ async function submitRegistrationAfterPaymentClick(payButton, reference) {
 
   const payload = { ...formData };
   if (!Array.isArray(payload.modulos)) payload.modulos = [];
+  if (reference) payload.paymentReference = reference;
 
   try {
     const response = await fetch("/api/register", {

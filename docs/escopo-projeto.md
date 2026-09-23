@@ -163,6 +163,9 @@ Pontos principais:
 - a tela consulta `GET /api/payment-status` até o webhook confirmar o pagamento
 - `worker/worker-ipag.js` monta o payload e chama `POST /service/v2/payment_links` do iPag com Basic Auth
 - retorna `{ link, paymentReference }`, exibido como botão "Pagar agora"
+- cria a reserva local em `payment_orders` no D1 antes de chamar o iPag
+- atualiza a reserva para `registration_submitted` após o envio do cadastro
+- atualiza a reserva para `paid` após a confirmação válida do webhook
 
 ### 5.10 Fluxo ponta a ponta do checkout
 
@@ -183,6 +186,8 @@ Pontos principais:
 
 O clique no link não confirma o pagamento. Ele apenas reserva a inscrição e inicia a espera. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`). Parceiros não passam pelo checkout pago.
 
+A tabela `payment_orders` mantém a reserva/cadastro local e usa `payment_reference` para relacionar o link, o cadastro e o pagamento. A tabela `payment_events` permanece exclusiva para idempotência do webhook.
+
 ## 6. Rotas de API
 
 - `GET/POST /api/turmas`
@@ -202,6 +207,12 @@ O clique no link não confirma o pagamento. Ele apenas reserva a inscrição e i
 - `POST /api/payment-link`
 - `POST /api/webhooks/ipag/payment-confirmed`
 - `GET /api/payment-status?reference=...`
+
+O ambiente dev usa o binding D1 `PAYMENTS_DB`. As migrations devem ser aplicadas antes do deploy:
+
+```powershell
+npx wrangler d1 migrations apply centro-treinamentos-dev --config wrangler.dev.jsonc --remote
+```
 
 ## 7. Integração com Power Automate
 

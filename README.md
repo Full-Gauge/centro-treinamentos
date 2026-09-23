@@ -14,6 +14,7 @@ Plataforma de treinamentos da Full Gauge com:
 - encurtamento e redirecionamento de URLs
 - consulta de turmas, módulos e parceiros
 - geração de link de pagamento (Pix e cartão) via iPag
+- persistência de reservas e pagamentos no Cloudflare D1
 
 O sistema roda em Cloudflare Workers, com frontend estático em `public/` e rotas serverless em `src/index.js`.
 

@@ -1,4 +1,5 @@
 import { requirePowerAutomateHeaders } from "./power-automate.js";
+import { jsonError, verifyRegistrationToken } from "./jwt.js";
 
 export async function handleCancellationRequest(request, env, ctx) {
   if (request.method !== 'POST') {
@@ -10,8 +11,6 @@ export async function handleCancellationRequest(request, env, ctx) {
 
   try {
     const body = await request.json();
-    let email = body.email;
-    let codigo_turma = body.codigo_turma;
     const cancellation = body.cancellation;
     let modules = Array.isArray(body.modules) ? body.modules : [];
     const allModules = body.all_modules === true;
@@ -35,25 +34,20 @@ export async function handleCancellationRequest(request, env, ctx) {
 
     modules = normalizeModules(modules);
 
-    if (body.token) {
-      try {
-        const payloadBase64 = body.token.split(".")[1];
-        if (payloadBase64) {
-          const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")));
-          if (!email) email = decoded.email;
-          if (!codigo_turma) codigo_turma = decoded.classId;
-          if (!modules.length && Array.isArray(decoded.modules)) modules = normalizeModules(decoded.modules);
-        }
-      } catch (e) {
-        console.error("Erro ao decodificar token no worker:", e);
-      }
+    const tokenPayload = await verifyRegistrationToken(body.token, env);
+    if (!tokenPayload?.email || !tokenPayload?.classId) {
+      return jsonError("Token de inscrição inválido ou expirado.", 401);
     }
 
-    if (!email || !cancellation) {
-      return new Response(JSON.stringify({ error: 'E-mail (ou token válido) e cancelamento são obrigatórios.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    const email = String(tokenPayload.email).trim();
+    const codigo_turma = String(tokenPayload.classId).trim();
+    const tokenModules = normalizeModules(tokenPayload.modules);
+    modules = allModules
+      ? tokenModules
+      : modules.filter((module) => tokenModules.includes(module));
+
+    if (!cancellation || !["Sim", "Não"].includes(String(cancellation))) {
+      return jsonError("Cancelamento válido é obrigatório.", 400);
     }
 
         const webhookUrl = env.CANCELLATION_WEBHOOK_URL || env.CONFIRMATION_WEBHOOK_URL;

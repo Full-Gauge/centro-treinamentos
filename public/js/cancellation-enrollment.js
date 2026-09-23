@@ -98,6 +98,15 @@ function t(key) {
   return (i18n[currentLang] || i18n.pt)[key] || i18n.pt[key] || key;
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function decodeJwtPayload(jwt) {
   const payloadBase64 = jwt.split(".")[1];
   if (!payloadBase64) return null;
@@ -174,8 +183,8 @@ function renderModulesSection() {
     ...modulesForDisplay.map((moduleItem) => {
       const isSelected = selectedModuleValues.includes(moduleItem.value);
       return `<label class="checkbox-chip${isSelected ? " checkbox-chip--selected" : ""}">
-        <input type="checkbox" name="moduleChoice" value="${moduleItem.value}"${isSelected ? " checked" : ""}>
-        <span>${moduleItem.label}</span>
+        <input type="checkbox" name="moduleChoice" value="${escapeHtml(moduleItem.value)}"${isSelected ? " checked" : ""}>
+        <span>${escapeHtml(moduleItem.label)}</span>
       </label>`;
     })
   ].join("");

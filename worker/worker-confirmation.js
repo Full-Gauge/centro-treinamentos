@@ -1,4 +1,5 @@
 import { requirePowerAutomateHeaders } from "./power-automate.js";
+import { jsonError, verifyRegistrationToken } from "./jwt.js";
 
 export async function handleConfirmationRequest(request, env, ctx) {
   if (request.method !== 'POST') {
@@ -10,29 +11,17 @@ export async function handleConfirmationRequest(request, env, ctx) {
 
   try {
     const body = await request.json();
-    let email = body.email;
-    let codigo_turma = body.codigo_turma;
-    const attendance = body.attendance;
-
-    // Se não veio e-mail direto, tenta extrair do Token (caso venha da tela de confirmação de inscrição)
-    if (body.token) {
-      try {
-        const payloadBase64 = body.token.split(".")[1];
-        if (payloadBase64) {
-          const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")));
-          if (!email) email = decoded.email;
-          if (!codigo_turma) codigo_turma = decoded.classId;
-        }
-      } catch (e) {
-        console.error("Erro ao decodificar token no worker:", e);
-      }
+    const tokenPayload = await verifyRegistrationToken(body.token, env);
+    if (!tokenPayload?.email || !tokenPayload?.classId) {
+      return jsonError("Token de inscrição inválido ou expirado.", 401);
     }
 
-    if (!email || !attendance) {
-      return new Response(JSON.stringify({ error: 'E-mail (ou token válido) e presença são obrigatórios.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    const email = String(tokenPayload.email).trim();
+    const codigo_turma = String(tokenPayload.classId).trim();
+    const attendance = body.attendance;
+
+    if (!attendance || !["Sim", "Não"].includes(String(attendance))) {
+      return jsonError("Presença válida é obrigatória.", 400);
     }
 
     const webhookUrl = env.CONFIRMATION_WEBHOOK_URL;

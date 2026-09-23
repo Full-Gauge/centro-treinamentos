@@ -1,5 +1,6 @@
 // Integração com o iPag para gerar links de pagamento (Pix e cartão de crédito).
 // Referência: POST /service/v2/payment_links em https://developers.ipag.com.br/pt-br/payment-link/reference
+import { createPaymentOrder, updatePaymentOrder } from "./payment-orders.js";
 
 const IPAG_SANDBOX_BASE = "https://sandbox.ipag.com.br";
 
@@ -68,17 +69,19 @@ export async function handlePaymentLinkRequest(request, env) {
     const body = await request.json();
     const name = String(body.name ?? body.fullName ?? "").trim();
     const taxReceipt = String(body.cpfCnpj ?? body.cpf ?? body.tax_receipt ?? "").trim();
-    const amount = String(body.amount ?? "1000.00").replace(",", ".");
+    const amount = "1000.00";
     const description =
       body.description || env.IPAG_DEFAULT_DESCRIPTION || "Inscrição - Centro de Treinamentos Full Gauge";
     const paymentMethod = normalizePaymentMethod(body.paymentMethod ?? body.formaPagamento);
-    const externalCode = String(body.externalCode ?? `FG-${Date.now()}`);
+    const externalCode = `FG-${crypto.randomUUID()}`;
     const expiresAt = body.expiresAt || defaultExpiresAt(Number(env.IPAG_LINK_EXPIRES_DAYS || 7));
 
     const parsedAmount = Number(amount);
-    if (!name || !taxReceipt || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+    const email = String(body.email || "").trim();
+    const phone = String(body.phone ?? "").replace(/\D/g, "");
+    if (!name || !taxReceipt || !Number.isFinite(parsedAmount) || !email.includes("@") || phone.length < 10) {
       return jsonResponse(
-        { error: "Campos obrigatórios: name, cpfCnpj e amount (maior que zero)." },
+        { error: "Campos obrigatórios: name, cpfCnpj, email e telefone válidos." },
         400
       );
     }
@@ -92,13 +95,38 @@ export async function handlePaymentLinkRequest(request, env) {
       customer: {
         name,
         cpf_cnpj: taxReceipt,
-        email: body.email || "",
-        phone: String(body.phone ?? "").replace(/\D/g, "")
+        email,
+        phone
       },
       checkout_settings: {
         payment_method: paymentMethod
       }
     };
+
+    if (!env.PAYMENTS_DB) {
+      return jsonResponse({ error: "Persistência de reservas não está configurada." }, 500);
+    }
+
+    try {
+      await createPaymentOrder(env, {
+        id: crypto.randomUUID(),
+        paymentReference: externalCode,
+        name,
+        email,
+        taxReceipt,
+        phone,
+        relationType: body.relacao,
+        personType: body.tipoPessoa,
+        classId: body.turmas,
+        desiredSlots:
+          Number.isInteger(Number(body.vagasDesejadas)) && Number(body.vagasDesejadas) > 0
+            ? Number(body.vagasDesejadas)
+            : null
+      });
+    } catch (error) {
+      console.error(`[IPAG] Failed to reserve payment order error=${error?.message || "database error"}`);
+      return jsonResponse({ error: "Não foi possível criar a reserva local." }, 503);
+    }
 
     const upstream = await fetch(`${baseUrl}/service/v2/payment_links`, {
       method: "POST",
@@ -118,6 +146,9 @@ export async function handlePaymentLinkRequest(request, env) {
     }
 
     if (!upstream.ok) {
+      await updatePaymentOrder(env, externalCode, { status: "link_failed" }).catch((error) => {
+        console.error(`[IPAG] Failed to update payment order status error=${error?.message || "database error"}`);
+      });
       return jsonResponse(
         {
           error: "Falha ao gerar o link de pagamento no iPag.",
@@ -128,12 +159,19 @@ export async function handlePaymentLinkRequest(request, env) {
     }
 
     const attributes = data?.attributes || {};
+    const paymentReference = attributes.external_code || externalCode;
+    await updatePaymentOrder(env, externalCode, {
+      status: "pending_payment",
+      payment_reference: paymentReference,
+      ipag_uuid: attributes.uuid || null,
+      order_id: attributes.order_id || null
+    });
     return jsonResponse({
     success: true,
     link: data?.links?.payment || "",
     uuid: attributes.uuid || "",
-    externalCode: attributes.external_code || externalCode,
-    paymentReference: attributes.external_code || externalCode,
+    externalCode: paymentReference,
+    paymentReference,
     amount: attributes.amount ?? amount,
       paymentMethod,
       upstreamStatus: upstream.status

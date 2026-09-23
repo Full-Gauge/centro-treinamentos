@@ -29,7 +29,7 @@ export async function handleJwtGenerationRequest(request, env) {
     const { classId, email, modules = [] } = await request.json();
     const jwtModules = normalizeModules(modules);
 
-    if (!classId || !email || !modules) {
+    if (!classId || !email || !Array.isArray(modules)) {
       return new Response(JSON.stringify({ error: 'classId/email/modules são obrigatórios.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }

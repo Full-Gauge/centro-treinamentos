@@ -1,4 +1,5 @@
 import { requirePowerAutomateHeaders } from "./power-automate.js";
+import { markPaymentOrderPaid } from "./payment-orders.js";
 
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -94,26 +95,37 @@ async function claimPaymentEvent(env, details) {
   }
 
   const idempotencyKey = `ipag:TransactionCaptured:${details.transactionUuid}`;
+  const claimToken = crypto.randomUUID();
   const now = new Date().toISOString();
   const staleBefore = new Date(Date.now() - 10 * 60 * 1000).toISOString();
 
   const claimed = await env.PAYMENTS_DB
     .prepare(
       `INSERT INTO payment_events
-        (idempotency_key, transaction_uuid, order_id, status, created_at, processed_at)
-       VALUES (?, ?, ?, 'processing', ?, NULL)
+        (idempotency_key, transaction_uuid, order_id, status, created_at, processed_at, claim_token, payment_reference)
+       VALUES (?, ?, ?, 'processing', ?, NULL, ?, ?)
        ON CONFLICT(idempotency_key) DO UPDATE SET
          status = 'processing',
          created_at = excluded.created_at,
-         processed_at = NULL
+         processed_at = NULL,
+         claim_token = excluded.claim_token,
+         payment_reference = excluded.payment_reference
        WHERE payment_events.status = 'failed'
           OR (payment_events.status = 'processing' AND payment_events.created_at < ?)
-       RETURNING idempotency_key`
+       RETURNING idempotency_key, claim_token`
     )
-    .bind(idempotencyKey, details.transactionUuid, details.orderId, now, staleBefore)
+    .bind(
+      idempotencyKey,
+      details.transactionUuid,
+      details.orderId,
+      now,
+      claimToken,
+      details.paymentLinkExternalCode || details.orderId || details.transactionUuid,
+      staleBefore
+    )
     .first();
 
-  if (claimed) return { idempotencyKey, claimed: true };
+  if (claimed) return { idempotencyKey, claimToken, claimed: true };
 
   const existing = await env.PAYMENTS_DB
     .prepare("SELECT status FROM payment_events WHERE idempotency_key = ?")
@@ -127,10 +139,10 @@ async function claimPaymentEvent(env, details) {
   return { idempotencyKey, inFlight: true };
 }
 
-async function updatePaymentEvent(env, idempotencyKey, status, processedAt = null) {
-  await env.PAYMENTS_DB
-    .prepare("UPDATE payment_events SET status = ?, processed_at = ? WHERE idempotency_key = ?")
-    .bind(status, processedAt, idempotencyKey)
+async function updatePaymentEvent(env, idempotencyKey, claimToken, status, processedAt = null) {
+  return env.PAYMENTS_DB
+    .prepare("UPDATE payment_events SET status = ?, processed_at = ? WHERE idempotency_key = ? AND claim_token = ?")
+    .bind(status, processedAt, idempotencyKey, claimToken)
     .run();
 }
 
@@ -224,7 +236,7 @@ export async function handleIpagPaymentConfirmed(request, env) {
     console.log(
       `[IPAG] TransactionCaptured already processing transactionUuid=${details.transactionUuid}`
     );
-    return jsonResponse({ success: true, duplicate: true, message: "Payment already processing" });
+    return jsonResponse({ success: false, error: "Payment already processing" }, 409);
   }
 
   const forwardedHeaders = new Headers(powerAutomateHeaders.headers);
@@ -246,7 +258,21 @@ export async function handleIpagPaymentConfirmed(request, env) {
     });
 
     if (response.ok) {
-      await updatePaymentEvent(env, eventClaim.idempotencyKey, "completed", new Date().toISOString());
+      await updatePaymentEvent(
+        env,
+        eventClaim.idempotencyKey,
+        eventClaim.claimToken,
+        "completed",
+        new Date().toISOString()
+      );
+
+      try {
+        await markPaymentOrderPaid(env, details);
+      } catch (error) {
+        console.error(
+          `[IPAG] Payment event completed but local order update failed transactionUuid=${details.transactionUuid} error=${error?.message || "database error"}`
+        );
+      }
 
       const paymentReferences = getPaymentReferences(details);
       if (env.URL_SHORTENER_KV && paymentReferences.length) {
@@ -283,13 +309,13 @@ export async function handleIpagPaymentConfirmed(request, env) {
     console.error(
       `[IPAG] Failed to forward TransactionCaptured to Power Automate transactionId=${details.transactionId} orderId=${details.orderId} powerAutomateStatus=${response.status}`
     );
-    await updatePaymentEvent(env, eventClaim.idempotencyKey, "failed");
+    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
     return jsonResponse({ success: false, error: "Payment confirmation processing failed" }, 502);
   } catch (error) {
     console.error(
       `[IPAG] Failed to forward TransactionCaptured to Power Automate transactionId=${details.transactionId} orderId=${details.orderId} error=${error?.message || "network error"}`
     );
-    await updatePaymentEvent(env, eventClaim.idempotencyKey, "failed");
+    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
     return jsonResponse({ success: false, error: "Payment confirmation processing failed" }, 502);
   }
 }
