@@ -9,3 +9,5 @@ README.md
 .dev.vars
 .continue/
 .artifacts/
+playwright-report/
+test-results/

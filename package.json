@@ -1,5 +1,17 @@
 {
+  "scripts": {
+    "test": "npm run test:e2e",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "deploy:dev": "npm test && wrangler deploy --config wrangler.dev.jsonc",
+    "deploy:prod": "npm test && wrangler deploy --config wrangler.prod.jsonc"
+  },
   "dependencies": {
     "jose": "^6.2.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "wrangler": "^4.137.0"
   }
 }

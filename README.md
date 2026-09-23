@@ -18,6 +18,30 @@ Plataforma de treinamentos da Full Gauge com:
 
 O sistema roda em Cloudflare Workers, com frontend estático em `public/` e rotas serverless em `src/index.js`.
 
+### Testes obrigatórios
+
+Toda alteração que mudar o fluxo da interface deve passar pelos testes Playwright antes do deploy:
+
+```powershell
+npm install
+npx playwright install chromium
+npm test
+```
+
+Para depurar visualmente:
+
+```powershell
+npm run test:e2e:headed
+npm run test:e2e:ui
+```
+
+Os comandos oficiais de publicação executam `npm test` automaticamente:
+
+```powershell
+npm run deploy:dev
+npm run deploy:prod
+```
+
 ## Documentação do escopo
 
 O arquivo [`docs/escopo-projeto.md`](docs/escopo-projeto.md) é a referência oficial de escopo e arquitetura do projeto.
