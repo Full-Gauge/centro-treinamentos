@@ -5,7 +5,7 @@ function requireDatabase(env) {
 
 export async function createPaymentOrder(env, data) {
   const now = new Date().toISOString();
-  await requireDatabase(env)
+  return requireDatabase(env)
     .prepare(
       `INSERT INTO payment_orders
         (id, payment_reference, name, email, tax_receipt, phone, relation_type,
@@ -44,12 +44,12 @@ export async function updatePaymentOrder(env, paymentReference, fields) {
   if (!assignments.length) return;
 
   const values = Object.values(fields);
-  values.push(new Date().toISOString(), paymentReference);
+  values.push(new Date().toISOString(), paymentReference, paymentReference);
   await requireDatabase(env)
     .prepare(
       `UPDATE payment_orders
        SET ${assignments.join(", ")}, updated_at = ?
-       WHERE payment_reference = ?`
+       WHERE payment_reference = ? OR order_id = ?`
     )
     .bind(...values)
     .run();
@@ -57,12 +57,38 @@ export async function updatePaymentOrder(env, paymentReference, fields) {
 
 export async function markPaymentOrderPaid(env, details) {
   const paymentReference = details.paymentLinkExternalCode || details.orderId;
-  if (!paymentReference) return;
+  if (paymentReference) {
+    const directUpdate = await updatePaymentOrder(env, paymentReference, {
+      status: "paid",
+      transaction_uuid: details.transactionUuid || null,
+      order_id: details.orderId || null,
+      paid_at: new Date().toISOString()
+    });
 
-  await updatePaymentOrder(env, paymentReference, {
+    if (directUpdate?.meta?.changes > 0) return paymentReference;
+  }
+
+  if (!details.customerEmail) return null;
+
+  const pendingOrder = await requireDatabase(env)
+    .prepare(
+      `SELECT payment_reference FROM payment_orders
+       WHERE lower(email) = lower(?)
+         AND status IN ('link_pending', 'pending_payment')
+       ORDER BY created_at DESC
+       LIMIT 1`
+    )
+    .bind(details.customerEmail)
+    .first();
+
+  if (!pendingOrder?.payment_reference) return null;
+
+  await updatePaymentOrder(env, pendingOrder.payment_reference, {
     status: "paid",
     transaction_uuid: details.transactionUuid || null,
     order_id: details.orderId || null,
     paid_at: new Date().toISOString()
   });
+
+  return pendingOrder.payment_reference;
 }

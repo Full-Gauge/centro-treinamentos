@@ -4,6 +4,7 @@ import { createPaymentOrder, updatePaymentOrder } from "./payment-orders.js";
 import { verifyTurnstileToken } from "./worker-turnstile.js";
 
 const IPAG_SANDBOX_BASE = "https://sandbox.ipag.com.br";
+const COURSE_AMOUNT_PER_SLOT = 1000;
 
 function basicAuthToken(apiId, apiKey) {
   return "Basic " + btoa(`${apiId}:${apiKey}`);
@@ -65,6 +66,34 @@ function getBillingAddress(body) {
   return isValid ? address : null;
 }
 
+export function getPaymentAmount(body) {
+  const requestedSlots = body.tipoPessoa === "PJ" ? Number(body.vagasDesejadas) : 1;
+  if (!Number.isInteger(requestedSlots) || requestedSlots < 1) return null;
+  return (COURSE_AMOUNT_PER_SLOT * requestedSlots).toFixed(2);
+}
+
+export function buildIpagCustomer({
+  name,
+  businessName,
+  taxReceipt,
+  email,
+  phone,
+  personType,
+  billingAddress
+}) {
+  return {
+    name,
+    ...(personType === "PJ" ? { business_name: businessName } : {}),
+    cpf_cnpj: taxReceipt,
+    email,
+    phone,
+    // Payment Links document customer.address, while the hosted checkout
+    // exposes the same data as attributes.billing_address.
+    address: billingAddress,
+    billing_address: billingAddress
+  };
+}
+
 export async function handlePaymentLinkRequest(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, {
@@ -101,8 +130,9 @@ export async function handlePaymentLinkRequest(request, env) {
     if (!turnstile.ok) return jsonResponse({ error: turnstile.error }, turnstile.status);
 
     const name = String(body.name ?? body.fullName ?? "").trim();
+    const businessName = String(body.businessName ?? body.razaoSocial ?? "").trim();
     const taxReceipt = String(body.cpfCnpj ?? body.cpf ?? body.tax_receipt ?? "").trim();
-    const amount = "1000.00";
+    const amount = getPaymentAmount(body);
     const description =
       body.description || env.IPAG_DEFAULT_DESCRIPTION || "Inscrição - Centro de Treinamentos Full Gauge";
     const paymentMethod = normalizePaymentMethod(body.paymentMethod ?? body.formaPagamento);
@@ -113,7 +143,7 @@ export async function handlePaymentLinkRequest(request, env) {
     const email = String(body.email || "").trim();
     const phone = String(body.phone ?? "").replace(/\D/g, "");
     const billingAddress = getBillingAddress(body);
-    if (!name || !taxReceipt || !Number.isFinite(parsedAmount) || !email.includes("@") || phone.length < 10 || !billingAddress) {
+    if (!name || !taxReceipt || amount === null || !Number.isFinite(parsedAmount) || !email.includes("@") || phone.length < 10 || !billingAddress || (body.tipoPessoa === "PJ" && !businessName)) {
       return jsonResponse(
         { error: "Preencha nome, CPF/CNPJ, e-mail, telefone e endereço de cobrança válidos." },
         400
@@ -126,13 +156,15 @@ export async function handlePaymentLinkRequest(request, env) {
       description,
       additional_info: body.additionalInfo || "",
       expires_at: expiresAt,
-      customer: {
+      customer: buildIpagCustomer({
         name,
-        cpf_cnpj: taxReceipt,
+        businessName,
+        taxReceipt,
         email,
         phone,
-        address: billingAddress
-      },
+        personType: body.tipoPessoa,
+        billingAddress
+      }),
       checkout_settings: {
         payment_method: paymentMethod
       }

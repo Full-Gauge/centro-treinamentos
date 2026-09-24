@@ -1,3 +1,61 @@
+const POWER_AUTOMATE_WAIT_SECONDS = 60;
+
+function isTurmasPayload(data) {
+  return Boolean(data && Array.isArray(data.data));
+}
+
+function unwrapTurmasPayload(value, depth = 0) {
+  if (isTurmasPayload(value)) return value;
+  if (depth > 3 || value === null || value === undefined) return null;
+
+  if (typeof value === "string") {
+    try {
+      return unwrapTurmasPayload(JSON.parse(value), depth + 1);
+    } catch {
+      return null;
+    }
+  }
+
+  if (typeof value !== "object") return null;
+  for (const key of ["body", "response", "properties"]) {
+    const payload = unwrapTurmasPayload(value[key], depth + 1);
+    if (payload) return payload;
+  }
+  return null;
+}
+
+function isPendingPowerAutomateResponse(data, status) {
+  return status === 202 || data?.properties?.response?.status === "Waiting";
+}
+
+async function fetchTurmasFromPowerAutomate(targetUrl) {
+  const upstream = await fetch(targetUrl, {
+    headers: { Prefer: `wait=${POWER_AUTOMATE_WAIT_SECONDS}` }
+  });
+  const data = await upstream.json().catch(() => ({}));
+  const payload = unwrapTurmasPayload(data);
+
+  if (payload) return payload;
+
+  if (isPendingPowerAutomateResponse(data, upstream.status)) {
+    const location = upstream.headers.get("Location");
+    if (location) {
+      const completed = await fetch(location, {
+        headers: { Prefer: `wait=${POWER_AUTOMATE_WAIT_SECONDS}` }
+      });
+      const completedData = await completed.json().catch(() => ({}));
+      const completedPayload = unwrapTurmasPayload(completedData);
+      if (completed.ok && completedPayload) return completedPayload;
+    }
+
+    throw new Error(
+      `Power Automate não concluiu a consulta de turmas em ${POWER_AUTOMATE_WAIT_SECONDS}s.`
+    );
+  }
+
+  throw new Error("A resposta da consulta de turmas não possui o formato esperado.");
+}
+
 export async function handleTurmasRequest(request, env, ctx) {
   const cache = caches.default;
   const cacheKey = request;
@@ -16,10 +74,7 @@ export async function handleTurmasRequest(request, env, ctx) {
     }
 
     try {
-      const res = await fetch(targetUrl);
-      if (!res.ok) throw new Error(`Erro na API: ${res.status}`);
-      
-      const data = await res.json();
+      const data = await fetchTurmasFromPowerAutomate(targetUrl);
 
       response = new Response(JSON.stringify(data), {
         headers: {
@@ -43,3 +98,5 @@ export async function handleTurmasRequest(request, env, ctx) {
   }
   return response;
 }
+
+export { fetchTurmasFromPowerAutomate, isPendingPowerAutomateResponse, isTurmasPayload, unwrapTurmasPayload };

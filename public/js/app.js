@@ -20,6 +20,7 @@ const i18n = {
     previous: "Voltar",
     next: "Avançar",
     submit: "Enviar cadastro",
+    goToIpag: "Ir para o iPag",
     requiredLegend: "Campos com * são obrigatórios.",
     confirmTitle: "Confirmação",
     confirmCancel: "Cancelar",
@@ -31,12 +32,17 @@ const i18n = {
     },
     paymentReady: {
       title: "Pagamento necessário",
-      message: "Confira o valor e clique em Pagar agora. Sua inscrição será reservada e ficará aguardando a confirmação do pagamento.",
+      message: "Confira o valor e clique em Pagar agora. O cadastro será enviado somente após a confirmação do pagamento.",
       icon: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>'
     },
     paymentReserved: {
       title: "Inscrição reservada",
       message: "Seu cadastro foi recebido e sua vaga está reservada. Estamos aguardando a confirmação do pagamento.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg>'
+    },
+    paymentAwaiting: {
+      title: "Aguardando pagamento",
+      message: "Conclua o pagamento no iPag. O cadastro será enviado somente após a confirmação do pagamento.",
       icon: '<svg viewBox="0 0 24 24"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg>'
     },
     paymentWaiting: "Aguardando a confirmação do pagamento pelo iPag...",
@@ -66,6 +72,7 @@ const i18n = {
     waitingListPrompt: "Esta turma está sem vagas. Deseja entrar na lista de espera?",
     waitingListSelected: "Você será incluído na lista de espera e não precisará realizar pagamento.",
     waitingListRequired: "Escolha a lista de espera para continuar com uma turma sem vagas.",
+    noAvailableClasses: "Nenhuma turma com vagas disponíveis.",
     waitingListSuccess: {
       title: "Solicitação enviada com sucesso!",
       message: "Recebemos seu pedido para entrar na lista de espera. Nossa equipe entrará em contato quando houver disponibilidade.",
@@ -87,9 +94,15 @@ const i18n = {
     generatingPayment: "Gerando link de pagamento...",
     paymentError: "Não foi possível gerar o link de pagamento. Tente novamente.",
     humanVerificationRequired: "Confirme que você é humano para continuar.",
-    paymentPending: "Clique no botão abaixo para abrir o pagamento e concluir seu cadastro.",
+    paymentPending: "Clique no botão abaixo para abrir o pagamento. O cadastro será enviado após a confirmação.",
     courseAmount: "Valor do curso",
+    paymentSummary: "Resumo da inscrição",
+    selectedClass: "Turma",
+    requestedSlots: "Vagas desejadas",
+    amountPerSlot: "Valor por vaga",
+    totalAmount: "Total a pagar",
     paymentSecurity: "Pagamento seguro processado pelo iPag",
+    legalEntityTokenNotice: "Os tokens dos participantes serão liberados após a confirmação do pagamento.",
   },
   en: {
     brandEyebrow: "FULL GAUGE CONTROLS TRAINING CENTER",
@@ -111,6 +124,7 @@ const i18n = {
     previous: "Back",
     next: "Next",
     submit: "Submit registration",
+    goToIpag: "Go to iPag",
     requiredLegend: "Fields marked with * are required.",
     confirmTitle: "Confirmation",
     confirmCancel: "Cancel",
@@ -122,12 +136,17 @@ const i18n = {
     },
     paymentReady: {
       title: "Payment required",
-      message: "Check the amount and click Pay now. Your enrollment will be reserved while payment confirmation is pending.",
+      message: "Check the amount and click Pay now. The registration will be sent only after payment confirmation.",
       icon: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>'
     },
     paymentReserved: {
       title: "Enrollment reserved",
       message: "Your registration was received and your seat is reserved. We are waiting for payment confirmation.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg>'
+    },
+    paymentAwaiting: {
+      title: "Waiting for payment",
+      message: "Complete the payment on iPag. The registration will be sent only after payment confirmation.",
       icon: '<svg viewBox="0 0 24 24"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg>'
     },
     paymentWaiting: "Waiting for payment confirmation from iPag...",
@@ -157,6 +176,7 @@ const i18n = {
     waitingListPrompt: "This class has no available seats. Would you like to join the waiting list?",
     waitingListSelected: "You will be added to the waiting list and will not need to make a payment.",
     waitingListRequired: "Choose the waiting list option to continue with a class that has no available seats.",
+    noAvailableClasses: "No class with available seats.",
     waitingListSuccess: {
       title: "Request sent successfully!",
       message: "We received your waiting list request. Our team will contact you when a seat becomes available.",
@@ -178,9 +198,15 @@ const i18n = {
     generatingPayment: "Generating payment link...",
     paymentError: "Could not generate the payment link. Please try again.",
     humanVerificationRequired: "Please confirm that you are human to continue.",
-    paymentPending: "Click the button below to open the payment and complete your registration.",
+    paymentPending: "Click the button below to open the payment. The registration will be sent after confirmation.",
     courseAmount: "Course amount",
+    paymentSummary: "Registration summary",
+    selectedClass: "Class",
+    requestedSlots: "Requested seats",
+    amountPerSlot: "Amount per seat",
+    totalAmount: "Total to pay",
     paymentSecurity: "Secure payment processed by iPag",
+    legalEntityTokenNotice: "Participant tokens will be released after payment confirmation.",
   },
   es: {
     brandEyebrow: "CENTRO DE CAPACITACIÓN FULL GAUGE CONTROLS",
@@ -202,6 +228,7 @@ const i18n = {
     previous: "Volver",
     next: "Avanzar",
     submit: "Enviar registro",
+    goToIpag: "Ir a iPag",
     requiredLegend: "Los campos con * son obligatorios.",
     confirmTitle: "Confirmación",
     confirmCancel: "Cancelar",
@@ -213,12 +240,17 @@ const i18n = {
     },
     paymentReady: {
       title: "Pago necesario",
-      message: "Confirma el valor y haz clic en Pagar ahora. Tu inscripción quedará reservada mientras esperamos la confirmación del pago.",
+      message: "Confirma el valor y haz clic en Pagar ahora. El registro se enviará solo después de confirmar el pago.",
       icon: '<svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>'
     },
     paymentReserved: {
       title: "Inscripción reservada",
       message: "Recibimos tu registro y tu cupo está reservado. Estamos esperando la confirmación del pago.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg>'
+    },
+    paymentAwaiting: {
+      title: "Esperando el pago",
+      message: "Completa el pago en iPag. El registro se enviará solo después de confirmar el pago.",
       icon: '<svg viewBox="0 0 24 24"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"></path></svg>'
     },
     paymentWaiting: "Esperando la confirmación del pago por iPag...",
@@ -248,6 +280,7 @@ const i18n = {
     waitingListPrompt: "Esta clase no tiene cupos disponibles. ¿Desea entrar en la lista de espera?",
     waitingListSelected: "Será incluido en la lista de espera y no necesitará realizar el pago.",
     waitingListRequired: "Seleccione la lista de espera para continuar con una clase sin cupos.",
+    noAvailableClasses: "No hay clases con cupos disponibles.",
     waitingListSuccess: {
       title: "¡Solicitud enviada con éxito!",
       message: "Recibimos su solicitud para la lista de espera. Nuestro equipo se pondrá en contacto cuando haya disponibilidad.",
@@ -269,9 +302,15 @@ const i18n = {
     generatingPayment: "Generando enlace de pago...",
     paymentError: "No se pudo generar el enlace de pago. Inténtelo de nuevo.",
     humanVerificationRequired: "Confirma que eres una persona para continuar.",
-    paymentPending: "Haz clic en el botón para abrir el pago y completar tu registro.",
+    paymentPending: "Haz clic en el botón para abrir el pago. El registro se enviará después de la confirmación.",
     courseAmount: "Valor del curso",
+    paymentSummary: "Resumen de la inscripción",
+    selectedClass: "Clase",
+    requestedSlots: "Cupos deseados",
+    amountPerSlot: "Valor por cupo",
+    totalAmount: "Total a pagar",
     paymentSecurity: "Pago seguro procesado por iPag",
+    legalEntityTokenNotice: "Los tokens de los participantes se liberarán después de confirmar el pago.",
   },
 };
 
@@ -579,6 +618,7 @@ let turmasFromPartnerToken = null;
 let allTurmasOptions = [];
 let allEmpresaOptions = DEFAULT_EMPRESA_OPTIONS.slice();
 const COURSE_AMOUNT = 1000;
+const PAYMENT_WINDOW_NAME = "fgIpagPaymentWindow";
 let paymentStatusTimer = null;
 let paymentReference = "";
 let turnstileSiteKey = "";
@@ -598,6 +638,23 @@ function formatMessage(template, values = {}) {
   return String(template).replace(/\{(\w+)\}/g, (_, key) =>
     values[key] !== undefined ? values[key] : `{${key}}`
   );
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+}
+
+function getSelectedTurma() {
+  const field = STEPS.find((step) => step.fields.some((item) => item.id === "turmas"))?.fields.find((item) => item.id === "turmas");
+  return field?.options?.find((option) => typeof option === "object" && option.value === formData.turmas) || null;
+}
+
+function getRequestedSlots() {
+  return formData.tipoPessoa === "PJ" ? Number(formData.vagasDesejadas) || 0 : 1;
+}
+
+function getPaymentAmount() {
+  return COURSE_AMOUNT * getRequestedSlots();
 }
 
 function isMobileDevice() {
@@ -767,6 +824,7 @@ async function lookupCep(value) {
     setAddressFieldValue("enderecoCobranca", data.logradouro);
     setAddressFieldValue("bairroCobranca", data.bairro);
     setAddressFieldValue("cidadeCobranca", data.localidade);
+    setAddressFieldValue("paisCobranca", "BR");
     const state = document.getElementById("estadoCobranca");
     if (data.uf && state && (!state.value || cepAutofillValues.estadoCobranca === state.value)) {
       state.value = data.uf;
@@ -970,10 +1028,16 @@ function renderFields() {
   }
 
   const paymentStepHtml = currentStep === STEPS.length - 1
-    ? `<div class="payment-step-summary full">
-        <div class="payment-step-summary-label">${t("courseAmount")}</div>
-        <strong>${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(COURSE_AMOUNT)}</strong>
+    ? `<div class="payment-step-summary payment-step-summary--detailed full">
+        <div class="payment-step-summary-heading">${t("paymentSummary")}</div>
+        <div class="payment-step-summary-grid">
+          <div><span>${t("selectedClass")}</span><strong>${escapeHtml(getSelectedTurma()?.label || "-")}</strong></div>
+          <div><span>${t("requestedSlots")}</span><strong>${getRequestedSlots()}</strong></div>
+          <div><span>${t("amountPerSlot")}</span><strong>${formatCurrency(COURSE_AMOUNT)}</strong></div>
+          <div class="payment-step-total"><span>${t("totalAmount")}</span><strong>${formatCurrency(getPaymentAmount())}</strong></div>
+        </div>
         <p>${t("paymentSecurity")}</p>
+        ${formData.tipoPessoa === "PJ" ? `<p class="payment-legal-entity-notice">${t("legalEntityTokenNotice")}</p>` : ""}
       </div>
       ${turnstileSiteKey ? `<div class="turnstile-payment-wrap full"><div id="turnstile-payment-widget" class="cf-turnstile" data-sitekey="${escapeHtml(turnstileSiteKey)}"></div></div>` : ""}`
     : "";
@@ -986,7 +1050,7 @@ function renderFields() {
       if (f.id === "vagasDesejadas" && !formData.turmas) return "";
       if (f.id === "vagasDesejadas" && selectedTurmaHasNoSeats()) return "";
       if (f.id === "estrangeiro" && formData.tipoPessoa === "PJ") return "";
-      if (f.id === "empresa" && formData.tipoPessoa === "PJ") return "";
+      if (f.id === "empresa" && formData.tipoPessoa === "PF") return "";
       const fieldType = (f.id === "empresa" && formData.relacao === "GERAL") ? "text" : f.type;
 
       const isCnpjField = f.id === "cpf" && formData.tipoPessoa === "PJ";
@@ -998,7 +1062,7 @@ function renderFields() {
       const fieldLabel = f.id === "cpf" && formData.estrangeiro
         ? label.replace(/\s*\*$/, "")
         : label;
-      const val = f.id === "relacao"
+      let val = f.id === "relacao"
         ? (formData.relacao === "PARCEIRO" ? "PARCEIRO" : (formData.tipoPessoa || ""))
         : (formData[f.id] ?? "");
       const fullClass = f.full ? "full" : "";
@@ -1066,7 +1130,24 @@ function renderFields() {
         }
 
         const placeholder = isLoading ? t("loading") : t("selectOption");
-        const opts = (f.options || [])
+        let selectOptions = f.options || [];
+        if (f.id === "turmas" && formData.tipoPessoa === "PJ") {
+          selectOptions = selectOptions.filter((option) => typeof option === "object" && Number(option.availableSlots) > 0);
+        }
+        if (f.id === "vagasDesejadas" && formData.tipoPessoa === "PJ" && formData.turmas) {
+          const selectedClass = (STEPS.find((step) => step.fields.some((item) => item.id === "turmas"))?.fields.find((item) => item.id === "turmas")?.options || [])
+            .find((option) => typeof option === "object" && option.value === formData.turmas);
+          const availableSlots = Math.max(0, Number(selectedClass?.availableSlots || 0));
+          selectOptions = Array.from({ length: availableSlots }, (_, index) => ({
+            value: String(index + 1),
+            label: `${index + 1} ${index === 0 ? "vaga" : "vagas"}`
+          }));
+          if (Number(val) > availableSlots) {
+            formData.vagasDesejadas = "";
+            val = "";
+          }
+        }
+        const opts = selectOptions
           .map((o) => {
             const isObj = typeof o === "object" && o !== null;
             const optVal = isObj ? o.value : o;
@@ -1078,11 +1159,11 @@ function renderFields() {
           })
           .join("");
         const selectedTurma = f.id === "turmas"
-          ? (f.options || []).find((item) => typeof item === "object" && item.value === val)
+          ? selectOptions.find((item) => typeof item === "object" && item.value === val)
           : null;
         const selectedAvailability = selectedTurma ? formatTurmaAvailability(selectedTurma) : null;
         const turmaAvailability = f.id === "turmas"
-          ? `<div id="turma-availability-helper" class="turma-availability-panel${selectedAvailability ? ` turma-availability-panel--${selectedAvailability.state}` : ""}" aria-live="polite">${selectedAvailability ? escapeHtml(selectedAvailability.text) : "Selecione uma turma para consultar as vagas."}</div>`
+          ? `<div id="turma-availability-helper" class="turma-availability-panel${selectedAvailability ? ` turma-availability-panel--${selectedAvailability.state}` : ""}" aria-live="polite">${selectedAvailability ? escapeHtml(selectedAvailability.text) : (formData.tipoPessoa === "PJ" && !selectOptions.length ? t("noAvailableClasses") : "Selecione uma turma para consultar as vagas.")}</div>`
           : "";
         const waitingList = f.id === "turmas" && selectedAvailability?.state === "empty"
           ? `<div class="waiting-list-card" id="waiting-list-card">
@@ -1251,6 +1332,7 @@ function renderFields() {
         // Atualiza a disponibilidade sem ocupar a tela com módulos.
         formData[f.id] = v;
         formData.listaEspera = false;
+        formData.vagasDesejadas = "";
         updateTurmaAvailabilityMessage(v);
         render();
         return;
@@ -1388,7 +1470,7 @@ function renderButtons() {
       submitBtn.innerHTML = `<span class="spinner" aria-hidden="true"></span><span class="btn-label">${t("loading")}</span>`;
     } else {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = `<span class="btn-label">${t("submit")}</span><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 5 5L20 6"></path></svg>`;
+      submitBtn.innerHTML = `<span class="btn-label">${isLast ? t("goToIpag") : t("submit")}</span><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 5 5L20 6"></path></svg>`;
     }
     
     // Desabilita o botão se houver checkboxes obrigatórios não marcados (termos)
@@ -1728,6 +1810,25 @@ function closeConfirm() {
   pendingAction = null;
 }
 
+function resetRegistrationFlow() {
+  stopPaymentStatusPolling();
+  resetTurnstileWidget();
+  clearStatus();
+  formData = {};
+  currentStep = 0;
+  paymentReference = "";
+  waitlistSubmitted = false;
+  isSubmittingForm = false;
+  isValidatingToken = false;
+  turmasFromPartnerToken = null;
+  if (cepLookupTimer) clearTimeout(cepLookupTimer);
+  cepLookupTimer = null;
+  cepLookupSequence += 1;
+  updateTurmasFieldOptions();
+  render();
+  document.getElementById("statusMessageWrapper")?.style.setProperty("display", "none");
+}
+
 // ─── Submit ───────────────────────────────────────────────────────────────────
 async function handleSubmit() {
   if (!validateCurrentStep()) {
@@ -1735,10 +1836,11 @@ async function handleSubmit() {
     return;
   }
 
+  const paymentWindow = window.open("about:blank", PAYMENT_WINDOW_NAME);
   isSubmittingForm = true;
   renderButtons(); // Mostra o loader no botão de submit
 
-  await handleSuccessfulSubmission();
+  await handleSuccessfulSubmission(paymentWindow);
   isSubmittingForm = false;
   renderButtons();
 }
@@ -1756,7 +1858,8 @@ async function generatePaymentLink() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: formData.tipoPessoa === "PJ" ? formData.razaoSocial : formData.fullName,
+        name: formData.fullName,
+        businessName: formData.tipoPessoa === "PJ" ? formData.razaoSocial : "",
         cpfCnpj: formData.cpf,
         email: formData.email,
         phone: formData.telefone,
@@ -1777,13 +1880,15 @@ async function generatePaymentLink() {
       })
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.link) {
+    const paymentLink = normalizePaymentLink(data.link);
+    if (!res.ok || !paymentLink) {
       resetTurnstileWidget();
       return null;
     }
     return {
-      link: data.link,
-      reference: data.paymentReference || data.externalCode || ""
+      link: paymentLink,
+      reference: data.paymentReference || data.externalCode || "",
+      amount: Number(data.amount) || getPaymentAmount()
     };
   } catch {
     resetTurnstileWidget();
@@ -1798,10 +1903,52 @@ function resetTurnstileWidget() {
   }
 }
 
+function normalizePaymentLink(value) {
+  try {
+    const url = new URL(String(value || ""), window.location.origin);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function openPaymentLink(link, preOpenedWindow = null) {
+  const paymentUrl = normalizePaymentLink(link);
+  if (!paymentUrl) return false;
+
+  if (preOpenedWindow && !preOpenedWindow.closed) {
+    try {
+      // Reutiliza a janela nomeada aberta durante o clique. Isso é mais confiável
+      // no Chrome do que alterar a referência de uma janela about:blank após o fetch.
+      const navigatedWindow = window.open(paymentUrl, PAYMENT_WINDOW_NAME);
+      if (!navigatedWindow) throw new Error("Não foi possível navegar para o iPag.");
+      navigatedWindow.focus();
+      window.setTimeout(() => {
+        try {
+          navigatedWindow.focus();
+        } catch {
+          // A janela pode ter sido fechada pelo usuário durante a navegação.
+        }
+      }, 250);
+      return true;
+    } catch {
+      try {
+        preOpenedWindow.close();
+      } catch {
+        // Usa a abertura direta abaixo como fallback.
+      }
+    }
+  }
+
+  const paymentWindow = window.open(paymentUrl, PAYMENT_WINDOW_NAME, "noopener,noreferrer");
+  paymentWindow?.focus();
+  return Boolean(paymentWindow);
+}
+
 // Injeta o botão de pagamento do iPag na mensagem de sucesso
-function renderPaymentLinkButton(link, reference) {
+function renderPaymentLinkButton(link, reference, amount = getPaymentAmount()) {
   const textWrapper = document.querySelector("#statusMessage .status-text-wrapper");
-  if (!textWrapper || !link) return;
+  if (!textWrapper || !link) return null;
 
   const restartBtn = textWrapper.querySelector(".status-restart-btn");
 
@@ -1812,7 +1959,7 @@ function renderPaymentLinkButton(link, reference) {
     <div class="payment-summary-value">${new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL"
-    }).format(COURSE_AMOUNT)}</div>
+    }).format(amount)}</div>
     <div class="payment-summary-note">${t("paymentSecurity")}</div>
   `;
 
@@ -1829,23 +1976,24 @@ function renderPaymentLinkButton(link, reference) {
   payButton.style.display = "inline-flex";
   payButton.innerHTML = `<span class="btn-label">${t("payNow")}</span><span class="btn-icon" aria-hidden="true">↗</span>`;
   payButton.addEventListener("click", (event) => {
-    event.preventDefault();
-    window.open(link, "_blank", "noopener,noreferrer");
-    submitRegistrationAfterPaymentClick(payButton, reference);
+    const opened = openPaymentLink(link);
+    if (opened) event.preventDefault();
+    startPaymentConfirmation(payButton, reference);
   });
 
   textWrapper.insertBefore(paymentSummary, restartBtn);
   textWrapper.insertBefore(hint, restartBtn);
   textWrapper.insertBefore(payButton, restartBtn);
+  return payButton;
 }
 
-function updatePaymentReservationStatus(payButton) {
+function updatePaymentWaitingStatus(payButton) {
   const title = document.querySelector("#statusMessage .status-title");
   const description = document.querySelector("#statusMessage .status-description");
   const hint = document.querySelector("#statusMessage .payment-waiting-hint");
 
-  if (title) title.textContent = t("paymentReserved").title;
-  if (description) description.textContent = t("paymentReserved").message;
+  if (title) title.textContent = t("paymentAwaiting").title;
+  if (description) description.textContent = t("paymentAwaiting").message;
   if (hint) hint.textContent = t("paymentWaiting");
   if (payButton) {
     payButton.style.pointerEvents = "none";
@@ -1861,7 +2009,7 @@ function stopPaymentStatusPolling() {
   }
 }
 
-function startPaymentStatusPolling(reference) {
+function startPaymentStatusPolling(reference, payButton) {
   stopPaymentStatusPolling();
 
   const poll = async () => {
@@ -1871,7 +2019,7 @@ function startPaymentStatusPolling(reference) {
 
       if (response.ok && data.confirmed === true) {
         stopPaymentStatusPolling();
-        showStatus(i18n[currentLang].submitSuccess, "success", true);
+        await submitRegistrationAfterPayment(payButton, reference);
         return;
       }
     } catch {
@@ -1884,8 +2032,50 @@ function startPaymentStatusPolling(reference) {
   poll();
 }
 
-async function submitRegistrationAfterPaymentClick(payButton, reference) {
-  updatePaymentReservationStatus(payButton);
+function startPaymentConfirmation(payButton, reference) {
+  updatePaymentWaitingStatus(payButton);
+  startPaymentStatusPolling(reference, payButton);
+}
+
+function showPaymentAwaitingScreen(paymentUrl) {
+  const wizardContent = document.getElementById("wizardContent");
+
+  if (wizardContent) wizardContent.style.display = "none";
+  showStatus(i18n[currentLang].paymentAwaiting, "success", true);
+
+  const refreshedTextWrapper = document.querySelector("#statusMessage .status-text-wrapper");
+  if (!refreshedTextWrapper) return;
+
+  const loader = document.createElement("div");
+  loader.className = "payment-awaiting-loader-wrap";
+  loader.innerHTML = `
+    <span class="payment-awaiting-loader" aria-hidden="true"></span>
+    <span>${t("paymentWaiting")}</span>
+  `;
+  const restartBtn = refreshedTextWrapper.querySelector(".status-restart-btn");
+  refreshedTextWrapper.insertBefore(loader, restartBtn);
+
+  const paymentLink = document.createElement("a");
+  paymentLink.href = paymentUrl;
+  paymentLink.target = "_blank";
+  paymentLink.rel = "noopener noreferrer";
+  paymentLink.className = "primary-btn payment-awaiting-link";
+  paymentLink.innerHTML = `<span class="btn-label">${t("payNow")}</span><span class="btn-icon" aria-hidden="true">↗</span>`;
+  paymentLink.addEventListener("click", (event) => {
+    const opened = openPaymentLink(paymentUrl);
+    if (opened) event.preventDefault();
+  });
+  refreshedTextWrapper.insertBefore(paymentLink, restartBtn);
+
+  if (formData.tipoPessoa === "PJ") {
+    const notice = document.createElement("p");
+    notice.className = "payment-awaiting-legal-entity-notice";
+    notice.textContent = t("legalEntityTokenNotice");
+    refreshedTextWrapper.insertBefore(notice, restartBtn);
+  }
+}
+
+async function submitRegistrationAfterPayment(payButton, reference) {
   payButton.style.pointerEvents = "none";
   payButton.setAttribute("aria-disabled", "true");
   payButton.textContent = t("sending");
@@ -1902,7 +2092,7 @@ async function submitRegistrationAfterPaymentClick(payButton, reference) {
     });
 
     if (!response.ok) throw new Error("Falha ao enviar cadastro");
-    startPaymentStatusPolling(reference);
+    showStatus(i18n[currentLang].submitSuccess, "success", true);
   } catch {
     showStatus(t("submitError"), "error");
   }
@@ -1931,7 +2121,7 @@ async function handleWaitlistSubmission() {
 }
 
 // Mantém a etapa de pagamento visível na tela principal após o cadastro.
-async function handleSuccessfulSubmission() {
+async function handleSuccessfulSubmission(paymentWindow = null) {
   const wizardContent = document.getElementById("wizardContent");
   const statusMessageWrapper = document.getElementById("statusMessageWrapper");
 
@@ -1946,7 +2136,18 @@ async function handleSuccessfulSubmission() {
 
       if (payment) {
         paymentReference = payment.reference;
-        renderPaymentLinkButton(payment.link, payment.reference);
+        const payButton = renderPaymentLinkButton(payment.link, payment.reference, payment.amount);
+        if (paymentWindow && payButton) {
+          const opened = openPaymentLink(payment.link, paymentWindow);
+          if (!opened) {
+            paymentWindow.close();
+          } else {
+            showPaymentAwaitingScreen(payment.link);
+          }
+          startPaymentConfirmation(payButton, payment.reference);
+        } else if (paymentWindow) {
+          paymentWindow.close();
+        }
       } else {
         const textWrapper = document.querySelector("#statusMessage .status-text-wrapper");
         if (textWrapper) {
@@ -2112,11 +2313,7 @@ async function init() {
     openConfirm(
       t("clearFormConfirm"),
       () => {
-        formData = {};
-        turmasFromPartnerToken = null;
-        updateTurmasFieldOptions();
-        currentStep = 0;
-        render();
+        resetRegistrationFlow();
         closeConfirm();
       }
     );
@@ -2170,18 +2367,38 @@ async function init() {
         btn.innerHTML = `<span class="debug-fill-icon" aria-hidden="true">✦</span><span>${label}</span>`;
         btn.addEventListener('click', () => {
           const step = STEPS[currentStep];
-          const samples = {
-            relacao: relType === "PARCEIRO" ? "PARCEIRO" : "GERAL",
+          const isPartner = relType === "PARCEIRO";
+          const isLegalEntity = relType === "PJ";
+          formData = {
+            ...formData,
+            relacao: relType,
             tipoPessoa: relType,
-            token: relType === "PARCEIRO" ? "FULLGAUGE-6EY380IL10CCP3ZANSZZ" : "Full Gauge Controls",
-            fullName: "Usuário de Teste FG",
-            cpf: "956.863.230-11",
-            empresa: relType === "PARCEIRO" ? "PAR-0001" : "fqwfqwfqwf",
+            listaEspera: false,
+            vagasDesejadas: ""
+          };
+          const samples = {
+            relacao: relType,
+            tipoPessoa: relType,
+            token: isPartner ? "FULLGAUGE-6EY380IL10CCP3ZANSZZ" : "",
+            fullName: isLegalEntity ? "Responsável de Teste FG" : "Usuário de Teste FG",
+            razaoSocial: isLegalEntity ? "Empresa de Teste FG Ltda" : "",
+            cpf: isLegalEntity ? "04.252.011/0001-10" : "956.863.230-11",
+            empresa: "PAR-0002",
             segmento: "Refrigeração",
             atuacao: "Industrial",
             cidade: "Canoas",
             telefone: "(51) 98888-7777",
-            email: "ian.campillay@fullgauge.com.br",
+            email: "teste.debug@fullgauge.com.br",
+            cepCobranca: "92010-000",
+            enderecoCobranca: "Rua dos Testes",
+            numeroEnderecoCobranca: "100",
+            bairroCobranca: "Centro",
+            complementoCobranca: "Sala 2",
+            cidadeCobranca: "Canoas",
+            estadoCobranca: "RS",
+            paisCobranca: "BR",
+            vagasDesejadas: "1",
+            formaPagamento: "pix",
             termImage: true,
             termCosts: true,
           };
@@ -2193,7 +2410,11 @@ async function init() {
             if (samples[f.id] !== undefined) {
               formData[f.id] = samples[f.id];
             } else if (f.type === 'select' && f.options && f.options.length > 0) {
-              const opt = f.options[0];
+              const options = f.id === "turmas" && isLegalEntity
+                ? f.options.filter((option) => typeof option === "object" && Number(option.availableSlots) > 0)
+                : f.options;
+              const opt = options[0];
+              if (!opt) return;
               const val = (typeof opt === 'object') ? opt.value : opt;
               formData[f.id] = f.multiple ? [val] : val;
             }

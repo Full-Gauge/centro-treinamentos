@@ -113,7 +113,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 - `NAME_VALIDATION_WEBHOOK_URL`
 - `URL_VALIDATE_CPF_MODULOS`
 - `IPAG_BASE_URL` (opcional)
-- valor do link iPag temporariamente fixado em `R$ 1.000,00` no Worker
+- valor do link iPag: `R$ 1.000,00` por vaga; PJ paga `vagasDesejadas × R$ 1.000,00`
 - `IPAG_DEFAULT_DESCRIPTION` (opcional)
 - `IPAG_LINK_EXPIRES_DAYS` (opcional; padrão 7)
 - `JWT_SECRET`
@@ -125,7 +125,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 
 ### Fluxo do checkout
 
-Após aceitar os termos, PF e PJ escolhem Pix ou cartão e recebem um link iPag de R$ 1.000,00. Ao clicar no link, o cadastro é enviado e a inscrição fica reservada como pendente. A tela consulta `GET /api/payment-status` enquanto aguarda o webhook `POST /api/webhooks/ipag/payment-confirmed`.
+Após aceitar os termos, PF e PJ escolhem Pix ou cartão e recebem um link iPag. PF paga uma vaga; PJ paga `vagasDesejadas × R$ 1.000,00`. Ao abrir o link, a tela aguarda o pagamento e consulta `GET /api/payment-status`. Somente após a confirmação pelo webhook `POST /api/webhooks/ipag/payment-confirmed` o cadastro é enviado para `/api/register`.
 
 O webhook valida HMAC-SHA256, `TransactionCaptured`, status `8`/`CAPTURED` e encaminha ao Power Automate somente `event`, `transaction_uuid`, `name`, `email`, `order_id`, `amount`, `status`, `payment_method`, `installments`, `captured_at` e `acquirer`. A inscrição só aparece como realizada após o status `confirmed`.
 

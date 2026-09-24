@@ -47,6 +47,27 @@ export async function handleIpagPaymentStatusRequest(request, env) {
       if (event?.status === "failed") {
         return jsonResponse({ success: true, status: "failed", confirmed: false });
       }
+
+      // O iPag pode confirmar usando o order_id LINK-* sem devolver o
+      // external_code FG-* criado pelo portal.
+      const order = await env.PAYMENTS_DB
+        .prepare(
+          "SELECT status, transaction_uuid, order_id, payment_reference, paid_at FROM payment_orders WHERE payment_reference = ? LIMIT 1"
+        )
+        .bind(reference)
+        .first();
+
+      if (order?.status === "paid") {
+        return jsonResponse({
+          success: true,
+          status: "confirmed",
+          confirmed: true,
+          transactionUuid: order.transaction_uuid,
+          orderId: order.order_id,
+          paymentReference: order.payment_reference,
+          confirmedAt: order.paid_at
+        });
+      }
     }
 
     if (!env.URL_SHORTENER_KV) {

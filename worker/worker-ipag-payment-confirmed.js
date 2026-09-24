@@ -163,19 +163,6 @@ export async function handleIpagPaymentConfirmed(request, env) {
   }
 
   const powerAutomateUrl = env.POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL;
-  if (!powerAutomateUrl) {
-    return jsonResponse(
-      { success: false, error: "Payment confirmation forwarding is not configured" },
-      500
-    );
-  }
-
-  if (!env.POWER_AUTOMATE_WEBHOOK_TOKEN) {
-    return jsonResponse(
-      { success: false, error: "Power Automate webhook token is not configured" },
-      500
-    );
-  }
 
   const rawBody = await request.text();
   const receivedSignature = request.headers.get("X-Ipag-Signature");
@@ -214,9 +201,6 @@ export async function handleIpagPaymentConfirmed(request, env) {
     return jsonResponse({ success: false, error: "Invalid payment confirmation event" }, 400);
   }
 
-  const powerAutomateHeaders = requirePowerAutomateHeaders(env);
-  if (powerAutomateHeaders.error) return powerAutomateHeaders.error;
-
   let eventClaim;
   try {
     eventClaim = await claimPaymentEvent(env, details);
@@ -237,6 +221,54 @@ export async function handleIpagPaymentConfirmed(request, env) {
       `[IPAG] TransactionCaptured already processing transactionUuid=${details.transactionUuid}`
     );
     return jsonResponse({ success: false, error: "Payment already processing" }, 409);
+  }
+
+  // Confirma localmente antes de depender do Power Automate. Assim, o checkout
+  // consegue sair de pending mesmo quando o fluxo de e-mail estiver indisponível.
+  try {
+    const matchedPaymentReference = await markPaymentOrderPaid(env, details);
+    console.log(
+      `[IPAG] Local payment confirmation matched=${Boolean(matchedPaymentReference)} transactionUuid=${details.transactionUuid} orderId=${details.orderId}`
+    );
+
+    const paymentReferences = getPaymentReferences(details);
+    if (env.URL_SHORTENER_KV && paymentReferences.length) {
+      const confirmation = JSON.stringify({
+        status: "confirmed",
+        transactionId: details.transactionId,
+        transactionUuid: details.transactionUuid,
+        orderId: details.orderId,
+        paymentLinkExternalCode: details.paymentLinkExternalCode,
+        confirmedAt: new Date().toISOString()
+      });
+
+      await Promise.all(
+        paymentReferences.map((paymentReference) =>
+          env.URL_SHORTENER_KV.put(`ipag-payment:${paymentReference}`, confirmation, {
+            expirationTtl: 60 * 60 * 24 * 7
+          })
+        )
+      );
+    }
+  } catch (error) {
+    console.error(
+      `[IPAG] Failed to persist local payment confirmation transactionUuid=${details.transactionUuid} error=${error?.message || "database error"}`
+    );
+    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
+    return jsonResponse({ success: false, error: "Payment confirmation persistence failed" }, 503);
+  }
+
+  if (!powerAutomateUrl || !env.POWER_AUTOMATE_WEBHOOK_TOKEN) {
+    console.error("[IPAG] Payment confirmed locally but Power Automate forwarding is not configured");
+    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
+    return jsonResponse({ success: true, confirmed: true, forwarded: false });
+  }
+
+  const powerAutomateHeaders = requirePowerAutomateHeaders(env);
+  if (powerAutomateHeaders.error) {
+    console.error("[IPAG] Payment confirmed locally but Power Automate headers are not configured");
+    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
+    return jsonResponse({ success: true, confirmed: true, forwarded: false });
   }
 
   const forwardedHeaders = new Headers(powerAutomateHeaders.headers);
@@ -265,40 +297,6 @@ export async function handleIpagPaymentConfirmed(request, env) {
         "completed",
         new Date().toISOString()
       );
-
-      try {
-        await markPaymentOrderPaid(env, details);
-      } catch (error) {
-        console.error(
-          `[IPAG] Payment event completed but local order update failed transactionUuid=${details.transactionUuid} error=${error?.message || "database error"}`
-        );
-      }
-
-      const paymentReferences = getPaymentReferences(details);
-      if (env.URL_SHORTENER_KV && paymentReferences.length) {
-        const confirmation = JSON.stringify({
-          status: "confirmed",
-          transactionId: details.transactionId,
-          transactionUuid: details.transactionUuid,
-          orderId: details.orderId,
-          paymentLinkExternalCode: details.paymentLinkExternalCode,
-          confirmedAt: new Date().toISOString()
-        });
-
-        try {
-          await Promise.all(
-            paymentReferences.map((paymentReference) =>
-              env.URL_SHORTENER_KV.put(`ipag-payment:${paymentReference}`, confirmation, {
-                expirationTtl: 60 * 60 * 24 * 7
-              })
-            )
-          );
-        } catch (error) {
-          console.error(
-            `[IPAG] Payment confirmed but status cache failed transactionUuid=${details.transactionUuid} error=${error?.message || "KV error"}`
-          );
-        }
-      }
 
       console.log(
         `[IPAG] TransactionCaptured forwarded successfully transactionId=${details.transactionId} orderId=${details.orderId}`

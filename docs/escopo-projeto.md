@@ -175,17 +175,17 @@ Pontos principais:
 2. Preenche cadastro, turma, módulos e, para PJ, vagas desejadas
 3. Aceita os termos
 4. PF/PJ escolhe Pix ou cartão
-5. Worker cria o link de R$ 1.000,00 no iPag
+5. Worker calcula o total (`R$ 1.000,00` por vaga) e cria o link no iPag
 6. Cliente clica em "Pagar agora"
-7. Worker envia o cadastro e a tela mostra "Inscrição reservada"
-8. Tela consulta GET /api/payment-status a cada 5 segundos
-9. iPag envia POST /api/webhooks/ipag/payment-confirmed
-10. Worker valida assinatura, evento e status capturado
-11. Worker registra a confirmação e envia o evento ao Power Automate
-12. Tela recebe status confirmed e mostra "Inscrição realizada com sucesso"
+7. Tela abre o checkout iPag e consulta GET /api/payment-status a cada 5 segundos
+8. iPag envia POST /api/webhooks/ipag/payment-confirmed
+9. Worker valida assinatura, evento e status capturado
+10. Worker registra a confirmação e envia o evento ao Power Automate
+11. Frontend envia o cadastro para /api/register somente após `confirmed`
+12. Tela mostra "Inscrição realizada com sucesso"
 ```
 
-O clique no link não confirma o pagamento. Ele apenas reserva a inscrição e inicia a espera. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`). Parceiros não passam pelo checkout pago.
+O clique no link não envia o cadastro nem confirma o pagamento. Ele apenas inicia a espera pelo pagamento. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`); somente então o cadastro é enviado. Parceiros não passam pelo checkout pago.
 
 A tabela `payment_orders` mantém a reserva/cadastro local e usa `payment_reference` para relacionar o link, o cadastro e o pagamento. A tabela `payment_events` permanece exclusiva para idempotência do webhook.
 
@@ -273,7 +273,7 @@ Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` 
 - `URL_VALIDATE_CPF_MODULOS`
 - `IPAG_BASE_URL` (opcional; padrão `https://sandbox.ipag.com.br`)
 - `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS` (opcionais do link iPag)
-- o valor do link iPag está temporariamente fixado em `R$ 1.000,00` no Worker
+- o valor do link iPag é `R$ 1.000,00` por vaga; para PJ, o total é `vagasDesejadas × R$ 1.000,00`
 
 O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Para o Power Automate, envia somente `event`, `transaction_uuid`, `name`, `email`, `order_id`, `amount`, `status`, `payment_method`, `installments`, `captured_at` e `acquirer`, além dos headers `x-api-key` e `X-CT-Webhook-Token`. Retorna `200` somente para respostas `2xx` do Power Automate; falhas de encaminhamento retornam `502` para permitir retry do iPag.
 

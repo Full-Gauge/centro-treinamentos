@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pedidos | Centro de Treinamentos</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .admin-shell { width: min(1400px, 94vw); margin: 2rem auto; }
+    .admin-card { background: var(--panel); border: 1px solid var(--line-200); border-radius: 20px; padding: 1.5rem; box-shadow: var(--shadow-1); }
+    .admin-toolbar { display: flex; justify-content: space-between; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+    .admin-toolbar h1 { margin: 0; }
+    .admin-login { max-width: 480px; margin: 12vh auto; }
+    .admin-login label { display: block; margin-bottom: .4rem; }
+    .admin-login input { width: 100%; margin-bottom: .8rem; }
+    .admin-table-wrap { overflow-x: auto; }
+    .admin-table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    .admin-table th, .admin-table td { text-align: left; padding: .8rem .65rem; border-bottom: 1px solid var(--line-200); vertical-align: top; }
+    .admin-table th { color: var(--ink-500); font-size: .78rem; text-transform: uppercase; }
+    .admin-status { display: inline-flex; padding: .25rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+    .status-paid, .status-sent { color: #087443; background: #dff8eb; }
+    .status-pending, .status-received { color: #8b5a00; background: #fff1c9; }
+    .status-inconsistent { color: #6b4a00; background: #ffe3a3; }
+    .status-failed { color: #9b2525; background: #ffe0e0; }
+    body[data-theme="dark"] .status-paid, body[data-theme="dark"] .status-sent { color: #b7f5d0; background: #125a3b; }
+    body[data-theme="dark"] .status-pending, body[data-theme="dark"] .status-received { color: #ffe0a0; background: #604812; }
+    body[data-theme="dark"] .status-inconsistent { color: #ffe0a0; background: #604812; }
+    body[data-theme="dark"] .status-failed { color: #ffc0c0; background: #632525; }
+    .admin-error { color: var(--danger); margin: .8rem 0; }
+    .muted { color: var(--ink-500); font-size: .82rem; }
+  </style>
+</head>
+<body data-theme="light">
+  <main class="admin-shell">
+    <section id="loginCard" class="admin-card admin-login">
+      <p class="eyebrow">Área restrita</p>
+      <h1>Pedidos</h1>
+      <p class="muted">Informe o token administrativo do ambiente.</p>
+      <form id="loginForm">
+        <label for="adminToken">Token de acesso</label>
+        <input id="adminToken" type="password" autocomplete="current-password" required>
+        <button class="primary-btn" type="submit">Entrar</button>
+      </form>
+      <p id="loginError" class="admin-error" hidden></p>
+    </section>
+
+    <section id="ordersCard" class="admin-card" hidden>
+      <div class="admin-toolbar">
+        <div><p class="eyebrow">Operação</p><h1>Pedidos</h1></div>
+        <div>
+          <button id="refreshBtn" class="primary-btn" type="button">Atualizar</button>
+          <button id="logoutBtn" class="ghost-btn" type="button">Sair</button>
+        </div>
+      </div>
+      <p id="ordersError" class="admin-error" hidden></p>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Turma</th><th>Pagamento</th><th>Webhook</th><th>Power Automate</th><th>Atualizado</th></tr></thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script>
+    const tokenKey = "ct-admin-token";
+    const loginCard = document.getElementById("loginCard");
+    const ordersCard = document.getElementById("ordersCard");
+    const loginError = document.getElementById("loginError");
+    const ordersError = document.getElementById("ordersError");
+    const labels = { paid: "Pago", pending: "Aguardando", received: "Recebido", sent: "Enviado", inconsistent: "Executado / retorno 502", failed: "Falha", not_sent: "Não enviado", link_pending: "Link pendente", pending_payment: "Aguardando pagamento" };
+    const esc = (value) => String(value ?? "").replace(/[&<>\"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]));
+    const status = (value) => `<span class="admin-status status-${esc(value)}">${esc(labels[value] || value || "-")}</span>`;
+    const date = (value) => value ? new Date(value.replace(" ", "T")).toLocaleString("pt-BR") : "-";
+    async function loadOrders() {
+      const token = sessionStorage.getItem(tokenKey);
+      if (!token) return showLogin();
+      ordersError.hidden = true;
+      const response = await fetch("/api/admin/orders", { headers: { Authorization: `Bearer ${token}` } });
+      if (response.status === 401) { sessionStorage.removeItem(tokenKey); loginError.textContent = "Token inválido."; loginError.hidden = false; return showLogin(); }
+      if (!response.ok) throw new Error("Não foi possível carregar os pedidos.");
+      const data = await response.json();
+      document.getElementById("ordersBody").innerHTML = data.orders.map((order) => `<tr><td><strong>${esc(order.orderId || order.paymentReference)}</strong><br><span class="muted">${esc(order.paymentReference)}</span></td><td>${esc(order.name)}<br><span class="muted">${esc(order.email)}</span></td><td>${esc(order.classId || "-")}<br><span class="muted">${esc(order.desiredSlots || 1)} vaga(s)</span></td><td>${status(order.paymentStatus)}</td><td>${status(order.webhookStatus)}</td><td>${status(order.powerAutomateStatus)}</td><td>${date(order.updatedAt)}</td></tr>`).join("") || '<tr><td colspan="7">Nenhum pedido encontrado.</td></tr>';
+    }
+    function showLogin() { loginCard.hidden = false; ordersCard.hidden = true; }
+    function showOrders() { loginCard.hidden = true; ordersCard.hidden = false; loadOrders().catch((error) => { ordersError.textContent = error.message; ordersError.hidden = false; }); }
+    document.getElementById("loginForm").addEventListener("submit", (event) => { event.preventDefault(); sessionStorage.setItem(tokenKey, document.getElementById("adminToken").value.trim()); showOrders(); });
+    document.getElementById("refreshBtn").addEventListener("click", loadOrders);
+    document.getElementById("logoutBtn").addEventListener("click", () => { sessionStorage.removeItem(tokenKey); showLogin(); });
+    sessionStorage.getItem(tokenKey) ? showOrders() : showLogin();
+  </script>
+</body>
+</html>
