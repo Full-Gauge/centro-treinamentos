@@ -20,12 +20,16 @@ O sistema roda em Cloudflare Workers, com frontend estático em `public/` e rota
 
 ### Testes obrigatórios
 
+O contrato para agentes de desenvolvimento está em [`AGENTS.md`](AGENTS.md). O gate único de verificação executa os testes Playwright e confere o diff.
+
 Toda alteração que mudar o fluxo da interface deve passar pelos testes Playwright antes do deploy:
 
 ```powershell
 npm install
 npx playwright install chromium
+npm run test:unit
 npm test
+npm run verify
 ```
 
 Para depurar visualmente:
@@ -35,7 +39,7 @@ npm run test:e2e:headed
 npm run test:e2e:ui
 ```
 
-Os comandos oficiais de publicação executam `npm test` automaticamente:
+Os comandos oficiais de publicação executam `npm run verify` automaticamente:
 
 ```powershell
 npm run deploy:dev
@@ -57,6 +61,8 @@ Atualize esse documento sempre que uma entrega mudar:
 - critérios de aceite
 
 Não é necessário atualizar o escopo para refatorações internas, ajustes de estilo ou correções sem impacto documentado no comportamento do projeto.
+
+O modelo oficial para solicitar alterações é [`prompt-pattern.md`](prompt-pattern.md).
 
 Secrets do Worker devem ser alteradas via CLI do Wrangler, usando a configuração do ambiente correto:
 
@@ -148,29 +154,32 @@ O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirme
 ## Guia rápido
 
 - `docs/escopo-projeto.md`: escopo técnico e arquitetura
-- `docs/prompt-padrao.md`: prompt padrão para o agente neste projeto
-- `codex.md`: guia interno, regras e prompts para o próprio Codex
+- `prompt-pattern.md`: modelo oficial de prompt para este projeto
+- `AGENTS.md`: contrato operacional para agentes de desenvolvimento
 - `scripts/generate-project-scope-docx.ps1`: geração do DOCX em `.artifacts\escopo-projeto.docx`
 - `wrangler.dev.jsonc` / `wrangler.prod.jsonc`: configs de deploy por ambiente
 - `.agents/*.md`: skills do projeto (Ponytail, convenções, segurança e Cloudflare Workers)
 
 ## Configuração local
 
+Requisito: Node.js 24 LTS. A versão está registrada em `.nvmrc` e no campo `engines` do `package.json`.
+
 ```bash
+nvm use
 npm install
 npx wrangler dev --config wrangler.dev.jsonc
 ```
 
 ## Deploy manual
 
-Não há deploy automático por push. Publique somente executando explicitamente o comando correspondente ao ambiente:
+Não há deploy automático por push. Publique somente executando explicitamente o comando correspondente ao ambiente; o gate de verificação roda antes do deploy:
 
 ```bash
 # Desenvolvimento
-npx wrangler deploy --config wrangler.dev.jsonc
+npm run deploy:dev
 
 # Produção
-npx wrangler deploy --config wrangler.prod.jsonc
+npm run deploy:prod
 ```
 
 `wrangler.dev.jsonc` publica no Worker `fg-centro-treinamentos-dev`. `wrangler.prod.jsonc` publica no Worker `fg-centro-treinamentos`.

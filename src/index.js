@@ -16,6 +16,23 @@ import { handleIpagPaymentConfirmed } from '../worker/worker-ipag-payment-confir
 import { handleIpagPaymentStatusRequest } from '../worker/worker-ipag-payment-status.js';
 import { publicTurnstileConfig } from '../worker/worker-turnstile.js';
 
+function serveStaticAsset(request, env) {
+  return env.ASSETS.fetch(request).then((response) => {
+    const contentType = response.headers.get('Content-Type') || '';
+    if (!/^(text\/|application\/(javascript|json))/i.test(contentType) || /charset=/i.test(contentType)) {
+      return response;
+    }
+
+    const headers = new Headers(response.headers);
+    headers.set('Content-Type', `${contentType}; charset=UTF-8`);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  });
+}
+
 
 export default {
   async fetch(request, env, ctx) {
@@ -112,6 +129,6 @@ export default {
     }
 
     // 7. Fallback: Se não for uma rota de API, entrega os arquivos estáticos (HTML, JS, CSS)
-    return env.ASSETS.fetch(request);
+    return serveStaticAsset(request, env);
   }
 };

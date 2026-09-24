@@ -12,7 +12,10 @@ async function mockApis(page, { status = "confirmed" } = {}) {
     route.fulfill({ json: { turnstileSiteKey: "playwright-site-key" } })
   );
   await page.route("**/api/turmas**", (route) =>
-    route.fulfill({ json: { data: [{ id: "TURMA-001", name: "Turma Playwright" }] } })
+    route.fulfill({ json: { data: [
+      { id: "TURMA-001", name: "Turma Playwright", availableSlots: 16 },
+      { id: "TURMA-0002", name: "Turma sem vagas", availableSlots: -1 }
+    ] } })
   );
   await page.route("**/api/modulos**", (route) =>
     route.fulfill({ json: [{ id: "MOD-001", name: "Módulo Playwright", description: "Teste" }] })
@@ -22,6 +25,17 @@ async function mockApis(page, { status = "confirmed" } = {}) {
   );
   await page.route("**/api/payment-status**", (route) =>
     route.fulfill({ json: { success: true, status, confirmed: status === "confirmed" } })
+  );
+  await page.route("https://viacep.com.br/ws/*/json/", (route) =>
+    route.fulfill({
+      json: {
+        cep: "92010-000",
+        logradouro: "Rua ViaCEP",
+        bairro: "Centro",
+        localidade: "Canoas",
+        uf: "RS"
+      }
+    })
   );
 }
 
@@ -45,6 +59,8 @@ async function fillCommonRegistration(page, { legalEntity = false } = {}) {
   await page.getByLabel("Cidade *").first().fill("Canoas");
   await page.getByLabel("Telefone / WhatsApp *").fill("(51) 98888-7777");
   await page.getByLabel("E-mail *").fill("playwright@example.com");
+  await page.getByLabel("CEP *").fill("92010-000");
+  await expect(page.getByLabel("Rua / Logradouro *")).toHaveValue("Rua ViaCEP");
   await page.getByLabel("Rua / Logradouro *").fill("Rua dos Testes");
   await page.getByLabel("Número *").fill("100");
   await page.getByLabel("Bairro *").fill("Centro");
@@ -52,17 +68,16 @@ async function fillCommonRegistration(page, { legalEntity = false } = {}) {
   await page.getByLabel("Cidade *").last().fill("Canoas");
   await page.getByLabel("Estado *").selectOption("RS");
   await page.getByLabel("País *").selectOption("BR");
-  await page.getByLabel("CEP *").fill("92010-000");
 
   await page.getByRole("button", { name: "Avançar" }).click();
 }
 
 async function completeCourseAndTerms(page, { legalEntity = false } = {}) {
   await page.getByLabel("Turmas *").selectOption("TURMA-001");
+  await expect(page.locator("#turma-availability-helper")).toHaveText("16 vagas disponíveis");
   if (legalEntity) {
     await page.getByLabel("Vagas desejadas *").selectOption("2");
   }
-  await page.getByRole("checkbox", { name: /Módulo Playwright/ }).check();
   await page.getByRole("button", { name: "Avançar" }).click();
 
   const termsLink = page.getByRole("link", { name: /Leia os Termos de Uso|Baixar Termos de Uso/ });
@@ -127,9 +142,42 @@ test.describe("fluxo de pagamento", () => {
     await page.goto("/");
     await selectRegistrationType(page, "Pessoa Jurídica");
     await fillCommonRegistration(page, { legalEntity: true });
+    await page.getByLabel("Turmas *").selectOption("TURMA-0002");
+    await expect(page.locator("#turma-availability-helper")).toHaveText("0 vagas disponíveis");
+    await page.getByLabel("Turmas *").selectOption("TURMA-001");
     await completeCourseAndTerms(page, { legalEntity: true });
 
     await expect(page.getByText("R$ 1.000,00")).toBeVisible();
     await expect(page.getByRole("button", { name: "Enviar cadastro" })).toBeVisible();
+  });
+
+  test("turma sem vagas permite solicitar lista de espera sem abrir pagamento", async ({ page }) => {
+    let registerPayload;
+    await mockApis(page, { status: "pending" });
+    await page.route("**/api/register", async (route) => {
+      registerPayload = route.request().postDataJSON();
+      await route.fulfill({ json: { success: true } });
+    });
+    await page.route("**/api/payment-link", (route) =>
+      route.fulfill({ json: { success: true, link: "https://pay.test/link" } })
+    );
+
+    await page.goto("/");
+    await selectRegistrationType(page, "Pessoa Física");
+    await fillCommonRegistration(page);
+    await page.getByLabel("Turmas *").selectOption("TURMA-0002");
+    await page.getByLabel(/Esta turma está sem vagas/).check();
+    await page.getByRole("button", { name: "Avançar" }).click();
+
+    const termsLink = page.getByRole("link", { name: /Leia os Termos de Uso|Baixar Termos de Uso/ });
+    await termsLink.click({ noWaitAfter: true }).catch(() => {});
+    await page.getByRole("checkbox").all().then(async (checkboxes) => {
+      for (const checkbox of checkboxes) await checkbox.check();
+    });
+    await page.getByRole("button", { name: "Avançar" }).click();
+
+    await expect(page.getByRole("heading", { name: "Solicitação enviada com sucesso!" })).toBeVisible();
+    expect(registerPayload.listaEspera).toBe(true);
+    expect(registerPayload.turmas).toBe("TURMA-0002");
   });
 });

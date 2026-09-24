@@ -312,14 +312,57 @@ select {
   align-items: center;
   gap: 0.4rem;
   cursor: pointer;
+  min-height: 2.55rem;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
 }
 
+.btn-icon,
 .ghost-btn svg {
   width: 17px;
   height: 17px;
   stroke: currentColor;
   fill: none;
   stroke-width: 1.8;
+  flex: 0 0 auto;
+}
+
+.btn-icon-arrow {
+  width: auto;
+  height: auto;
+  font-size: 1.05rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.ghost-btn:hover:not(:disabled) {
+  border-color: var(--fg-green-500);
+  background: color-mix(in srgb, var(--fg-green-100) 58%, transparent);
+  transform: translateY(-1px);
+}
+
+.debug-fill-btn {
+  border-color: color-mix(in srgb, var(--fg-green-500) 68%, var(--line-200));
+  color: var(--fg-green-700);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.debug-fill-btn:hover:not(:disabled) {
+  background: var(--fg-green-100);
+}
+
+.debug-fill-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  color: var(--fg-green-600);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+body[data-theme="dark"] .debug-fill-btn {
+  color: var(--fg-green-500);
 }
 
 .theme-icon-moon {
@@ -348,6 +391,29 @@ body[data-theme="dark"] .theme-icon-moon {
   display: grid;
   gap: 0.2rem;
   min-height: 68px;
+}
+
+.step-item.done::before,
+.step-item.active::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--fg-green-500);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--fg-green-100) 85%, transparent);
+}
+
+.step-item.done::before {
+  content: "✓";
+  width: 1.05rem;
+  height: 1.05rem;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: var(--fg-green-600);
+  font-size: 0.7rem;
+  font-weight: 800;
+  box-shadow: none;
 }
 
 .step-item strong {
@@ -466,6 +532,24 @@ button:focus {
 .helper {
   font-size: 0.74rem;
   color: var(--ink-500);
+}
+
+.cep-helper {
+  min-height: 1rem;
+  margin: 0;
+}
+
+.cep-helper--loading {
+  color: var(--ink-500);
+}
+
+.cep-helper--success {
+  color: var(--fg-green-700);
+  font-weight: 600;
+}
+
+.cep-helper--warning {
+  color: #a56a00;
 }
 
 .radio-group,
@@ -625,11 +709,25 @@ select:focus {
   cursor: pointer;
   color: #ffffff;
   background: linear-gradient(135deg, var(--fg-green-700), var(--fg-green-500));
+  min-height: 2.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--fg-green-700) 22%, transparent);
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--fg-green-700) 28%, transparent);
 }
 
 .primary-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .status-restart-btn {
@@ -1063,6 +1161,123 @@ body[data-theme="dark"] .status-message.error {
   font-weight: 600;
 }
 
+.turma-select-row {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(230px, 0.62fr);
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+.turma-select-row select {
+  width: 100%;
+  min-width: 300px;
+}
+
+.turma-availability-panel {
+  min-height: 2.9rem;
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line-200);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 92%, var(--fg-green-100));
+  color: var(--ink-500);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.turma-availability-panel::before {
+  content: "";
+  width: 0.58rem;
+  height: 0.58rem;
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+  border-radius: 999px;
+  background: var(--line-200);
+}
+
+.turma-availability-panel--available {
+  border-color: color-mix(in srgb, var(--fg-green-500) 52%, var(--line-200));
+  background: color-mix(in srgb, var(--fg-green-100) 78%, var(--panel));
+  color: var(--fg-green-700);
+}
+
+.turma-availability-panel--available::before {
+  background: var(--fg-green-500);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--fg-green-500) 18%, transparent);
+}
+
+.turma-availability-panel--empty {
+  border-color: color-mix(in srgb, #d18a00 62%, var(--line-200));
+  background: color-mix(in srgb, #ffd978 18%, var(--panel));
+  color: #986000;
+}
+
+.turma-availability-panel--empty::before {
+  background: #d18a00;
+  box-shadow: 0 0 0 4px color-mix(in srgb, #d18a00 18%, transparent);
+}
+
+.turma-availability-panel--unknown::before {
+  background: #a56a00;
+}
+
+.waiting-list-card {
+  margin-top: 0.65rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid color-mix(in srgb, #d18a00 48%, var(--line-200));
+  border-radius: 13px;
+  background: color-mix(in srgb, #ffd978 16%, var(--panel));
+}
+
+.waiting-list-option {
+  width: 100%;
+  border-color: color-mix(in srgb, #d18a00 55%, var(--line-200));
+  background: transparent;
+  color: var(--ink-900);
+}
+
+.waiting-list-card--selected {
+  border-color: var(--fg-green-600);
+  background: color-mix(in srgb, var(--fg-green-100) 72%, var(--panel));
+}
+
+.waiting-list-card--invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 16%, transparent);
+}
+
+.waiting-list-note {
+  margin: 0.45rem 0 0;
+  padding-left: 1.85rem;
+}
+
+body[data-theme="dark"] .turma-availability-panel--empty {
+  background: color-mix(in srgb, #8a5a00 32%, var(--panel));
+  border-color: #d9a62e;
+  color: #ffd978;
+}
+
+body[data-theme="dark"] .turma-availability-panel--unknown {
+  color: #ffd978;
+}
+
+body[data-theme="dark"] .waiting-list-card {
+  background: color-mix(in srgb, #8a5a00 28%, var(--panel));
+  border-color: #d9a62e;
+}
+
+body[data-theme="dark"] .waiting-list-option {
+  color: #f2fff8;
+  border-color: #41c891;
+  background: color-mix(in srgb, var(--fg-green-700) 24%, var(--panel));
+}
+
+body[data-theme="dark"] .waiting-list-note {
+  color: #d7eee3;
+}
+
 .modules-description-panel {
   min-width: 0;
   padding: 0.9rem 1rem 1rem;
@@ -1264,6 +1479,10 @@ body[data-theme="dark"] .status-message.error {
     justify-content: center;
   }
 
+  .debug-fill-btn {
+    flex: 1 1 auto;
+  }
+
   .progress-card {
     padding: 0.8rem 0.85rem;
   }
@@ -1274,6 +1493,14 @@ body[data-theme="dark"] .status-message.error {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .turma-select-row {
+    grid-template-columns: 1fr;
+  }
+
+  .turma-select-row select {
+    min-width: 0;
   }
 
   .stepper {

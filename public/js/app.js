@@ -56,6 +56,21 @@ const i18n = {
     invalidCnpj: "Informe um CNPJ válido.",
     invalidPhone: "Informe um telefone válido.",
     invalidCep: "Informe um CEP válido.",
+    cepSearching: "Consultando o CEP...",
+    cepFound: "Consulta realizada.",
+    cepNotFound: "CEP não encontrado. Preencha o endereço manualmente.",
+    cepUnavailable: "Não foi possível consultar o CEP. Preencha o endereço manualmente.",
+    availableSlots: "{count} vagas disponíveis",
+    noAvailableSlots: "0 vagas disponíveis",
+    availabilityUnknown: "Disponibilidade sob consulta",
+    waitingListPrompt: "Esta turma está sem vagas. Deseja entrar na lista de espera?",
+    waitingListSelected: "Você será incluído na lista de espera e não precisará realizar pagamento.",
+    waitingListRequired: "Escolha a lista de espera para continuar com uma turma sem vagas.",
+    waitingListSuccess: {
+      title: "Solicitação enviada com sucesso!",
+      message: "Recebemos seu pedido para entrar na lista de espera. Nossa equipe entrará em contato quando houver disponibilidade.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM7 10h10M7 14h6"></path></svg>'
+    },
     noItemsAvailable: "Nenhum item disponível",
     clearFormConfirm: "Tem certeza que deseja limpar todos os dados do cadastro?",
     loading: "Carregando...",
@@ -132,6 +147,21 @@ const i18n = {
     invalidCnpj: "Enter a valid CNPJ.",
     invalidPhone: "Enter a valid phone number.",
     invalidCep: "Enter a valid ZIP code.",
+    cepSearching: "Consulting ZIP code...",
+    cepFound: "Address filled by ViaCEP. Please check the details.",
+    cepNotFound: "ZIP code not found. Fill in the address manually.",
+    cepUnavailable: "Could not consult the ZIP code. Fill in the address manually.",
+    availableSlots: "{count} available seats",
+    noAvailableSlots: "0 seats available",
+    availabilityUnknown: "Availability on request",
+    waitingListPrompt: "This class has no available seats. Would you like to join the waiting list?",
+    waitingListSelected: "You will be added to the waiting list and will not need to make a payment.",
+    waitingListRequired: "Choose the waiting list option to continue with a class that has no available seats.",
+    waitingListSuccess: {
+      title: "Request sent successfully!",
+      message: "We received your waiting list request. Our team will contact you when a seat becomes available.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM7 10h10M7 14h6"></path></svg>'
+    },
     noItemsAvailable: "No items available",
     clearFormConfirm: "Are you sure you want to clear all registration data?",
     loading: "Loading...",
@@ -208,6 +238,21 @@ const i18n = {
     invalidCnpj: "Ingrese un CNPJ válido.",
     invalidPhone: "Ingrese un teléfono válido.",
     invalidCep: "Ingrese un código postal válido.",
+    cepSearching: "Consultando el código postal...",
+    cepFound: "Dirección completada por ViaCEP. Revise los datos.",
+    cepNotFound: "Código postal no encontrado. Complete la dirección manualmente.",
+    cepUnavailable: "No fue posible consultar el código postal. Complete la dirección manualmente.",
+    availableSlots: "{count} cupos disponibles",
+    noAvailableSlots: "0 cupos disponibles",
+    availabilityUnknown: "Disponibilidad bajo consulta",
+    waitingListPrompt: "Esta clase no tiene cupos disponibles. ¿Desea entrar en la lista de espera?",
+    waitingListSelected: "Será incluido en la lista de espera y no necesitará realizar el pago.",
+    waitingListRequired: "Seleccione la lista de espera para continuar con una clase sin cupos.",
+    waitingListSuccess: {
+      title: "¡Solicitud enviada con éxito!",
+      message: "Recibimos su solicitud para la lista de espera. Nuestro equipo se pondrá en contacto cuando haya disponibilidad.",
+      icon: '<svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM7 10h10M7 14h6"></path></svg>'
+    },
     noItemsAvailable: "No hay elementos disponibles",
     clearFormConfirm: "¿Estás seguro de que deseas borrar todos los datos del registro?",
     loading: "Cargando...",
@@ -385,6 +430,14 @@ const STEPS = [
         validateEmail: true,
       },
       {
+        id: "cepCobranca",
+        label: { pt: "CEP *", en: "ZIP code *", es: "Código postal *" },
+        type: "text",
+        required: true,
+        mask: "cep",
+        validateCep: true,
+      },
+      {
         id: "enderecoCobranca",
         label: { pt: "Rua / Logradouro *", en: "Street *", es: "Calle *" },
         type: "text",
@@ -428,25 +481,17 @@ const STEPS = [
         required: true,
         options: COUNTRY_OPTIONS,
       },
-      {
-        id: "cepCobranca",
-        label: { pt: "CEP *", en: "ZIP code *", es: "Código postal *" },
-        type: "text",
-        required: true,
-        mask: "cep",
-        validateCep: true,
-      },
     ],
   },
   {
-    title: { pt: "Turmas e módulos", en: "Course classes", es: "Clases del curso" },
+    title: { pt: "Turmas", en: "Course classes", es: "Clases del curso" },
     description: {
       pt: "",
       en: "",
       es: "",
     },
     fields: [
-      { id: "turmas", label: { pt: "Turmas *", en: "Classes *", es: "Clases *" }, type: "select", options: [], required: true },
+      { id: "turmas", label: { pt: "Turmas *", en: "Classes *", es: "Clases *" }, type: "select", options: [], required: true, full: true },
       {
         id: "vagasDesejadas",
         label: { pt: "Vagas desejadas *", en: "Requested seats *", es: "Cupos deseados *" },
@@ -458,7 +503,6 @@ const STEPS = [
         })),
         onlyFor: "PJ",
       },
-      { id: "modulos", label: { pt: "Módulos *", en: "Modules *", es: "Módulos *" }, type: "select", options: [] ,required: true, multiple: true},
     ],
   },
   {
@@ -540,6 +584,10 @@ let paymentReference = "";
 let turnstileSiteKey = "";
 let turnstileToken = "";
 let turnstileWidgetId = null;
+let waitlistSubmitted = false;
+let cepLookupTimer = null;
+let cepLookupSequence = 0;
+const cepAutofillValues = {};
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 function t(key) {
@@ -676,6 +724,71 @@ function applyMask(value, mask) {
   return value;
 }
 
+function setCepHelper(message, state = "") {
+  const helper = document.getElementById("cepCobranca-helper");
+  if (!helper) return;
+  helper.textContent = message;
+  helper.className = `helper cep-helper${state ? ` cep-helper--${state}` : ""}`;
+}
+
+function setAddressFieldValue(id, value) {
+  if (!value) return;
+  const currentValue = formData[id] || "";
+  if (currentValue && cepAutofillValues[id] !== currentValue) return;
+  formData[id] = value;
+  cepAutofillValues[id] = value;
+  const field = document.getElementById(id);
+  if (field) field.value = value;
+}
+
+async function lookupCep(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length !== 8) {
+    setCepHelper("");
+    return;
+  }
+
+  const requestId = ++cepLookupSequence;
+  setCepHelper(t("cepSearching"), "loading");
+
+  try {
+    const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`, {
+      headers: { Accept: "application/json" }
+    });
+    if (!response.ok) throw new Error("ViaCEP indisponível");
+    const data = await response.json();
+    if (requestId !== cepLookupSequence) return;
+
+    if (data.erro) {
+      setCepHelper(t("cepNotFound"), "warning");
+      return;
+    }
+
+    setAddressFieldValue("enderecoCobranca", data.logradouro);
+    setAddressFieldValue("bairroCobranca", data.bairro);
+    setAddressFieldValue("cidadeCobranca", data.localidade);
+    const state = document.getElementById("estadoCobranca");
+    if (data.uf && state && (!state.value || cepAutofillValues.estadoCobranca === state.value)) {
+      state.value = data.uf;
+      formData.estadoCobranca = data.uf;
+      cepAutofillValues.estadoCobranca = data.uf;
+    }
+    setCepHelper(t("cepFound"), "success");
+  } catch {
+    if (requestId === cepLookupSequence) setCepHelper(t("cepUnavailable"), "warning");
+  }
+}
+
+function scheduleCepLookup(value) {
+  clearTimeout(cepLookupTimer);
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length !== 8) {
+    setCepHelper("");
+    return;
+  }
+  cepLookupTimer = setTimeout(() => lookupCep(value), 250);
+}
+
 function normalizeTurmaOption(turma) {
   if (!turma) return null;
 
@@ -711,7 +824,45 @@ function normalizeTurmaOption(turma) {
       ? labelSource[currentLang] || labelSource.pt || labelSource.en || labelSource.es || value
       : labelSource;
 
-  return { value: String(value), label: String(label) };
+  return {
+    value: String(value),
+    label: String(label),
+    availableSlots: Number.isFinite(Number(turma.availableSlots)) ? Math.max(0, Number(turma.availableSlots)) : null
+  };
+}
+
+function formatTurmaAvailability(option) {
+  if (!option || option.availableSlots === null || option.availableSlots === undefined) {
+    return { text: t("availabilityUnknown"), state: "unknown" };
+  }
+  if (option.availableSlots === 0) {
+    return { text: t("noAvailableSlots"), state: "empty" };
+  }
+  return {
+    text: formatMessage(t("availableSlots"), { count: option.availableSlots }),
+    state: "available"
+  };
+}
+
+function updateTurmaAvailabilityMessage(value) {
+  const helper = document.getElementById("turma-availability-helper");
+  if (!helper) return;
+  const field = STEPS.find((step) => step.fields.some((item) => item.id === "turmas"))?.fields.find((item) => item.id === "turmas");
+  const option = field?.options?.find((item) => typeof item === "object" && item.value === value);
+  if (!option) {
+    helper.textContent = "";
+    helper.className = "turma-availability-panel";
+    return;
+  }
+  const availability = formatTurmaAvailability(option);
+  helper.textContent = availability.text;
+  helper.className = `turma-availability-panel turma-availability-panel--${availability.state}`;
+}
+
+function selectedTurmaHasNoSeats() {
+  const field = STEPS.find((step) => step.fields.some((item) => item.id === "turmas"))?.fields.find((item) => item.id === "turmas");
+  const option = field?.options?.find((item) => typeof item === "object" && item.value === formData.turmas);
+  return option ? formatTurmaAvailability(option).state === "empty" : false;
 }
 
 function applyPartnerTurmaSelection(turmaOption) {
@@ -777,16 +928,11 @@ function renderFields() {
   const container = document.getElementById("formFields");
   const title = document.getElementById("stepTitle");
   const desc = document.getElementById("stepDescription");
-  const modulesField = step.fields?.find((f) => f.id === "modulos");
-  const modulesCount = Array.isArray(modulesField?.options) ? modulesField.options.length : 0;
 
   if (title) title.textContent = step.title[currentLang] || step.title.pt;
   if (desc) {
     const baseDesc = step.description[currentLang] || step.description.pt || "";
-    const modulesInfo = currentStep === 2 && modulesCount > 0
-      ? formatMessage(t("modulesInfo"), { count: modulesCount })
-      : "";
-    desc.textContent = [baseDesc, modulesInfo].filter(Boolean).join(" ");
+    desc.textContent = baseDesc;
   }
   if (!container) return;
 
@@ -838,6 +984,7 @@ function renderFields() {
       if (f.id === "token" && formData.relacao !== "PARCEIRO") return "";
       if (f.onlyFor && formData.tipoPessoa !== f.onlyFor) return "";
       if (f.id === "vagasDesejadas" && !formData.turmas) return "";
+      if (f.id === "vagasDesejadas" && selectedTurmaHasNoSeats()) return "";
       if (f.id === "estrangeiro" && formData.tipoPessoa === "PJ") return "";
       if (f.id === "empresa" && formData.tipoPessoa === "PJ") return "";
       const fieldType = (f.id === "empresa" && formData.relacao === "GERAL") ? "text" : f.type;
@@ -930,12 +1077,30 @@ function renderFields() {
             return `<option value="${escapeHtml(optVal)}"${val === optVal ? " selected" : ""}>${escapeHtml(optLabel)}</option>`;
           })
           .join("");
+        const selectedTurma = f.id === "turmas"
+          ? (f.options || []).find((item) => typeof item === "object" && item.value === val)
+          : null;
+        const selectedAvailability = selectedTurma ? formatTurmaAvailability(selectedTurma) : null;
+        const turmaAvailability = f.id === "turmas"
+          ? `<div id="turma-availability-helper" class="turma-availability-panel${selectedAvailability ? ` turma-availability-panel--${selectedAvailability.state}` : ""}" aria-live="polite">${selectedAvailability ? escapeHtml(selectedAvailability.text) : "Selecione uma turma para consultar as vagas."}</div>`
+          : "";
+        const waitingList = f.id === "turmas" && selectedAvailability?.state === "empty"
+          ? `<div class="waiting-list-card" id="waiting-list-card">
+              <label class="checkbox-chip waiting-list-option" for="listaEspera">
+                <input type="checkbox" id="listaEspera" name="listaEspera"${formData.listaEspera ? " checked" : ""}>
+                <span>${t("waitingListPrompt")}</span>
+              </label>
+              <p class="helper waiting-list-note">${t("waitingListSelected")}</p>
+            </div>`
+          : "";
         return `<div class="field-wrap ${fullClass} ${isLoading ? 'loading-select' : ''} ${isLocked ? 'field-wrap--locked' : ''}">
           <label for="${f.id}">${label}</label>
-          <select id="${f.id}" name="${f.id}"${f.required ? " required" : ""}${isLoading || isLocked ? " disabled" : ""}>
+          ${f.id === "turmas" ? `<div class="turma-select-row"><select id="${f.id}" name="${f.id}"${f.required ? " required" : ""}${isLoading || isLocked ? " disabled" : ""}>
             <option value="">${placeholder}</option>${opts}
-          </select>
-          ${helperText}
+          </select>${turmaAvailability}</div>` : `<select id="${f.id}" name="${f.id}"${f.required ? " required" : ""}${isLoading || isLocked ? " disabled" : ""}>
+            <option value="">${placeholder}</option>${opts}
+          </select>`}
+          ${helperText}${f.id === "turmas" ? waitingList : ""}
         </div>`;
       }
 
@@ -969,9 +1134,12 @@ function renderFields() {
         </div>`;
       }
 
-            // Campo normal (text, email, tel, number, etc)
+      // Campo normal (text, email, tel, number, etc)
       const errorId = `${f.id}-error`;
-      return `<div class="field-wrap ${fullClass}">
+      const cepHelper = f.id === "cepCobranca"
+        ? `<p id="cepCobranca-helper" class="helper cep-helper" aria-live="polite"></p>`
+        : "";
+      return `<div class="field-wrap ${fullClass}" id="field-wrap-${f.id}">
         <label for="${f.id}">${fieldLabel}</label>
         <input
           type="${fieldType}"
@@ -984,6 +1152,7 @@ function renderFields() {
           autocomplete="off"
           ${f.uppercase ? 'style="text-transform: uppercase;"' : ''}>
         ${(f.validateEmail || f.validateToken || f.validateCpf || f.validatePhone || isCnpjField) ? `<span class="input-error-msg" id="${errorId}" role="alert"></span>` : ""}
+        ${cepHelper}
       </div>`;
     })
     .join("");
@@ -1079,13 +1248,17 @@ function renderFields() {
         const isLast = currentStep === STEPS.length - 1;
         if (isLast) renderButtons();
       } else if (f.id === "turmas" && v) {
-        // Lógica específica para turmas: limpa módulos e busca novos dados
+        // Atualiza a disponibilidade sem ocupar a tela com módulos.
         formData[f.id] = v;
-        formData["modulos"] = [];
-        fetchModulosData(v);
+        formData.listaEspera = false;
+        updateTurmaAvailabilityMessage(v);
+        render();
+        return;
       } else {
         formData[f.id] = v;
       }
+
+      if (f.id === "cepCobranca") scheduleCepLookup(v);
 
       // Limpa erro de e-mail em tempo real
       if (f.validateEmail) {
@@ -1124,6 +1297,11 @@ function renderFields() {
         }
       }
     });
+  });
+
+  document.getElementById("listaEspera")?.addEventListener("change", (event) => {
+    formData.listaEspera = event.target.checked;
+    document.getElementById("waiting-list-card")?.classList.toggle("waiting-list-card--selected", event.target.checked);
   });
 
   if (isTermsStep && checkboxesInitiallyDisabled) {
@@ -1184,15 +1362,22 @@ function renderButtons() {
   const isLast = currentStep === STEPS.length - 1;
   const step = STEPS[currentStep];
 
+  if (waitlistSubmitted) {
+    if (prevBtn) prevBtn.style.visibility = "hidden";
+    if (nextBtn) nextBtn.style.display = "none";
+    if (submitBtn) submitBtn.style.display = "none";
+    return;
+  }
+
   if (prevBtn) prevBtn.style.visibility = currentStep === 0 ? "hidden" : "visible";
   if (nextBtn) {
     nextBtn.style.display = isLast ? "none" : "inline-flex";
     if (isValidatingToken) {
       nextBtn.disabled = true;
-      nextBtn.innerHTML = `<span class="spinner" aria-hidden="true"></span> ${t("loading")}`;
+      nextBtn.innerHTML = `<span class="spinner" aria-hidden="true"></span><span class="btn-label">${t("loading")}</span>`;
     } else {
       nextBtn.disabled = false;
-      nextBtn.textContent = t("next");
+      nextBtn.innerHTML = `<span class="btn-label">${t("next")}</span><span class="btn-icon btn-icon-arrow" aria-hidden="true">→</span>`;
     }
   }
   
@@ -1200,10 +1385,10 @@ function renderButtons() {
     submitBtn.style.display = isLast ? "inline-flex" : "none";
     if (isSubmittingForm) {
       submitBtn.disabled = true;
-      submitBtn.innerHTML = `<span class="spinner" aria-hidden="true"></span> ${t("loading")}`;
+      submitBtn.innerHTML = `<span class="spinner" aria-hidden="true"></span><span class="btn-label">${t("loading")}</span>`;
     } else {
       submitBtn.disabled = false;
-      submitBtn.textContent = t("submit");
+      submitBtn.innerHTML = `<span class="btn-label">${t("submit")}</span><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 5 5L20 6"></path></svg>`;
     }
     
     // Desabilita o botão se houver checkboxes obrigatórios não marcados (termos)
@@ -1211,7 +1396,7 @@ function renderButtons() {
     const termsAccepted = !termsStep || termsStep.fields.every(f => f.type !== "checkbox" || !f.required || formData[f.id] === true);
     submitBtn.disabled = isLast && !termsAccepted;
   }
-  if (prevBtn) prevBtn.textContent = t("previous");
+  if (prevBtn) prevBtn.innerHTML = `<span class="btn-icon btn-icon-arrow" aria-hidden="true">←</span><span class="btn-label">${t("previous")}</span>`;
 }
 
 function applyI18n() {
@@ -1356,13 +1541,18 @@ function validateCurrentStep() {
       }
     }
   });
+
+  if (currentStep === 2 && selectedTurmaHasNoSeats() && !formData.listaEspera) {
+    document.getElementById("waiting-list-card")?.classList.add("waiting-list-card--invalid");
+    valid = false;
+  }
   return valid;
 }
 
 // ─── Navegação ────────────────────────────────────────────────────────────────
 async function goNext() {
   if (!validateCurrentStep()) {
-    showStatus(t("requiredFields"), "error");
+    showStatus(currentStep === 2 && selectedTurmaHasNoSeats() ? t("waitingListRequired") : t("requiredFields"), "error");
     return;
   }
 
@@ -1424,6 +1614,12 @@ async function goNext() {
 
   clearStatus();
 
+  const termsStepIndex = STEPS.findIndex((step) => step.termsLink);
+  if (currentStep === termsStepIndex && formData.listaEspera) {
+    await handleWaitlistSubmission();
+    return;
+  }
+
   if (currentStep < STEPS.length - 1) {
     currentStep++;
     render();
@@ -1467,7 +1663,7 @@ function showStatus(messageData, type = "", isPermanent = false) {
         <div class="status-text-wrapper">
           <h3 class="status-title">${messageData.title}</h3>
           <p class="status-description">${messageData.message}</p>
-          ${isPermanent ? `<button id="startNewRegistrationBtn" class="primary-btn status-restart-btn" style="margin-top: 1rem;">${t("startNewRegistration")}</button>` : ''}
+          ${isPermanent ? `<button id="startNewRegistrationBtn" class="primary-btn status-restart-btn" style="margin-top: 1rem;"><span class="btn-label">${t("startNewRegistration")}</span><span class="btn-icon" aria-hidden="true">↻</span></button>` : ''}
         </div>
       </div>
     `;
@@ -1631,7 +1827,7 @@ function renderPaymentLinkButton(link, reference) {
   payButton.className = "primary-btn";
   payButton.style.marginTop = "1rem";
   payButton.style.display = "inline-flex";
-  payButton.textContent = t("payNow");
+  payButton.innerHTML = `<span class="btn-label">${t("payNow")}</span><span class="btn-icon" aria-hidden="true">↗</span>`;
   payButton.addEventListener("click", (event) => {
     event.preventDefault();
     window.open(link, "_blank", "noopener,noreferrer");
@@ -1712,6 +1908,28 @@ async function submitRegistrationAfterPaymentClick(payButton, reference) {
   }
 }
 
+async function handleWaitlistSubmission() {
+  isSubmittingForm = true;
+  renderButtons();
+
+  const payload = { ...formData, modulos: [], listaEspera: true };
+  try {
+    const response = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("Falha ao solicitar lista de espera");
+    waitlistSubmitted = true;
+    showStatus(i18n[currentLang].waitingListSuccess, "success", true);
+  } catch {
+    showStatus(t("submitError"), "error");
+  } finally {
+    isSubmittingForm = false;
+    renderButtons();
+  }
+}
+
 // Mantém a etapa de pagamento visível na tela principal após o cadastro.
 async function handleSuccessfulSubmission() {
   const wizardContent = document.getElementById("wizardContent");
@@ -1770,7 +1988,11 @@ async function fetchTurmasData() {
       if (turmasStep) {
         const field = turmasStep.fields.find(f => f.id === 'turmas');
         allTurmasOptions = Array.isArray(data.data) 
-          ? data.data.map(t => ({ value: t.id || t.FG_TRAININGCLASSID, label: (t.id || t.FG_TRAININGCLASSID) + ' - ' + (t.name || t.NAME) })) 
+          ? data.data.map(t => ({
+              value: t.id || t.FG_TRAININGCLASSID,
+              label: (t.id || t.FG_TRAININGCLASSID) + ' - ' + (t.name || t.NAME),
+              availableSlots: Number.isFinite(Number(t.availableSlots)) ? Math.max(0, Number(t.availableSlots)) : null
+            }))
           : [];
         updateTurmasFieldOptions();
         // Se estivermos na etapa das turmas, renderiza novamente
@@ -1942,10 +2164,11 @@ async function init() {
     if (controlGroup) {
       const createFillBtn = (label, relType) => {
         const btn = document.createElement('button');
-        btn.className = 'ghost-btn';
-        btn.style.cssText = 'border-color: var(--fg-green-500); color: var(--fg-green-700); font-weight: 700; margin-right: 4px;';
-        btn.innerHTML = `🪄 ${label}`;
-        btn.onclick = () => {
+        btn.type = 'button';
+        btn.className = 'ghost-btn debug-fill-btn';
+        btn.setAttribute('aria-label', `Preencher dados de teste: ${label}`);
+        btn.innerHTML = `<span class="debug-fill-icon" aria-hidden="true">✦</span><span>${label}</span>`;
+        btn.addEventListener('click', () => {
           const step = STEPS[currentStep];
           const samples = {
             relacao: relType === "PARCEIRO" ? "PARCEIRO" : "GERAL",
@@ -1974,11 +2197,9 @@ async function init() {
               const val = (typeof opt === 'object') ? opt.value : opt;
               formData[f.id] = f.multiple ? [val] : val;
             }
-            // Gatilho para carregar módulos se preencher a turma via tester
-            if (f.id === 'turmas' && formData[f.id]) fetchModulosData(formData[f.id]);
           });
           render();
-        };
+        });
         controlGroup.prepend(btn);
       };
 

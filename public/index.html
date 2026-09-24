@@ -60,7 +60,10 @@
       <div id="wizardContent">
         <header class="wizard-toolbar">
           <div class="toolbar-left">
-            <button id="clearFormBtn" type="button" class="ghost-btn ghost-btn-danger" data-i18n="clearForm">Limpar cadastro</button>
+            <button id="clearFormBtn" type="button" class="ghost-btn ghost-btn-danger">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"></path></svg>
+              <span data-i18n="clearForm">Limpar cadastro</span>
+            </button>
           </div>
           <div class="control-group">
             <div class="language-switch" role="group" aria-label="Idioma">
@@ -124,9 +127,9 @@
         <div id="formFields" class="form-grid"></div>
 
           <div class="form-actions">
-            <button type="button" id="prevBtn" class="ghost-btn" data-i18n="previous" style="visibility: visible;">Voltar</button>
-            <button type="button" id="nextBtn" class="primary-btn" data-i18n="next" style="display: inline-flex;">Avançar</button>
-            <button type="submit" id="submitBtn" class="primary-btn" data-i18n="submit" style="display: none;">Enviar cadastro</button>
+            <button type="button" id="prevBtn" class="ghost-btn" style="visibility: visible;"><span class="btn-icon btn-icon-arrow" aria-hidden="true">←</span><span class="btn-label" data-i18n="previous">Voltar</span></button>
+            <button type="button" id="nextBtn" class="primary-btn" style="display: inline-flex;"><span class="btn-label" data-i18n="next">Avançar</span><span class="btn-icon btn-icon-arrow" aria-hidden="true">→</span></button>
+            <button type="submit" id="submitBtn" class="primary-btn" style="display: none;"><span class="btn-label" data-i18n="submit">Enviar cadastro</span><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 5 5L20 6"></path></svg></button>
           </div>
         </form>
       </div>

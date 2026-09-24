@@ -30,7 +30,7 @@ function hexToBytes(value) {
   return value.match(/.{2}/g).map((byte) => Number.parseInt(byte, 16));
 }
 
-function signaturesMatch(expected, received) {
+export function signaturesMatch(expected, received) {
   const expectedBytes = hexToBytes(expected);
   const receivedBytes = hexToBytes(String(received || "").trim());
 
@@ -44,7 +44,7 @@ function signaturesMatch(expected, received) {
   return difference === 0;
 }
 
-function getPaymentDetails(payload) {
+export function getPaymentDetails(payload) {
   const attributes = payload?.attributes || {};
   const status = attributes.status || {};
   const acquirer = attributes.acquirer || {};
@@ -73,7 +73,7 @@ function getPaymentDetails(payload) {
   };
 }
 
-function getPowerAutomatePayload(details) {
+export function getPowerAutomatePayload(details) {
   return {
     event: "payment.captured",
     transaction_uuid: details.transactionUuid,

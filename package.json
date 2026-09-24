@@ -1,11 +1,17 @@
 {
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
-    "test": "npm run test:e2e",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test tests/unit/*.test.js",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "deploy:dev": "npm test && wrangler deploy --config wrangler.dev.jsonc",
-    "deploy:prod": "npm test && wrangler deploy --config wrangler.prod.jsonc"
+    "verify": "npm test && git diff --check",
+    "deploy:dev": "npm run verify && wrangler deploy --config wrangler.dev.jsonc",
+    "deploy:prod": "npm run verify && wrangler deploy --config wrangler.prod.jsonc"
   },
   "dependencies": {
     "jose": "^6.2.3"
