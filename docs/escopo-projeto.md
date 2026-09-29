@@ -242,44 +242,74 @@ O fluxo de pagamento usa o mesmo padrão de proxy, mas com Basic Auth (`IPAG_API
 ```bash
 npx wrangler secret put JWT_SECRET --config wrangler.dev.jsonc
 npx wrangler secret put API_KEY --config wrangler.dev.jsonc
+npx wrangler secret put ADMIN_ACCESS_TOKEN --config wrangler.dev.jsonc
+npx wrangler secret put IPAG_API_ID --config wrangler.dev.jsonc
+npx wrangler secret put IPAG_API_KEY --config wrangler.dev.jsonc
+npx wrangler secret put POWER_AUTOMATE_PAYMENT_LINK_CREATED_URL --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_WEBHOOK_TOKEN --config wrangler.dev.jsonc
+npx wrangler secret put TURNSTILE_SECRET_KEY --config wrangler.dev.jsonc
+npx wrangler secret put url_registro --config wrangler.dev.jsonc
+npx wrangler secret put url_turmas --config wrangler.dev.jsonc
+npx wrangler secret put url_modulos --config wrangler.dev.jsonc
+npx wrangler secret put url_parceiros --config wrangler.dev.jsonc
+npx wrangler secret put url_token --config wrangler.dev.jsonc
+npx wrangler secret put url_registro_presenca --config wrangler.dev.jsonc
+npx wrangler secret put URL_VALIDATE_CPF_MODULOS --config wrangler.dev.jsonc
+npx wrangler secret put ATTENDANCE_WEBHOOK_URL --config wrangler.dev.jsonc
+npx wrangler secret put CONFIRMATION_WEBHOOK_URL --config wrangler.dev.jsonc
+npx wrangler secret put CANCELLATION_WEBHOOK_URL --config wrangler.dev.jsonc
+npx wrangler secret put NAME_VALIDATION_WEBHOOK_URL --config wrangler.dev.jsonc
 ```
 
 Para produção, use `--config wrangler.prod.jsonc`. Nunca use `wrangler.jsonc` para publicar um ambiente.
 
 ### 8.1 Secrets do Worker
 
-- `JWT_SECRET`
-- `API_KEY` obrigatória para os proxies enviados ao Power Automate
-- `IPAG_API_ID` e `IPAG_API_KEY` para autenticar (Basic Auth) na API do iPag; `IPAG_API_KEY` também é usada para validar o HMAC-SHA256 do webhook
-- `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL` para encaminhar confirmações `TransactionCaptured` ao Power Automate
-- `POWER_AUTOMATE_WEBHOOK_TOKEN` enviado no header `X-CT-Webhook-Token` ao Power Automate
-- `TURNSTILE_SECRET_KEY` para validar tokens humanos no Worker
-- `TURNSTILE_SITE_KEY` retornada pelo endpoint público de configuração e usada pelo frontend
+Os valores devem permanecer somente no ambiente Cloudflare. As URLs de webhook também são tratadas como secrets porque podem conter identificadores ou credenciais no próprio endereço.
 
-### 8.2 Variáveis do Worker
+- `JWT_SECRET`: assina os JWTs dos links de confirmação, cancelamento e presença.
+- `API_KEY`: chave compartilhada dos proxies/fluxos Power Automate, enviada como `x-api-key`.
+- `ADMIN_ACCESS_TOKEN`: protege a API e a tela administrativa de pedidos.
+- `IPAG_API_ID`: identificador da autenticação Basic Auth do iPag.
+- `IPAG_API_KEY`: credencial Basic Auth do iPag e segredo do HMAC-SHA256 do webhook.
+- `POWER_AUTOMATE_PAYMENT_LINK_CREATED_URL`: recebe o evento de link iPag criado.
+- `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`: recebe confirmações `TransactionCaptured`.
+- `POWER_AUTOMATE_WEBHOOK_TOKEN`: enviado no header `X-CT-Webhook-Token` aos fluxos de pagamento.
+- `TURNSTILE_SECRET_KEY`: valida no Worker os tokens do Cloudflare Turnstile.
+- `url_registro`: recebe o cadastro após a confirmação do pagamento.
+- `url_turmas`: consulta as turmas disponíveis.
+- `url_modulos`: consulta os módulos da turma.
+- `url_parceiros`: consulta os parceiros.
+- `url_token`: valida o token de parceiro.
+- `url_registro_presenca`: URL legada/de fallback para registro de presença.
+- `URL_VALIDATE_CPF_MODULOS`: valida CPF e módulos selecionados.
+- `ATTENDANCE_WEBHOOK_URL`: webhook principal de presença; usa `url_registro_presenca` como fallback.
+- `CONFIRMATION_WEBHOOK_URL`: recebe confirmações de inscrição.
+- `CANCELLATION_WEBHOOK_URL`: recebe cancelamentos; pode usar `CONFIRMATION_WEBHOOK_URL` como fallback.
+- `NAME_VALIDATION_WEBHOOK_URL`: recebe a validação externa de nome.
 
-- `url_registro`
-- `url_turmas`
-- `url_modulos`
-- `url_parceiros`
-- `url_token`
-- `url_registro_presenca`
-- `ATTENDANCE_WEBHOOK_URL`
-- `CONFIRMATION_WEBHOOK_URL`
-- `CANCELLATION_WEBHOOK_URL`
-- `NAME_VALIDATION_WEBHOOK_URL`
-- `URL_VALIDATE_CPF_MODULOS`
-- `IPAG_BASE_URL` (opcional; padrão `https://sandbox.ipag.com.br`)
-- `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS` (opcionais do link iPag)
+### 8.2 Configurações públicas ou bindings
+
+- `TURNSTILE_SITE_KEY`: chave pública enviada ao frontend; fica em `vars`, não é secret.
+- `IPAG_BASE_URL`: endereço da API iPag, opcional; padrão `https://sandbox.ipag.com.br`.
+- `IPAG_DEFAULT_DESCRIPTION` e `IPAG_LINK_EXPIRES_DAYS`: configurações opcionais dos links iPag.
+- `URL_SHORTENER_KV`: binding de namespace KV, não é secret.
+- `PAYMENTS_DB`: binding D1 usado para pedidos e idempotência, não é secret.
+
+### 8.3 Variáveis do Worker
+
+- As URLs de integração estão descritas em 8.1 porque são armazenadas como secrets.
+- As configurações opcionais do iPag estão descritas em 8.2.
 - o valor do link iPag é `R$ 1.000,00` por vaga; para PJ, o total é `vagasDesejadas × R$ 1.000,00`
 
-O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Para o Power Automate, envia somente `event`, `transaction_uuid`, `name`, `email`, `order_id`, `amount`, `status`, `payment_method`, `installments`, `captured_at` e `acquirer`, além dos headers `x-api-key` e `X-CT-Webhook-Token`. Retorna `200` somente para respostas `2xx` do Power Automate; falhas de encaminhamento retornam `502` para permitir retry do iPag.
+O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Depois de persistir a confirmação localmente, responde imediatamente `200` ao iPag e encaminha o evento ao Power Automate em segundo plano. Para o Power Automate, envia somente `event`, `transaction_uuid`, `name`, `email`, `order_id`, `amount`, `status`, `payment_method`, `installments`, `captured_at` e `acquirer`, além dos headers `x-api-key` e `X-CT-Webhook-Token`.
+
+O resultado do encaminhamento é registrado no D1 em `payment_events`: `completed` quando o Power Automate responde com `2xx` e `failed` quando há erro, indisponibilidade ou configuração ausente. Falhas do Power Automate não alteram o `200` já enviado ao iPag; o reprocessamento deve usar o registro `failed`.
 
 Após o encaminhamento bem-sucedido, o webhook grava a confirmação no KV. A tela consulta `GET /api/payment-status?reference=...` em intervalos de 5 segundos e só exibe "inscrição realizada com sucesso" após encontrar o status `confirmed`.
 
-### 8.3 Idempotência obrigatória do pagamento
+### 8.4 Idempotência obrigatória do pagamento
 
 O mesmo webhook pode ser reenviado pelo iPag. Portanto, o fluxo deve ser idempotente e não pode enviar dois e-mails para a mesma transação.
 
@@ -292,15 +322,15 @@ O mesmo webhook pode ser reenviado pelo iPag. Portanto, o fluxo deve ser idempot
 
 O binding e a migration do D1 já estão criados e aplicados no ambiente dev. O ambiente prod ainda precisa do banco, binding e migration equivalentes antes da publicação. O KV permanece reservado para o status da tela, não para garantir unicidade.
 
-### 8.4 Bindings do Worker
+### 8.5 Bindings do Worker
 
 - `URL_SHORTENER_KV`
 - `PAYMENTS_DB` (D1 de idempotência; configurado no dev)
 
-### 8.5 Segredos do deploy
+### 8.6 Segredos do deploy
 
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`: credencial usada pelo CI para autenticar a publicação na Cloudflare.
+- `CLOUDFLARE_ACCOUNT_ID`: identifica a conta Cloudflare usada pelo CI.
 
 Observações:
 

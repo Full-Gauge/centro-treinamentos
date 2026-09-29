@@ -2,6 +2,7 @@
 // Referência: POST /service/v2/payment_links em https://developers.ipag.com.br/pt-br/payment-link/reference
 import { createPaymentOrder, updatePaymentOrder } from "./payment-orders.js";
 import { verifyTurnstileToken } from "./worker-turnstile.js";
+import { buildPaymentLinkCreatedPayload, forwardPaymentLinkCreated } from "./power-automate.js";
 
 const IPAG_SANDBOX_BASE = "https://sandbox.ipag.com.br";
 const COURSE_AMOUNT_PER_SLOT = 1000;
@@ -94,7 +95,7 @@ export function buildIpagCustomer({
   };
 }
 
-export async function handlePaymentLinkRequest(request, env) {
+export async function handlePaymentLinkRequest(request, env, ctx) {
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -171,6 +172,7 @@ export async function handlePaymentLinkRequest(request, env) {
     };
 
     if (!env.PAYMENTS_DB) {
+      console.error("[IPAG] PAYMENTS_DB binding is missing at runtime");
       return jsonResponse({ error: "Persistência de reservas não está configurada." }, 500);
     }
 
@@ -234,9 +236,30 @@ export async function handlePaymentLinkRequest(request, env) {
       ipag_uuid: attributes.uuid || null,
       order_id: attributes.order_id || null
     });
+
+    const paymentLink = data?.links?.payment || "";
+    if (paymentLink) {
+      const notificationPayload = buildPaymentLinkCreatedPayload({
+        paymentReference,
+        link: paymentLink,
+        uuid: attributes.uuid,
+        orderId: attributes.order_id,
+        name,
+        email,
+        amount: attributes.amount ?? amount,
+        classId: body.turmas,
+        desiredSlots: body.vagasDesejadas
+      });
+      const notification = forwardPaymentLinkCreated(env, notificationPayload).catch((error) => {
+        console.error(`[POWER_AUTOMATE] Failed to send payment_link.created error=${error?.message || "network error"}`);
+      });
+      if (ctx?.waitUntil) ctx.waitUntil(notification);
+      else await notification;
+    }
+
     return jsonResponse({
     success: true,
-    link: data?.links?.payment || "",
+    link: paymentLink,
     uuid: attributes.uuid || "",
     externalCode: paymentReference,
     paymentReference,

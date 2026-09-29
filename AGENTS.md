@@ -9,6 +9,14 @@ Fontes de referência:
 - `prompt-pattern.md`: modelo oficial de solicitação.
 - `.agents/`: regras especializadas de convenções, segurança e Cloudflare.
 
+## Precedência e responsabilidade
+
+- Este arquivo é o contrato obrigatório para qualquer agente que altere o repositório.
+- `docs/escopo-projeto.md` é a fonte oficial para arquitetura, rotas, contratos, integrações e variáveis de ambiente.
+- `.agents/` contém regras técnicas especializadas e não deve contradizer este contrato ou o escopo oficial.
+- `README.md` contém apenas instruções operacionais, configuração rápida e links para a documentação oficial.
+- Em caso de conflito, siga esta ordem: `AGENTS.md`, `docs/escopo-projeto.md`, `.agents/`, `README.md`.
+
 ## Antes de alterar
 
 - Leia `README.md`, este `AGENTS.md` e o código do fluxo afetado.

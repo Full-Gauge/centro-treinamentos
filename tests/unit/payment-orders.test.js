@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { markPaymentOrderPaid, updatePaymentOrder } from "../../worker/payment-orders.js";
 import { buildIpagCustomer, getPaymentAmount } from "../../worker/worker-ipag.js";
+import { buildPaymentLinkCreatedPayload } from "../../worker/power-automate.js";
 
 test("buildIpagCustomer envia o endereco para o link e para o checkout", () => {
   const address = {
@@ -33,6 +34,24 @@ test("getPaymentAmount calcula o total da PJ pelo número de vagas", () => {
   assert.equal(getPaymentAmount({ tipoPessoa: "PJ", vagasDesejadas: "3" }), "3000.00");
   assert.equal(getPaymentAmount({ tipoPessoa: "PF", vagasDesejadas: "9" }), "1000.00");
   assert.equal(getPaymentAmount({ tipoPessoa: "PJ", vagasDesejadas: "0" }), null);
+});
+
+test("monta evento de link criado com idempotência local", () => {
+  const payload = buildPaymentLinkCreatedPayload({
+    paymentReference: "FG-001",
+    link: "https://pay.test/001",
+    uuid: "IPAG-001",
+    name: "Pessoa Teste",
+    email: "teste@example.com",
+    amount: "2000.00",
+    classId: "TURMA-001",
+    desiredSlots: "2"
+  });
+
+  assert.equal(payload.event, "payment_link.created");
+  assert.equal(payload.event_id, "payment_link.created:FG-001");
+  assert.equal(payload.amount, 2000);
+  assert.equal(payload.desired_slots, 2);
 });
 
 function createDatabaseSpy() {

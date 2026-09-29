@@ -824,7 +824,6 @@ async function lookupCep(value) {
     setAddressFieldValue("enderecoCobranca", data.logradouro);
     setAddressFieldValue("bairroCobranca", data.bairro);
     setAddressFieldValue("cidadeCobranca", data.localidade);
-    setAddressFieldValue("paisCobranca", "BR");
     const state = document.getElementById("estadoCobranca");
     if (data.uf && state && (!state.value || cepAutofillValues.estadoCobranca === state.value)) {
       state.value = data.uf;
@@ -1050,7 +1049,7 @@ function renderFields() {
       if (f.id === "vagasDesejadas" && !formData.turmas) return "";
       if (f.id === "vagasDesejadas" && selectedTurmaHasNoSeats()) return "";
       if (f.id === "estrangeiro" && formData.tipoPessoa === "PJ") return "";
-      if (f.id === "empresa" && formData.tipoPessoa === "PF") return "";
+      if (f.id === "empresa" && formData.tipoPessoa === "PJ") return "";
       const fieldType = (f.id === "empresa" && formData.relacao === "GERAL") ? "text" : f.type;
 
       const isCnpjField = f.id === "cpf" && formData.tipoPessoa === "PJ";
@@ -2388,7 +2387,7 @@ async function init() {
             atuacao: "Industrial",
             cidade: "Canoas",
             telefone: "(51) 98888-7777",
-            email: "teste.debug@fullgauge.com.br",
+            email: "ian.campillay@fullgauge.com.br",
             cepCobranca: "92010-000",
             enderecoCobranca: "Rua dos Testes",
             numeroEnderecoCobranca: "100",

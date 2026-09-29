@@ -157,7 +157,66 @@ function getPaymentReferences(details) {
     .filter((value, index, values) => value && values.indexOf(value) === index);
 }
 
-export async function handleIpagPaymentConfirmed(request, env) {
+async function forwardPaymentConfirmation({ request, env, details, eventClaim, powerAutomateUrl }) {
+  if (!powerAutomateUrl || !env.POWER_AUTOMATE_WEBHOOK_TOKEN) {
+    console.error("[IPAG] Payment confirmed locally but Power Automate forwarding is not configured");
+    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
+    return;
+  }
+
+  const powerAutomateHeaders = requirePowerAutomateHeaders(env);
+  if (powerAutomateHeaders.error) {
+    console.error("[IPAG] Payment confirmed locally but Power Automate headers are not configured");
+    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
+    return;
+  }
+
+  const forwardedHeaders = new Headers(powerAutomateHeaders.headers);
+  forwardedHeaders.set("Content-Type", "application/json");
+  forwardedHeaders.set("X-CT-Source", "ipag-webhook");
+  forwardedHeaders.set("X-CT-Webhook-Token", env.POWER_AUTOMATE_WEBHOOK_TOKEN);
+
+  for (const headerName of ["X-Ipag-Signature", "X-Ipag-Event", "X-Ipag-Timestamps"]) {
+    const value = request.headers.get(headerName);
+    if (value) forwardedHeaders.set(headerName, value);
+  }
+
+  try {
+    const forwardedBody = JSON.stringify(getPowerAutomatePayload(details));
+    const response = await fetch(powerAutomateUrl, {
+      method: "POST",
+      headers: forwardedHeaders,
+      body: forwardedBody
+    });
+
+    if (response.ok) {
+      await updatePaymentEvent(
+        env,
+        eventClaim.idempotencyKey,
+        eventClaim.claimToken,
+        "completed",
+        new Date().toISOString()
+      );
+
+      console.log(
+        `[IPAG] TransactionCaptured forwarded successfully transactionId=${details.transactionId} orderId=${details.orderId}`
+      );
+      return;
+    }
+
+    console.error(
+      `[IPAG] Failed to forward TransactionCaptured to Power Automate transactionId=${details.transactionId} orderId=${details.orderId} powerAutomateStatus=${response.status}`
+    );
+  } catch (error) {
+    console.error(
+      `[IPAG] Failed to forward TransactionCaptured to Power Automate transactionId=${details.transactionId} orderId=${details.orderId} error=${error?.message || "network error"}`
+    );
+  }
+
+  await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
+}
+
+export async function handleIpagPaymentConfirmed(request, env, ctx) {
   if (request.method !== "POST") {
     return jsonResponse({ success: false, error: "Method not allowed" }, 405);
   }
@@ -258,62 +317,20 @@ export async function handleIpagPaymentConfirmed(request, env) {
     return jsonResponse({ success: false, error: "Payment confirmation persistence failed" }, 503);
   }
 
-  if (!powerAutomateUrl || !env.POWER_AUTOMATE_WEBHOOK_TOKEN) {
-    console.error("[IPAG] Payment confirmed locally but Power Automate forwarding is not configured");
-    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
-    return jsonResponse({ success: true, confirmed: true, forwarded: false });
-  }
+  const forwarding = forwardPaymentConfirmation({
+    request,
+    env,
+    details,
+    eventClaim,
+    powerAutomateUrl
+  });
 
-  const powerAutomateHeaders = requirePowerAutomateHeaders(env);
-  if (powerAutomateHeaders.error) {
-    console.error("[IPAG] Payment confirmed locally but Power Automate headers are not configured");
-    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
-    return jsonResponse({ success: true, confirmed: true, forwarded: false });
-  }
+  if (ctx?.waitUntil) ctx.waitUntil(forwarding);
+  else await forwarding;
 
-  const forwardedHeaders = new Headers(powerAutomateHeaders.headers);
-  forwardedHeaders.set("Content-Type", "application/json");
-  forwardedHeaders.set("X-CT-Source", "ipag-webhook");
-  forwardedHeaders.set("X-CT-Webhook-Token", env.POWER_AUTOMATE_WEBHOOK_TOKEN);
-
-  for (const headerName of ["X-Ipag-Signature", "X-Ipag-Event", "X-Ipag-Timestamps"]) {
-    const value = request.headers.get(headerName);
-    if (value) forwardedHeaders.set(headerName, value);
-  }
-
-  try {
-    const forwardedBody = JSON.stringify(getPowerAutomatePayload(details));
-    const response = await fetch(powerAutomateUrl, {
-      method: "POST",
-      headers: forwardedHeaders,
-      body: forwardedBody
-    });
-
-    if (response.ok) {
-      await updatePaymentEvent(
-        env,
-        eventClaim.idempotencyKey,
-        eventClaim.claimToken,
-        "completed",
-        new Date().toISOString()
-      );
-
-      console.log(
-        `[IPAG] TransactionCaptured forwarded successfully transactionId=${details.transactionId} orderId=${details.orderId}`
-      );
-      return jsonResponse({ success: true, message: "Payment confirmation received" });
-    }
-
-    console.error(
-      `[IPAG] Failed to forward TransactionCaptured to Power Automate transactionId=${details.transactionId} orderId=${details.orderId} powerAutomateStatus=${response.status}`
-    );
-    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
-    return jsonResponse({ success: false, error: "Payment confirmation processing failed" }, 502);
-  } catch (error) {
-    console.error(
-      `[IPAG] Failed to forward TransactionCaptured to Power Automate transactionId=${details.transactionId} orderId=${details.orderId} error=${error?.message || "network error"}`
-    );
-    await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
-    return jsonResponse({ success: false, error: "Payment confirmation processing failed" }, 502);
-  }
+  return jsonResponse({
+    success: true,
+    confirmed: true,
+    forwarded: Boolean(powerAutomateUrl && env.POWER_AUTOMATE_WEBHOOK_TOKEN && env.API_KEY)
+  });
 }

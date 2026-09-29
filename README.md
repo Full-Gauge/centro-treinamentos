@@ -64,20 +64,68 @@ Não é necessário atualizar o escopo para refatorações internas, ajustes de 
 
 O modelo oficial para solicitar alterações é [`prompt-pattern.md`](prompt-pattern.md).
 
-Secrets do Worker devem ser alteradas via CLI do Wrangler, usando a configuração do ambiente correto:
+## Secrets e configurações por ambiente
+
+Os secrets do Worker devem ser alterados via CLI do Wrangler, usando a configuração do ambiente correto. Nunca registre os valores no repositório, em prompts, logs ou tickets. Execute os comandos abaixo para cada ambiente necessário:
 
 ```powershell
+# Segurança e autenticação
 npx wrangler secret put JWT_SECRET --config wrangler.dev.jsonc
 npx wrangler secret put API_KEY --config wrangler.dev.jsonc
+npx wrangler secret put ADMIN_ACCESS_TOKEN --config wrangler.dev.jsonc
+
+# Integração iPag
 npx wrangler secret put IPAG_API_ID --config wrangler.dev.jsonc
 npx wrangler secret put IPAG_API_KEY --config wrangler.dev.jsonc
+
+# Integrações Power Automate
+npx wrangler secret put POWER_AUTOMATE_PAYMENT_LINK_CREATED_URL --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_WEBHOOK_TOKEN --config wrangler.dev.jsonc
+
+# Validação humana
 npx wrangler secret put TURNSTILE_SECRET_KEY --config wrangler.dev.jsonc
-npx wrangler secret put TURNSTILE_SITE_KEY --config wrangler.dev.jsonc
+
+# Proxies e integrações auxiliares
+npx wrangler secret put url_registro --config wrangler.dev.jsonc
+npx wrangler secret put url_turmas --config wrangler.dev.jsonc
+npx wrangler secret put url_modulos --config wrangler.dev.jsonc
+npx wrangler secret put url_parceiros --config wrangler.dev.jsonc
+npx wrangler secret put url_token --config wrangler.dev.jsonc
+npx wrangler secret put url_registro_presenca --config wrangler.dev.jsonc
+npx wrangler secret put URL_VALIDATE_CPF_MODULOS --config wrangler.dev.jsonc
+npx wrangler secret put ATTENDANCE_WEBHOOK_URL --config wrangler.dev.jsonc
+npx wrangler secret put CONFIRMATION_WEBHOOK_URL --config wrangler.dev.jsonc
+npx wrangler secret put CANCELLATION_WEBHOOK_URL --config wrangler.dev.jsonc
+npx wrangler secret put NAME_VALIDATION_WEBHOOK_URL --config wrangler.dev.jsonc
 ```
 
 Para produção, repita o comando trocando `wrangler.dev.jsonc` por `wrangler.prod.jsonc`.
+
+Os significados, responsabilidades, fallbacks e distinções entre secrets, variáveis públicas e bindings estão documentados em [`docs/escopo-projeto.md`](docs/escopo-projeto.md), seção 8. Não duplique essa lista aqui.
+
+### O que é obrigatório
+
+Para o fluxo principal de inscrição e pagamento funcionar, configure pelo menos:
+
+- `JWT_SECRET`
+- `API_KEY`
+- `IPAG_API_ID`
+- `IPAG_API_KEY`
+- `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`
+- `POWER_AUTOMATE_WEBHOOK_TOKEN`
+- `TURNSTILE_SECRET_KEY`
+- `url_turmas`, `url_modulos`, `url_registro`, `url_token` e `url_parceiros`
+- binding `PAYMENTS_DB` com as migrations aplicadas
+- binding `URL_SHORTENER_KV`
+
+Para enviar o link de pagamento por e-mail, configure também:
+
+- `POWER_AUTOMATE_PAYMENT_LINK_CREATED_URL`
+
+Para acessar a tela administrativa `/admin.html`, configure:
+
+- `ADMIN_ACCESS_TOKEN`
 
 Depois de gerar o documento Word, copie o arquivo final para:
 
@@ -99,30 +147,6 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 
 ## Ambientes e hospedagem
 
-### Worker
-
-- `url_registro`
-- `url_turmas`
-- `url_modulos`
-- `url_parceiros`
-- `url_token`
-- `url_registro_presenca`
-- `ATTENDANCE_WEBHOOK_URL`
-- `CONFIRMATION_WEBHOOK_URL`
-- `CANCELLATION_WEBHOOK_URL`
-- `NAME_VALIDATION_WEBHOOK_URL`
-- `URL_VALIDATE_CPF_MODULOS`
-- `IPAG_BASE_URL` (opcional)
-- valor do link iPag: `R$ 1.000,00` por vaga; PJ paga `vagasDesejadas × R$ 1.000,00`
-- `IPAG_DEFAULT_DESCRIPTION` (opcional)
-- `IPAG_LINK_EXPIRES_DAYS` (opcional; padrão 7)
-- `JWT_SECRET`
-- `API_KEY` obrigatória para os proxies enviados ao Power Automate
-- `IPAG_API_ID` e `IPAG_API_KEY` (secrets) para o iPag; `IPAG_API_KEY` também valida o HMAC-SHA256 do webhook
-- `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL` (secret) para confirmações `TransactionCaptured` do iPag
-- `POWER_AUTOMATE_WEBHOOK_TOKEN` (secret) enviado no header `X-CT-Webhook-Token` ao Power Automate
-- `URL_SHORTENER_KV`
-
 ### Fluxo do checkout
 
 Após aceitar os termos, PF e PJ escolhem Pix ou cartão e recebem um link iPag. PF paga uma vaga; PJ paga `vagasDesejadas × R$ 1.000,00`. Ao abrir o link, a tela aguarda o pagamento e consulta `GET /api/payment-status`. Somente após a confirmação pelo webhook `POST /api/webhooks/ipag/payment-confirmed` o cadastro é enviado para `/api/register`.
@@ -131,17 +155,14 @@ O webhook valida HMAC-SHA256, `TransactionCaptured`, status `8`/`CAPTURED` e enc
 
 Idempotência é obrigatória: o mesmo `transaction_uuid` não pode gerar mais de um processamento ou e-mail. O Worker usa D1 com chave única para bloquear duplicidades; o KV é usado apenas para o status exibido pela tela. O D1 de dev já está configurado; produção precisa do binding e da migration equivalentes.
 
-### Deploy
-
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-
 ### Observações
 
 - `CANCELLATION_WEBHOOK_URL` pode cair para `CONFIRMATION_WEBHOOK_URL` como fallback.
 - `ATTENDANCE_WEBHOOK_URL` pode cair para `url_registro_presenca` como fallback.
 - `URL_SHORTENER_KV` é um binding de KV, não uma secret.
 - `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` são usados apenas se o deploy for executado por CI; o fluxo padrão deste projeto é o deploy manual pelo Wrangler.
+
+Para a descrição completa da configuração do Worker e dos secrets de CI, consulte [`docs/escopo-projeto.md`](docs/escopo-projeto.md), seção 8.
 
 O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirmed`. Cadastre a URL completa do Worker no iPag. O Worker valida a assinatura HMAC-SHA256 sobre o corpo bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Para o Power Automate, encaminha somente `event`, `transaction_uuid`, `name`, `email`, `order_id`, `amount`, `status`, `payment_method`, `installments`, `captured_at` e `acquirer`, além dos headers `x-api-key` e `X-CT-Webhook-Token`. Após a confirmação, a tela consulta `GET /api/payment-status?reference=...` até mostrar a inscrição como realizada com sucesso.
 
@@ -156,6 +177,7 @@ O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirme
 - `docs/escopo-projeto.md`: escopo técnico e arquitetura
 - `prompt-pattern.md`: modelo oficial de prompt para este projeto
 - `AGENTS.md`: contrato operacional para agentes de desenvolvimento
+- `.agents/`: regras técnicas especializadas para agentes
 - `scripts/generate-project-scope-docx.ps1`: geração do DOCX em `.artifacts\escopo-projeto.docx`
 - `wrangler.dev.jsonc` / `wrangler.prod.jsonc`: configs de deploy por ambiente
 - `.agents/*.md`: skills do projeto (Ponytail, convenções, segurança e Cloudflare Workers)

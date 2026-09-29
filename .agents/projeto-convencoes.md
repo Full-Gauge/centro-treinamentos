@@ -5,7 +5,7 @@ Siga estas regras em toda alteração neste repositório.
 ## Estrutura
 - Frontend estático em `public/` (HTML + JS puro em `public/js/*`), sem framework.
 - Backend em Cloudflare Workers: roteamento só em `src/index.js`, handlers em `worker/*.js`.
-- Escopo oficial: `docs/escopo-projeto.md`. Guia interno: `codex.md`.
+- Escopo oficial: `docs/escopo-projeto.md`. Contrato para agentes: `AGENTS.md`.
 
 ## Contratos que não podem quebrar
 - `modules` é array real de strings (`string[]`). Array serializado como string NÃO é contrato válido.
@@ -46,7 +46,7 @@ Siga estas regras em toda alteração neste repositório.
 - Webhooks: `ATTENDANCE_WEBHOOK_URL`, `CONFIRMATION_WEBHOOK_URL`, `CANCELLATION_WEBHOOK_URL`, `NAME_VALIDATION_WEBHOOK_URL`, `URL_VALIDATE_CPF_MODULOS`
 - iPag: `IPAG_BASE_URL` (opcional), `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS`; o valor atual do link é fixo em R$ 1.000,00 no Worker
 - Webhook iPag: `POST /api/webhooks/ipag/payment-confirmed` usa `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`
-- Secrets: `JWT_SECRET`, `API_KEY`, `IPAG_API_ID`, `IPAG_API_KEY`, `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`
+- A lista oficial e a finalidade dos secrets estão em `docs/escopo-projeto.md`, seção 8.1.
 - Binding KV: `URL_SHORTENER_KV`
 
 ## Regras
