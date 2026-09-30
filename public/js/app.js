@@ -89,7 +89,7 @@ const i18n = {
     termsDownloaded: "PDF baixado com sucesso.",
     modulesInfo: "O curso completo é composto por {count} módulos. Você pode se inscrever em todos eles na mesma turma ou em turmas diferentes, desde que não repita um módulo.",
     termsLinkMobileLabel: "Baixar Termos de Uso",
-    partnerClassLocked: "Turma vinculada ao token do parceiro.",
+    partnerClassLocked: "Turma vinculada ao token informado.",
     payNow: "Pagar agora",
     generatingPayment: "Gerando link de pagamento...",
     paymentError: "Não foi possível gerar o link de pagamento. Tente novamente.",
@@ -193,7 +193,7 @@ const i18n = {
     termsDownloaded: "PDF downloaded successfully.",
     modulesInfo: "The full course is made up of {count} modules. You can enroll in all of them in the same class or across different classes, as long as you do not repeat a module.",
     termsLinkMobileLabel: "Download Terms of Use",
-    partnerClassLocked: "Class linked to the partner token.",
+    partnerClassLocked: "Class linked to the provided token.",
     payNow: "Pay now",
     generatingPayment: "Generating payment link...",
     paymentError: "Could not generate the payment link. Please try again.",
@@ -297,7 +297,7 @@ const i18n = {
     termsDownloaded: "PDF descargado con éxito.",
     modulesInfo: "El curso completo está compuesto por {count} módulos. Puedes inscribirte en todos ellos en la misma clase o en clases diferentes, siempre que no repitas un módulo.",
     termsLinkMobileLabel: "Descargar Términos de Uso",
-    partnerClassLocked: "Clase vinculada al token del socio.",
+    partnerClassLocked: "Clase vinculada al token informado.",
     payNow: "Pagar ahora",
     generatingPayment: "Generando enlace de pago...",
     paymentError: "No se pudo generar el enlace de pago. Inténtelo de nuevo.",
@@ -384,6 +384,7 @@ const STEPS = [
           { value: "PF", label: { pt: "Pessoa Física", en: "Individual", es: "Persona Física" } },
           { value: "PJ", label: { pt: "Pessoa Jurídica", en: "Legal entity", es: "Persona Jurídica" } },
           { value: "PARCEIRO", label: { pt: "Parceiro", en: "Partner", es: "Socio" } },
+          { value: "TOKEN", label: { pt: "Inscrição com Token", en: "Registration with Token", es: "Inscripción con Token" } },
         ],
       },
       { id: "token", label: { pt: "Qual o token enviado pelo parceiro? *", en: "Which token is sent by the partner? *", es: "¿Qué token es enviado por el socio? *" }, type: "text", required: true, validateToken: true, uppercase: true },
@@ -618,6 +619,17 @@ let turmasFromPartnerToken = null;
 let allTurmasOptions = [];
 let allEmpresaOptions = DEFAULT_EMPRESA_OPTIONS.slice();
 const COURSE_AMOUNT = 1000;
+const FOREIGNER_OPTIONAL_ADDRESS_FIELDS = [
+  "enderecoCobranca",
+  "numeroEnderecoCobranca",
+  "bairroCobranca",
+  "complementoCobranca",
+];
+
+function isRequiredField(field) {
+  return field.required
+    && !(formData.estrangeiro && (field.id === "cpf" || FOREIGNER_OPTIONAL_ADDRESS_FIELDS.includes(field.id)));
+}
 const PAYMENT_WINDOW_NAME = "fgIpagPaymentWindow";
 let paymentStatusTimer = null;
 let paymentReference = "";
@@ -1026,6 +1038,10 @@ function renderFields() {
     }
   }
 
+  const classSelectionNoticeHtml = step.fields.some((field) => field.id === "turmas") && formData.tipoPessoa === "PJ"
+    ? `<div class="payment-step-summary full"><p class="payment-legal-entity-notice">${t("legalEntityTokenNotice")}</p></div>`
+    : "";
+
   const paymentStepHtml = currentStep === STEPS.length - 1
     ? `<div class="payment-step-summary payment-step-summary--detailed full">
         <div class="payment-step-summary-heading">${t("paymentSummary")}</div>
@@ -1036,20 +1052,21 @@ function renderFields() {
           <div class="payment-step-total"><span>${t("totalAmount")}</span><strong>${formatCurrency(getPaymentAmount())}</strong></div>
         </div>
         <p>${t("paymentSecurity")}</p>
-        ${formData.tipoPessoa === "PJ" ? `<p class="payment-legal-entity-notice">${t("legalEntityTokenNotice")}</p>` : ""}
       </div>
       ${turnstileSiteKey ? `<div class="turnstile-payment-wrap full"><div id="turnstile-payment-widget" class="cf-turnstile" data-sitekey="${escapeHtml(turnstileSiteKey)}"></div></div>` : ""}`
     : "";
 
-  container.innerHTML = paymentStepHtml + termsLinkHtml + step.fields
+  container.innerHTML = classSelectionNoticeHtml + paymentStepHtml + termsLinkHtml + step.fields
     .map((f) => {
-      // O campo token só deve aparecer se a relação for PARCEIRO
-      if (f.id === "token" && formData.relacao !== "PARCEIRO") return "";
+      // O campo token só aparece na inscrição com token.
+      if (f.id === "token" && formData.relacao !== "TOKEN") return "";
+      if (f.id === "cidade" && ["PF", "PJ"].includes(formData.tipoPessoa)) return "";
+      if (["segmento", "atuacao"].includes(f.id) && formData.tipoPessoa === "PJ") return "";
+      if (f.id === "cepCobranca" && formData.estrangeiro) return "";
       if (f.onlyFor && formData.tipoPessoa !== f.onlyFor) return "";
       if (f.id === "vagasDesejadas" && !formData.turmas) return "";
       if (f.id === "vagasDesejadas" && selectedTurmaHasNoSeats()) return "";
-      if (f.id === "estrangeiro" && formData.tipoPessoa === "PJ") return "";
-      if (f.id === "empresa" && formData.tipoPessoa === "PJ") return "";
+      if (f.id === "empresa" && formData.tipoPessoa !== "PARCEIRO") return "";
       const fieldType = (f.id === "empresa" && formData.relacao === "GERAL") ? "text" : f.type;
 
       const isCnpjField = f.id === "cpf" && formData.tipoPessoa === "PJ";
@@ -1058,11 +1075,9 @@ function renderFields() {
         : f.id === "fullName" && formData.tipoPessoa === "PJ"
           ? { pt: "Nome do responsável *", en: "Responsible person *", es: "Nombre del responsable *" }[currentLang]
           : (f.label[currentLang] || f.label.pt);
-      const fieldLabel = f.id === "cpf" && formData.estrangeiro
-        ? label.replace(/\s*\*$/, "")
-        : label;
+      const fieldLabel = isRequiredField(f) ? label : label.replace(/\s*\*$/, "");
       let val = f.id === "relacao"
-        ? (formData.relacao === "PARCEIRO" ? "PARCEIRO" : (formData.tipoPessoa || ""))
+        ? (formData.relacao === "TOKEN" ? "TOKEN" : (formData.tipoPessoa || ""))
         : (formData[f.id] ?? "");
       const fullClass = f.full ? "full" : "";
 
@@ -1174,10 +1189,10 @@ function renderFields() {
             </div>`
           : "";
         return `<div class="field-wrap ${fullClass} ${isLoading ? 'loading-select' : ''} ${isLocked ? 'field-wrap--locked' : ''}">
-          <label for="${f.id}">${label}</label>
-          ${f.id === "turmas" ? `<div class="turma-select-row"><select id="${f.id}" name="${f.id}"${f.required ? " required" : ""}${isLoading || isLocked ? " disabled" : ""}>
+          <label for="${f.id}">${fieldLabel}</label>
+          ${f.id === "turmas" ? `<div class="turma-select-row"><select id="${f.id}" name="${f.id}"${isRequiredField(f) ? " required" : ""}${isLoading || isLocked ? " disabled" : ""}>
             <option value="">${placeholder}</option>${opts}
-          </select>${turmaAvailability}</div>` : `<select id="${f.id}" name="${f.id}"${f.required ? " required" : ""}${isLoading || isLocked ? " disabled" : ""}>
+          </select>${turmaAvailability}</div>` : `<select id="${f.id}" name="${f.id}"${isRequiredField(f) ? " required" : ""}${isLoading || isLocked ? " disabled" : ""}>
             <option value="">${placeholder}</option>${opts}
           </select>`}
           ${helperText}${f.id === "turmas" ? waitingList : ""}
@@ -1194,7 +1209,7 @@ function renderFields() {
           </label>`;
         }).join("");
         return `<div class="field-wrap ${fullClass}" id="field-wrap-${f.id}">
-          <label>${label}</label>
+            <label>${fieldLabel}</label>
           <div class="radio-group" role="group" aria-label="${label}" id="${f.id}-group">
             ${chips}
           </div>
@@ -1207,8 +1222,8 @@ function renderFields() {
         return `<div class="field-wrap ${fullClass}" id="field-wrap-${f.id}">
           <div class="checkbox-group">
             <label class="checkbox-chip${val === true ? " checkbox-chip--selected" : ""}" for="${f.id}">
-              <input type="checkbox" id="${f.id}" name="${f.id}" ${checked} ${f.required ? "required" : ""} ${disabledAttr}>
-              <span>${label}</span>
+              <input type="checkbox" id="${f.id}" name="${f.id}" ${checked} ${isRequiredField(f) ? "required" : ""} ${disabledAttr}>
+              <span>${fieldLabel}</span>
             </label>
           </div>
         </div>`;
@@ -1226,7 +1241,7 @@ function renderFields() {
           id="${f.id}"
           name="${f.id}"
           value="${escapeHtml(f.uppercase ? val.toUpperCase() : val)}"
-          ${f.required && !(f.id === "cpf" && formData.estrangeiro) ? "required" : ""}
+          ${isRequiredField(f) ? "required" : ""}
           ${f.id === "cpf" && formData.estrangeiro ? "disabled" : ""}
           ${(f.validateEmail || f.validateToken || f.validateCpf || f.validatePhone || isCnpjField) ? `aria-describedby="${errorId}"` : ""}
           autocomplete="off"
@@ -1254,12 +1269,12 @@ function renderFields() {
           if (wrap) wrap.classList.remove("invalid-group");
 
           if (f.id === "relacao") {
-            const isPartner = radio.value === "PARCEIRO";
+            const isTokenRegistration = radio.value === "TOKEN";
             formData = {
-              tipoPessoa: radio.value,
-              relacao: isPartner ? "PARCEIRO" : "GERAL"
+              tipoPessoa: isTokenRegistration ? "PARCEIRO" : radio.value,
+              relacao: isTokenRegistration || radio.value === "PARCEIRO" ? radio.value : "GERAL"
             };
-            if (!isPartner) {
+            if (!isTokenRegistration && radio.value !== "PARCEIRO") {
               turmasFromPartnerToken = null;
               updateTurmasFieldOptions();
             }
@@ -1319,7 +1334,10 @@ function renderFields() {
         el.closest(".checkbox-chip")?.classList.toggle("checkbox-chip--selected", el.checked);
 
         if (f.id === "estrangeiro") {
-          if (el.checked) formData.cpf = "";
+          if (el.checked) {
+            formData.cpf = "";
+            formData.cepCobranca = "";
+          }
           render();
           return;
         }
@@ -1511,7 +1529,7 @@ function validateCurrentStep() {
       const checked = group.querySelector(`input[name="${f.id}"]:checked`);
       if (wrap) wrap.classList.remove("invalid-group");
       wrap?.classList.remove("required-empty-group");
-      if (f.required && !checked) {
+      if (isRequiredField(f) && !checked) {
         if (wrap) wrap.classList.add("invalid-group");
         wrap?.classList.add("required-empty-group");
         valid = false;
@@ -1526,7 +1544,7 @@ function validateCurrentStep() {
       wrap?.classList.remove("required-empty-group");
       
       const isEmpty = !Array.isArray(formData[f.id]) || formData[f.id].length === 0;
-      if (f.required && isEmpty) {
+      if (isRequiredField(f) && isEmpty) {
         if (wrap) wrap.classList.add("invalid-group");
         wrap?.classList.add("required-empty-group");
         valid = false;
@@ -1547,7 +1565,7 @@ function validateCurrentStep() {
     el.closest(".checkbox-chip")?.classList.remove("required-empty-chip");
 
     if (fieldType === "checkbox") {
-      if (f.required && !el.checked) {
+      if (isRequiredField(f) && !el.checked) {
         if (wrap) wrap.classList.add("invalid-group"); // Aplica ao wrap para consistência visual
         el.classList.add("required-empty");
         el.closest(".checkbox-chip")?.classList.add("required-empty-chip");
@@ -1559,7 +1577,7 @@ function validateCurrentStep() {
         ? (!Array.isArray(formData[f.id]) || formData[f.id].length === 0)
         : !el.value.trim();
 
-      if (f.required && !(f.id === "cpf" && formData.estrangeiro) && isEmpty) {
+      if (isRequiredField(f) && isEmpty) {
         el.classList.add("invalid");
         el.classList.add("required-empty");
         valid = false;
@@ -1604,7 +1622,7 @@ function validateCurrentStep() {
       valid = false;
     }
 
-    if (isCnpjField && el.value.trim() && !isValidCnpj(el.value)) {
+      if (isCnpjField && !formData.estrangeiro && el.value.trim() && !isValidCnpj(el.value)) {
       el.classList.add("invalid");
       const errSpan = document.getElementById(`${f.id}-error`);
       if (errSpan) errSpan.textContent = t("invalidCnpj");
@@ -1637,8 +1655,8 @@ async function goNext() {
     return;
   }
 
-  // Validação de Token via API na Etapa 1 (se for Parceiro)
-  if (currentStep === 0 && formData.relacao === "PARCEIRO") {
+  // Validação do token via API na etapa 1.
+  if (currentStep === 0 && formData.relacao === "TOKEN") {
     const tokenField = document.getElementById("token");
     const errSpan = document.getElementById("token-error");
     
@@ -2366,19 +2384,19 @@ async function init() {
         btn.innerHTML = `<span class="debug-fill-icon" aria-hidden="true">✦</span><span>${label}</span>`;
         btn.addEventListener('click', () => {
           const step = STEPS[currentStep];
-          const isPartner = relType === "PARCEIRO";
+          const isTokenRegistration = relType === "TOKEN";
           const isLegalEntity = relType === "PJ";
           formData = {
             ...formData,
             relacao: relType,
-            tipoPessoa: relType,
+            tipoPessoa: isTokenRegistration ? "PARCEIRO" : relType,
             listaEspera: false,
             vagasDesejadas: ""
           };
           const samples = {
             relacao: relType,
             tipoPessoa: relType,
-            token: isPartner ? "FULLGAUGE-6EY380IL10CCP3ZANSZZ" : "",
+            token: isTokenRegistration ? "FULLGAUGE-6EY380IL10CCP3ZANSZZ" : "",
             fullName: isLegalEntity ? "Responsável de Teste FG" : "Usuário de Teste FG",
             razaoSocial: isLegalEntity ? "Empresa de Teste FG Ltda" : "",
             cpf: isLegalEntity ? "04.252.011/0001-10" : "956.863.230-11",
@@ -2426,6 +2444,7 @@ async function init() {
       createFillBtn('Fill Individual', 'PF');
       createFillBtn('Fill Legal Entity', 'PJ');
       createFillBtn('Fill Partner', 'PARCEIRO');
+      createFillBtn('Fill Token Registration', 'TOKEN');
     }
   }
 }

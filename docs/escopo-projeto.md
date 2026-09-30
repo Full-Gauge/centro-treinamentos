@@ -61,11 +61,11 @@ A arquitetura combina:
 
 ### 5.1 Inscrição de treinamentos
 
-O fluxo principal roda em `public/index.html` com lógica em `public/js/app.js`. Ele funciona como um wizard com etapas, validação de campos e três entradas na primeira etapa: Pessoa Física, Pessoa Jurídica e Parceiro.
+O fluxo principal roda em `public/index.html` com lógica em `public/js/app.js`. Ele funciona como um wizard com etapas, validação de campos e quatro entradas na primeira etapa: Pessoa Física, Pessoa Jurídica, Parceiro e Inscrição com Token.
 
 Pontos principais:
 
-- validação de token de parceiro via `/api/validate-token` quando a opção Parceiro é escolhida
+- validação de token via `/api/validate-token` quando a opção Inscrição com Token é escolhida
 - preenchimento automático de dados quando o token é válido
 - na etapa 2, Pessoa Jurídica informa razão social, responsável e CNPJ para o iPag; Pessoa Física informa CPF
 - após a escolha da turma, Pessoa Jurídica pode selecionar as vagas desejadas em um combobox; a consulta de disponibilidade será adicionada depois
@@ -171,7 +171,7 @@ Pontos principais:
 ### 5.10 Fluxo ponta a ponta do checkout
 
 ```text
-1. Cliente escolhe PF, PJ ou Parceiro
+1. Cliente escolhe PF, PJ, Parceiro ou Inscrição com Token
 2. Preenche cadastro, turma, módulos e, para PJ, vagas desejadas
 3. Aceita os termos
 4. PF/PJ escolhe Pix ou cartão

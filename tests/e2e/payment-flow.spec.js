@@ -45,6 +45,7 @@ async function selectRegistrationType(page, label) {
 }
 
 async function fillCommonRegistration(page, { legalEntity = false } = {}) {
+  await expect(page.getByLabel("Cidade *")).toHaveCount(1);
   if (legalEntity) {
     await page.getByLabel("Nome do responsável *").fill("Responsável Playwright");
     await page.getByLabel("Razão Social *").fill("Empresa Playwright Ltda");
@@ -54,14 +55,18 @@ async function fillCommonRegistration(page, { legalEntity = false } = {}) {
 
   await page.locator("#cpf").fill(legalEntity ? "04.252.011/0001-10" : "956.863.230-11");
   if (!legalEntity) await expect(page.locator("#empresa")).toHaveCount(0);
-  await page.getByLabel("Segmento *").selectOption({ label: "Refrigeração" });
-  await page.getByLabel("Atuação *").selectOption({ label: "Industrial" });
+  if (legalEntity) {
+    await expect(page.getByLabel("Segmento *")).toHaveCount(0);
+    await expect(page.getByLabel("Atuação *")).toHaveCount(0);
+  } else {
+    await page.getByLabel("Segmento *").selectOption({ label: "Refrigeração" });
+    await page.getByLabel("Atuação *").selectOption({ label: "Industrial" });
+  }
   await page.getByLabel("Cidade *").first().fill("Canoas");
   await page.getByLabel("Telefone / WhatsApp *").fill("(51) 98888-7777");
   await page.getByLabel("E-mail *").fill("playwright@example.com");
   await page.getByLabel("CEP *").fill("92010-000");
   await expect(page.getByLabel("Rua / Logradouro *")).toHaveValue("Rua ViaCEP");
-  await expect(page.getByLabel("País *")).toHaveValue("BR");
   await page.getByLabel("Rua / Logradouro *").fill("Rua dos Testes");
   await page.getByLabel("Número *").fill("100");
   await page.getByLabel("Bairro *").fill("Centro");
@@ -77,6 +82,7 @@ async function completeCourseAndTerms(page, { legalEntity = false } = {}) {
   await page.getByLabel("Turmas *").selectOption("TURMA-001");
   await expect(page.locator("#turma-availability-helper")).toHaveText("16 vagas disponíveis");
   if (legalEntity) {
+    await expect(page.getByText("Os tokens dos participantes serão liberados após a confirmação do pagamento.")).toBeVisible();
     await expect(page.getByLabel("Vagas desejadas *").locator("option")).toHaveCount(17);
     await page.getByLabel("Vagas desejadas *").selectOption("2");
   }
@@ -112,6 +118,7 @@ test.describe("fluxo de pagamento", () => {
     await expect(page.getByRole("button", { name: /Fill Individual/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /Fill Legal Entity/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /Fill Partner/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Fill Token Registration/ })).toBeVisible();
 
     await page.getByRole("button", { name: /Fill Individual/ }).click();
     await expect(page.getByRole("radio", { name: "Pessoa Física" })).toBeChecked();
@@ -121,6 +128,10 @@ test.describe("fluxo de pagamento", () => {
 
     await page.getByRole("button", { name: /Fill Partner/ }).click();
     await expect(page.getByRole("radio", { name: "Parceiro" })).toBeChecked();
+    await expect(page.locator("#token")).toHaveCount(0);
+
+    await page.getByRole("button", { name: /Fill Token Registration/ }).click();
+    await expect(page.getByRole("radio", { name: "Inscrição com Token" })).toBeChecked();
     await expect(page.locator("#token")).toHaveValue("FULLGAUGE-6EY380IL10CCP3ZANSZZ");
 
     await page.getByRole("button", { name: /Fill Legal Entity/ }).click();
@@ -202,7 +213,6 @@ test.describe("fluxo de pagamento", () => {
 
     await expect(page.getByText("Turma Playwright")).toBeVisible();
     await expect(page.getByText("R$ 2.000,00")).toBeVisible();
-    await expect(page.getByText("Os tokens dos participantes serão liberados após a confirmação do pagamento.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Ir para o iPag" })).toBeVisible();
     await page.getByRole("radio", { name: "Pix" }).check();
     const paymentPopupPromise = page.waitForEvent("popup");
@@ -215,6 +225,23 @@ test.describe("fluxo de pagamento", () => {
     expect(registrationPayload).toBeUndefined();
     expect(paymentPayload.businessName).toBe("Empresa Playwright Ltda");
     expect(paymentPayload.vagasDesejadas).toBe("2");
+  });
+
+  test("Pessoa Jurídica pode se identificar como estrangeira sem CNPJ", async ({ page }) => {
+    await mockApis(page);
+    await page.goto("/");
+    await selectRegistrationType(page, "Pessoa Jurídica");
+
+    await page.getByLabel("Estrangeiro").check();
+    await expect(page.getByLabel("CNPJ")).toBeDisabled();
+    await expect(page.getByLabel("CNPJ")).not.toHaveAttribute("required");
+    await expect(page.locator("#cepCobranca")).toHaveCount(0);
+    await expect(page.locator("#cidadeCobranca")).toHaveAttribute("required", "");
+    await expect(page.locator("#estadoCobranca")).toHaveAttribute("required", "");
+    await expect(page.locator("#paisCobranca")).toHaveAttribute("required", "");
+    await expect(page.locator("#enderecoCobranca")).not.toHaveAttribute("required");
+    await expect(page.locator("#numeroEnderecoCobranca")).not.toHaveAttribute("required");
+    await expect(page.locator("#bairroCobranca")).not.toHaveAttribute("required");
   });
 
   test("turma sem vagas permite solicitar lista de espera sem abrir pagamento", async ({ page }) => {
