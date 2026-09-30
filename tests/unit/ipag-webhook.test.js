@@ -42,7 +42,7 @@ test("getPaymentDetails normaliza o evento capturado do iPag", () => {
   });
 });
 
-test("getPowerAutomatePayload envia somente o contrato capturado", () => {
+test("getPowerAutomatePayload inclui pagamento, pessoa e endereço da reserva", () => {
   const payload = getPowerAutomatePayload({
     transactionUuid: "UUID-001",
     customerName: "Pessoa Teste",
@@ -53,25 +53,51 @@ test("getPowerAutomatePayload envia somente o contrato capturado", () => {
     paymentMethod: "pix",
     installments: 1,
     capturedAt: "2026-09-17T15:20:37-03:00",
-    acquirer: "simulated"
+    acquirer: "simulated",
+    paymentLinkExternalCode: "FG-001"
+  }, {
+    payment_reference: "FG-001",
+    person_type: "PJ",
+    billing_street: "Rua Teste",
+    billing_number: "100",
+    billing_district: "Centro",
+    billing_complement: "Sala 2",
+    billing_city: "Canoas",
+    billing_state: "RS",
+    billing_country: "BR",
+    billing_zipcode: "92010000"
   });
 
   assert.deepEqual(Object.keys(payload).sort(), [
     "acquirer",
     "amount",
+    "bairroCobranca",
     "captured_at",
+    "cepCobranca",
+    "cidadeCobranca",
+    "complementoCobranca",
     "email",
+    "enderecoCobranca",
+    "estadoCobranca",
     "event",
     "installments",
     "name",
+    "numeroEnderecoCobranca",
     "order_id",
+    "paisCobranca",
+    "paymentReference",
     "payment_method",
     "status",
+    "tipoPessoa",
     "transaction_uuid"
   ]);
   assert.equal(payload.event, "payment.captured");
   assert.equal(payload.name, "Pessoa Teste");
   assert.equal(payload.email, "teste@example.com");
+  assert.equal(payload.paymentReference, "FG-001");
+  assert.equal(payload.tipoPessoa, "PJ");
+  assert.equal(payload.enderecoCobranca, "Rua Teste");
+  assert.equal(payload.cepCobranca, "92010000");
 });
 
 test("signaturesMatch compara HMAC hexadecimal sem aceitar formato inválido", () => {

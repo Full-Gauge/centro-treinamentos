@@ -45,7 +45,7 @@ export async function updatePaymentOrder(env, paymentReference, fields) {
 
   const values = Object.values(fields);
   values.push(new Date().toISOString(), paymentReference, paymentReference);
-  await requireDatabase(env)
+  return requireDatabase(env)
     .prepare(
       `UPDATE payment_orders
        SET ${assignments.join(", ")}, updated_at = ?
@@ -53,6 +53,23 @@ export async function updatePaymentOrder(env, paymentReference, fields) {
     )
     .bind(...values)
     .run();
+}
+
+export async function getPaymentOrderByReference(env, paymentReference) {
+  if (!paymentReference) return null;
+
+  return requireDatabase(env)
+    .prepare(
+      `SELECT payment_reference, person_type,
+              billing_street, billing_number, billing_district,
+              billing_complement, billing_city, billing_state,
+              billing_country, billing_zipcode
+       FROM payment_orders
+       WHERE payment_reference = ? OR order_id = ?
+       LIMIT 1`
+    )
+    .bind(paymentReference, paymentReference)
+    .first();
 }
 
 export async function markPaymentOrderPaid(env, details) {

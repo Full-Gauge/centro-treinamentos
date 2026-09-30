@@ -1,5 +1,5 @@
 import { requirePowerAutomateHeaders } from "./power-automate.js";
-import { markPaymentOrderPaid } from "./payment-orders.js";
+import { getPaymentOrderByReference, markPaymentOrderPaid } from "./payment-orders.js";
 
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -73,9 +73,11 @@ export function getPaymentDetails(payload) {
   };
 }
 
-export function getPowerAutomatePayload(details) {
+export function getPowerAutomatePayload(details, paymentOrder = {}) {
   return {
     event: "payment.captured",
+    paymentReference: paymentOrder.payment_reference || details.paymentLinkExternalCode || details.orderId || "",
+    tipoPessoa: paymentOrder.person_type || "",
     transaction_uuid: details.transactionUuid,
     name: details.customerName,
     email: details.customerEmail,
@@ -85,7 +87,15 @@ export function getPowerAutomatePayload(details) {
     payment_method: details.paymentMethod,
     installments: details.installments,
     captured_at: details.capturedAt,
-    acquirer: details.acquirer
+    acquirer: details.acquirer,
+    enderecoCobranca: paymentOrder.billing_street || "",
+    numeroEnderecoCobranca: paymentOrder.billing_number || "",
+    bairroCobranca: paymentOrder.billing_district || "",
+    complementoCobranca: paymentOrder.billing_complement || "",
+    cidadeCobranca: paymentOrder.billing_city || "",
+    estadoCobranca: paymentOrder.billing_state || "",
+    paisCobranca: paymentOrder.billing_country || "",
+    cepCobranca: paymentOrder.billing_zipcode || ""
   };
 }
 
@@ -157,7 +167,7 @@ function getPaymentReferences(details) {
     .filter((value, index, values) => value && values.indexOf(value) === index);
 }
 
-async function forwardPaymentConfirmation({ request, env, details, eventClaim, powerAutomateUrl }) {
+async function forwardPaymentConfirmation({ request, env, details, eventClaim, powerAutomateUrl, paymentOrder }) {
   if (!powerAutomateUrl || !env.POWER_AUTOMATE_WEBHOOK_TOKEN) {
     console.error("[IPAG] Payment confirmed locally but Power Automate forwarding is not configured");
     await updatePaymentEvent(env, eventClaim.idempotencyKey, eventClaim.claimToken, "failed");
@@ -182,7 +192,7 @@ async function forwardPaymentConfirmation({ request, env, details, eventClaim, p
   }
 
   try {
-    const forwardedBody = JSON.stringify(getPowerAutomatePayload(details));
+    const forwardedBody = JSON.stringify(getPowerAutomatePayload(details, paymentOrder));
     const response = await fetch(powerAutomateUrl, {
       method: "POST",
       headers: forwardedHeaders,
@@ -284,8 +294,13 @@ export async function handleIpagPaymentConfirmed(request, env, ctx) {
 
   // Confirma localmente antes de depender do Power Automate. Assim, o checkout
   // consegue sair de pending mesmo quando o fluxo de e-mail estiver indisponível.
+  let paymentOrder = null;
   try {
     const matchedPaymentReference = await markPaymentOrderPaid(env, details);
+    paymentOrder = await getPaymentOrderByReference(
+      env,
+      matchedPaymentReference || details.paymentLinkExternalCode || details.orderId
+    );
     console.log(
       `[IPAG] Local payment confirmation matched=${Boolean(matchedPaymentReference)} transactionUuid=${details.transactionUuid} orderId=${details.orderId}`
     );
@@ -322,7 +337,8 @@ export async function handleIpagPaymentConfirmed(request, env, ctx) {
     env,
     details,
     eventClaim,
-    powerAutomateUrl
+    powerAutomateUrl,
+    paymentOrder
   });
 
   if (ctx?.waitUntil) ctx.waitUntil(forwarding);

@@ -244,6 +244,18 @@ test.describe("fluxo de pagamento", () => {
     await expect(page.locator("#bairroCobranca")).not.toHaveAttribute("required");
   });
 
+  test("Pessoa Física estrangeira informa bairro em texto livre", async ({ page }) => {
+    await mockApis(page);
+    await page.goto("/");
+    await selectRegistrationType(page, "Pessoa Física");
+
+    await page.getByLabel("Nome Completo *").fill("Pessoa Estrangeira");
+    await page.getByLabel("Estrangeiro").check();
+
+    await expect(page.locator("#bairroCobranca")).toHaveAttribute("type", "text");
+    await expect(page.locator("#bairroCobranca")).not.toHaveAttribute("required");
+  });
+
   test("turma sem vagas permite solicitar lista de espera sem abrir pagamento", async ({ page }) => {
     let registerPayload;
     await mockApis(page, { status: "pending" });
