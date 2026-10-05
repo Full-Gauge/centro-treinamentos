@@ -118,9 +118,6 @@ O endpoint `/api/generate-jwt-register-attendance` emite tokens com:
 
 - `classId`
 - `email`
-- `modules` quando aplicável
-
-Importante: `modules` precisa ser um array real. Array serializado como string não deve ser tratado como contrato válido.
 
 ### 5.6 Encurtamento de URL
 

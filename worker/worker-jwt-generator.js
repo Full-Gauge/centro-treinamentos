@@ -1,22 +1,5 @@
 import { SignJWT } from 'jose';
 
-function normalizeModules(modules) {
-  if (!Array.isArray(modules)) return [];
-  return modules
-    .map((item) => {
-      if (typeof item === "string") return item.trim();
-      return (
-        item?.modulo ||
-        item?.value ||
-        item?.label ||
-        item?.name ||
-        item?.NAME ||
-        ""
-      ).toString().trim();
-    })
-    .filter(Boolean);
-}
-
 export async function handleJwtGenerationRequest(request, env) {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Método não permitido. Use POST.' }), {
@@ -26,11 +9,10 @@ export async function handleJwtGenerationRequest(request, env) {
   }
 
   try {
-    const { classId, email, modules = [] } = await request.json();
-    const jwtModules = normalizeModules(modules);
+    const { classId, email } = await request.json();
 
-    if (!classId || !email || !Array.isArray(modules)) {
-      return new Response(JSON.stringify({ error: 'classId/email/modules são obrigatórios.' }), {
+    if (!classId || !email) {
+      return new Response(JSON.stringify({ error: 'classId/email são obrigatórios.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -57,8 +39,7 @@ export async function handleJwtGenerationRequest(request, env) {
     // Gera o token com validade (ex: 7 dias)
     const jwt = await new SignJWT({
       classId,
-      email,
-      modules: jwtModules
+      email
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
