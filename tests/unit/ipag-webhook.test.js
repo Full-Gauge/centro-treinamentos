@@ -65,7 +65,12 @@ test("getPowerAutomatePayload inclui pagamento, pessoa e endereço da reserva", 
     billing_city: "Canoas",
     billing_state: "RS",
     billing_country: "BR",
-    billing_zipcode: "92010000"
+    billing_zipcode: "92010000",
+    registration_payload: JSON.stringify({
+      fullName: "Pessoa Teste",
+      relacao: "PF",
+      turmas: "TURMA-001"
+    })
   });
 
   assert.deepEqual(Object.keys(payload).sort(), [
@@ -80,6 +85,7 @@ test("getPowerAutomatePayload inclui pagamento, pessoa e endereço da reserva", 
     "enderecoCobranca",
     "estadoCobranca",
     "event",
+    "fullName",
     "installments",
     "name",
     "numeroEnderecoCobranca",
@@ -87,15 +93,20 @@ test("getPowerAutomatePayload inclui pagamento, pessoa e endereço da reserva", 
     "paisCobranca",
     "paymentReference",
     "payment_method",
+    "relacao",
     "status",
     "tipoPessoa",
-    "transaction_uuid"
-  ]);
+    "transaction_uuid",
+    "turmas"
+  ].sort());
   assert.equal(payload.event, "payment.captured");
   assert.equal(payload.name, "Pessoa Teste");
   assert.equal(payload.email, "teste@example.com");
   assert.equal(payload.paymentReference, "FG-001");
   assert.equal(payload.tipoPessoa, "PJ");
+  assert.equal(payload.fullName, "Pessoa Teste");
+  assert.equal(payload.relacao, "PF");
+  assert.equal(payload.turmas, "TURMA-001");
   assert.equal(payload.enderecoCobranca, "Rua Teste");
   assert.equal(payload.cepCobranca, "92010000");
 });

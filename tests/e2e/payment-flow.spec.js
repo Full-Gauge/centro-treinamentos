@@ -185,7 +185,7 @@ test.describe("fluxo de pagamento", () => {
     expect(paymentPayload.paisCobranca).toBe("BR");
 
     await expect(page.getByRole("heading", { name: "Cadastro enviado com sucesso!" })).toBeVisible({ timeout: 10000 });
-    expect(registrationPayload.paymentReference).toBe("FG-PLAYWRIGHT-001");
+    expect(registrationPayload).toBeUndefined();
   });
 
   test("Pessoa Jurídica exibe vagas desejadas e país adicional", async ({ page }) => {

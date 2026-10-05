@@ -180,8 +180,8 @@ Pontos principais:
 7. Tela abre o checkout iPag e consulta GET /api/payment-status a cada 5 segundos
 8. iPag envia POST /api/webhooks/ipag/payment-confirmed
 9. Worker valida assinatura, evento e status capturado
-10. Worker registra a confirmação e envia o evento ao Power Automate
-11. Frontend envia o cadastro para /api/register somente após `confirmed`
+10. Worker registra a confirmação e envia o cadastro completo ao destino de `/api/register`
+11. Frontend exibe sucesso após `confirmed`, sem reenviar o cadastro
 12. Tela mostra "Inscrição realizada com sucesso"
 ```
 
@@ -246,7 +246,6 @@ npx wrangler secret put ADMIN_ACCESS_TOKEN --config wrangler.dev.jsonc
 npx wrangler secret put IPAG_API_ID --config wrangler.dev.jsonc
 npx wrangler secret put IPAG_API_KEY --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_PAYMENT_LINK_CREATED_URL --config wrangler.dev.jsonc
-npx wrangler secret put POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_WEBHOOK_TOKEN --config wrangler.dev.jsonc
 npx wrangler secret put TURNSTILE_SECRET_KEY --config wrangler.dev.jsonc
 npx wrangler secret put url_registro --config wrangler.dev.jsonc
@@ -274,10 +273,9 @@ Os valores devem permanecer somente no ambiente Cloudflare. As URLs de webhook t
 - `IPAG_API_ID`: identificador da autenticação Basic Auth do iPag.
 - `IPAG_API_KEY`: credencial Basic Auth do iPag e segredo do HMAC-SHA256 do webhook.
 - `POWER_AUTOMATE_PAYMENT_LINK_CREATED_URL`: recebe o evento de link iPag criado.
-- `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`: recebe confirmações `TransactionCaptured`.
 - `POWER_AUTOMATE_WEBHOOK_TOKEN`: enviado no header `X-CT-Webhook-Token` aos fluxos de pagamento.
 - `TURNSTILE_SECRET_KEY`: valida no Worker os tokens do Cloudflare Turnstile.
-- `url_registro`: recebe o cadastro após a confirmação do pagamento.
+- `url_registro`: recebe o cadastro completo após a confirmação do pagamento pelo webhook.
 - `url_turmas`: consulta as turmas disponíveis.
 - `url_modulos`: consulta os módulos da turma.
 - `url_parceiros`: consulta os parceiros.
@@ -303,9 +301,9 @@ Os valores devem permanecer somente no ambiente Cloudflare. As URLs de webhook t
 - As configurações opcionais do iPag estão descritas em 8.2.
 - o valor do link iPag é `R$ 1.000,00` por vaga; para PJ, o total é `vagasDesejadas × R$ 1.000,00`
 
-O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Depois de persistir a confirmação localmente, responde imediatamente `200` ao iPag e encaminha o evento ao Power Automate em segundo plano. Para o Power Automate, envia os dados do pagamento (`event`, `transaction_uuid`, `name`, `email`, `order_id`, `amount`, `status`, `payment_method`, `installments`, `captured_at`, `acquirer`), `paymentReference`, `tipoPessoa` e todos os campos de endereço (`enderecoCobranca`, `numeroEnderecoCobranca`, `bairroCobranca`, `complementoCobranca`, `cidadeCobranca`, `estadoCobranca`, `paisCobranca` e `cepCobranca`), além dos headers `x-api-key` e `X-CT-Webhook-Token`.
+O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Depois de persistir a confirmação localmente, responde imediatamente `200` ao iPag e encaminha uma única inscrição completa ao mesmo destino de `/api/register` (`url_registro`) em segundo plano. O payload combina os dados originais do cadastro, `paymentReference`, `tipoPessoa`, os dados do pagamento (`event`, `transaction_uuid`, `name`, `email`, `order_id`, `amount`, `status`, `payment_method`, `installments`, `captured_at`, `acquirer`) e todos os campos de endereço (`enderecoCobranca`, `numeroEnderecoCobranca`, `bairroCobranca`, `complementoCobranca`, `cidadeCobranca`, `estadoCobranca`, `paisCobranca` e `cepCobranca`), além dos headers `x-api-key` e `X-CT-Webhook-Token`.
 
-O resultado do encaminhamento é registrado no D1 em `payment_events`: `completed` quando o Power Automate responde com `2xx` e `failed` quando há erro, indisponibilidade ou configuração ausente. Falhas do Power Automate não alteram o `200` já enviado ao iPag; o reprocessamento deve usar o registro `failed`.
+O resultado do encaminhamento é registrado no D1 em `payment_events`: `completed` quando o fluxo de inscrição responde com `2xx` e `failed` quando há erro, indisponibilidade ou configuração ausente. Falhas do destino não alteram o `200` já enviado ao iPag; o reprocessamento deve usar o registro `failed`.
 
 Após o encaminhamento bem-sucedido, o webhook grava a confirmação no KV. A tela consulta `GET /api/payment-status?reference=...` em intervalos de 5 segundos e só exibe "inscrição realizada com sucesso" após encontrar o status `confirmed`.
 

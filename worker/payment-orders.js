@@ -11,8 +11,8 @@ export async function createPaymentOrder(env, data) {
         (id, payment_reference, name, email, tax_receipt, phone, relation_type,
          person_type, class_id, desired_slots, billing_street, billing_number,
          billing_district, billing_complement, billing_city, billing_state,
-         billing_country, billing_zipcode, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'link_pending', ?, ?)`
+         billing_country, billing_zipcode, registration_payload, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'link_pending', ?, ?)`
     )
     .bind(
       data.id,
@@ -33,6 +33,7 @@ export async function createPaymentOrder(env, data) {
       data.billingAddress.state,
       data.billingAddress.country,
       data.billingAddress.zipcode,
+      JSON.stringify(data.registrationPayload || {}),
       now,
       now
     )
@@ -63,7 +64,7 @@ export async function getPaymentOrderByReference(env, paymentReference) {
       `SELECT payment_reference, person_type,
               billing_street, billing_number, billing_district,
               billing_complement, billing_city, billing_state,
-              billing_country, billing_zipcode
+              billing_country, billing_zipcode, registration_payload
        FROM payment_orders
        WHERE payment_reference = ? OR order_id = ?
        LIMIT 1`

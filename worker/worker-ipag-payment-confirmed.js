@@ -74,10 +74,20 @@ export function getPaymentDetails(payload) {
 }
 
 export function getPowerAutomatePayload(details, paymentOrder = {}) {
+  let registrationPayload = {};
+  try {
+    registrationPayload = paymentOrder.registration_payload
+      ? JSON.parse(paymentOrder.registration_payload)
+      : {};
+  } catch {
+    registrationPayload = {};
+  }
+
   return {
+    ...registrationPayload,
     event: "payment.captured",
     paymentReference: paymentOrder.payment_reference || details.paymentLinkExternalCode || details.orderId || "",
-    tipoPessoa: paymentOrder.person_type || "",
+    tipoPessoa: registrationPayload.tipoPessoa || paymentOrder.person_type || "",
     transaction_uuid: details.transactionUuid,
     name: details.customerName,
     email: details.customerEmail,
@@ -88,14 +98,14 @@ export function getPowerAutomatePayload(details, paymentOrder = {}) {
     installments: details.installments,
     captured_at: details.capturedAt,
     acquirer: details.acquirer,
-    enderecoCobranca: paymentOrder.billing_street || "",
-    numeroEnderecoCobranca: paymentOrder.billing_number || "",
-    bairroCobranca: paymentOrder.billing_district || "",
-    complementoCobranca: paymentOrder.billing_complement || "",
-    cidadeCobranca: paymentOrder.billing_city || "",
-    estadoCobranca: paymentOrder.billing_state || "",
-    paisCobranca: paymentOrder.billing_country || "",
-    cepCobranca: paymentOrder.billing_zipcode || ""
+    enderecoCobranca: registrationPayload.enderecoCobranca || paymentOrder.billing_street || "",
+    numeroEnderecoCobranca: registrationPayload.numeroEnderecoCobranca || paymentOrder.billing_number || "",
+    bairroCobranca: registrationPayload.bairroCobranca || paymentOrder.billing_district || "",
+    complementoCobranca: registrationPayload.complementoCobranca || paymentOrder.billing_complement || "",
+    cidadeCobranca: registrationPayload.cidadeCobranca || paymentOrder.billing_city || "",
+    estadoCobranca: registrationPayload.estadoCobranca || paymentOrder.billing_state || "",
+    paisCobranca: registrationPayload.paisCobranca || paymentOrder.billing_country || "",
+    cepCobranca: registrationPayload.cepCobranca || paymentOrder.billing_zipcode || ""
   };
 }
 
@@ -231,7 +241,7 @@ export async function handleIpagPaymentConfirmed(request, env, ctx) {
     return jsonResponse({ success: false, error: "Method not allowed" }, 405);
   }
 
-  const powerAutomateUrl = env.POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL;
+  const powerAutomateUrl = env.url_registro;
 
   const rawBody = await request.text();
   const receivedSignature = request.headers.get("X-Ipag-Signature");

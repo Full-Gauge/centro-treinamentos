@@ -80,7 +80,6 @@ npx wrangler secret put IPAG_API_KEY --config wrangler.dev.jsonc
 
 # Integrações Power Automate
 npx wrangler secret put POWER_AUTOMATE_PAYMENT_LINK_CREATED_URL --config wrangler.dev.jsonc
-npx wrangler secret put POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL --config wrangler.dev.jsonc
 npx wrangler secret put POWER_AUTOMATE_WEBHOOK_TOKEN --config wrangler.dev.jsonc
 
 # Validação humana
@@ -112,7 +111,6 @@ Para o fluxo principal de inscrição e pagamento funcionar, configure pelo meno
 - `API_KEY`
 - `IPAG_API_ID`
 - `IPAG_API_KEY`
-- `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`
 - `POWER_AUTOMATE_WEBHOOK_TOKEN`
 - `TURNSTILE_SECRET_KEY`
 - `url_turmas`, `url_modulos`, `url_registro`, `url_token` e `url_parceiros`
@@ -149,9 +147,9 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 
 ### Fluxo do checkout
 
-Após aceitar os termos, PF e PJ escolhem Pix ou cartão e recebem um link iPag. PF paga uma vaga; PJ paga `vagasDesejadas × R$ 1.000,00`. Ao abrir o link, a tela aguarda o pagamento e consulta `GET /api/payment-status`. Somente após a confirmação pelo webhook `POST /api/webhooks/ipag/payment-confirmed` o cadastro é enviado para `/api/register`.
+Após aceitar os termos, PF e PJ escolhem Pix ou cartão e recebem um link iPag. PF paga uma vaga; PJ paga `vagasDesejadas × R$ 1.000,00`. Ao abrir o link, a tela aguarda o pagamento e consulta `GET /api/payment-status`. Somente após a confirmação pelo webhook `POST /api/webhooks/ipag/payment-confirmed` o cadastro completo é enviado ao destino de `/api/register`.
 
-O webhook valida HMAC-SHA256, `TransactionCaptured`, status `8`/`CAPTURED` e encaminha ao Power Automate os dados do pagamento, `paymentReference`, `tipoPessoa` e todos os campos de endereço da reserva. A inscrição só aparece como realizada após o status `confirmed`.
+O webhook valida HMAC-SHA256, `TransactionCaptured`, status `8`/`CAPTURED` e encaminha uma única vez ao mesmo destino de `/api/register` (`url_registro`) o cadastro completo junto com os dados de pagamento, `paymentReference`, `tipoPessoa` e todos os campos de endereço da reserva. A inscrição só aparece como realizada após o status `confirmed`.
 
 Idempotência é obrigatória: o mesmo `transaction_uuid` não pode gerar mais de um processamento ou e-mail. O Worker usa D1 com chave única para bloquear duplicidades; o KV é usado apenas para o status exibido pela tela. O D1 de dev já está configurado; produção precisa do binding e da migration equivalentes.
 
@@ -164,7 +162,7 @@ Idempotência é obrigatória: o mesmo `transaction_uuid` não pode gerar mais d
 
 Para a descrição completa da configuração do Worker e dos secrets de CI, consulte [`docs/escopo-projeto.md`](docs/escopo-projeto.md), seção 8.
 
-O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirmed`. Cadastre a URL completa do Worker no iPag. O Worker valida a assinatura HMAC-SHA256 sobre o corpo bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Para o Power Automate, encaminha os dados do pagamento, `paymentReference`, `tipoPessoa` e todos os campos de endereço da reserva, além dos headers `x-api-key` e `X-CT-Webhook-Token`. Após a confirmação, a tela consulta `GET /api/payment-status?reference=...` até mostrar a inscrição como realizada com sucesso.
+O endpoint público do webhook iPag é `POST /api/webhooks/ipag/payment-confirmed`. Cadastre a URL completa do Worker no iPag. O Worker valida a assinatura HMAC-SHA256 sobre o corpo bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Após a confirmação, encaminha o cadastro completo e os dados de pagamento ao destino `url_registro`, usando os headers `x-api-key` e `X-CT-Webhook-Token`. A tela consulta `GET /api/payment-status?reference=...` até mostrar a inscrição como realizada com sucesso.
 
 ## Hospedagem
 

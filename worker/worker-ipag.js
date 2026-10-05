@@ -191,7 +191,8 @@ export async function handlePaymentLinkRequest(request, env, ctx) {
           Number.isInteger(Number(body.vagasDesejadas)) && Number(body.vagasDesejadas) > 0
             ? Number(body.vagasDesejadas)
             : null,
-        billingAddress
+        billingAddress,
+        registrationPayload: body.registrationPayload || {}
       });
     } catch (error) {
       console.error(`[IPAG] Failed to reserve payment order error=${error?.message || "database error"}`);

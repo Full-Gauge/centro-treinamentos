@@ -1893,6 +1893,7 @@ async function generatePaymentLink() {
         estadoCobranca: formData.estadoCobranca,
         paisCobranca: formData.paisCobranca,
         cepCobranca: formData.cepCobranca,
+        registrationPayload: formData,
         turnstileToken
       })
     });
@@ -2036,7 +2037,7 @@ function startPaymentStatusPolling(reference, payButton) {
 
       if (response.ok && data.confirmed === true) {
         stopPaymentStatusPolling();
-        await submitRegistrationAfterPayment(payButton, reference);
+        showStatus(i18n[currentLang].submitSuccess, "success", true);
         return;
       }
     } catch {
@@ -2089,29 +2090,6 @@ function showPaymentAwaitingScreen(paymentUrl) {
     notice.className = "payment-awaiting-legal-entity-notice";
     notice.textContent = t("legalEntityTokenNotice");
     refreshedTextWrapper.insertBefore(notice, restartBtn);
-  }
-}
-
-async function submitRegistrationAfterPayment(payButton, reference) {
-  payButton.style.pointerEvents = "none";
-  payButton.setAttribute("aria-disabled", "true");
-  payButton.textContent = t("sending");
-
-  const payload = { ...formData };
-  if (!Array.isArray(payload.modulos)) payload.modulos = [];
-  if (reference) payload.paymentReference = reference;
-
-  try {
-    const response = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) throw new Error("Falha ao enviar cadastro");
-    showStatus(i18n[currentLang].submitSuccess, "success", true);
-  } catch {
-    showStatus(t("submitError"), "error");
   }
 }
 
