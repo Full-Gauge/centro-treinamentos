@@ -97,6 +97,74 @@ async function completeCourseAndTerms(page, { legalEntity = false } = {}) {
 }
 
 test.describe("fluxo de pagamento", () => {
+  for (const registrationType of ["Parceiro", "Inscrição com Token"]) {
+    test(`${registrationType} conclui sem endereço e sem pagamento`, async ({ page }) => {
+      await mockApis(page);
+      await page.route("**/api/parceiros**", (route) => route.fulfill({
+        json: [{ id: "PAR-TEST", name: "Parceiro Teste" }]
+      }));
+      await page.route("**/api/validate-token", (route) => route.fulfill({
+        json: { data: true, turma: { id: "TURMA-001", name: "Turma Playwright", availableSlots: 16 } }
+      }));
+      let registrationPayload;
+      let paymentRequests = 0;
+      let popups = 0;
+      page.on("popup", () => popups++);
+      await page.route("**/api/payment-link", (route) => {
+        paymentRequests++;
+        return route.fulfill({ status: 500, json: {} });
+      });
+      await page.route("**/api/register", async (route) => {
+        registrationPayload = route.request().postDataJSON();
+        await route.fulfill({ status: 500, json: { error: "Teste de falha" } });
+      });
+      await page.goto("/");
+      await page.getByRole("radio", { name: registrationType, exact: true }).check();
+      const isToken = registrationType === "Inscrição com Token";
+      if (isToken) await page.locator("#token").fill("FULLGAUGE-6EY380IL10CCP3ZANSZZ");
+      await page.getByRole("button", { name: "Avançar" }).click();
+      await page.locator("#fullName").fill("Pessoa Teste");
+      await page.locator("#cpf").fill("956.863.230-11");
+      if (isToken) await expect(page.locator("#empresa")).toHaveCount(0);
+      else await page.locator("#empresa").selectOption("PAR-TEST");
+      await page.locator("#segmento").selectOption("Refrigeração");
+      await page.locator("#atuacao").selectOption("Industrial");
+      await page.locator("#cidade").fill("Canoas");
+      await page.locator("#telefone").fill("(51) 98888-7777");
+      await page.locator("#email").fill("teste@example.com");
+      await expect(page.locator('[id$="Cobranca"]')).toHaveCount(0);
+      await page.getByRole("button", { name: "Avançar" }).click();
+      if (isToken) await expect(page.locator("#turmas")).toBeDisabled();
+      else await page.locator("#turmas").selectOption("TURMA-001");
+      await page.getByRole("button", { name: "Avançar" }).click();
+      await expect(page.getByText("Etapa 4 de 4")).toBeVisible();
+      await expect(page.locator("#stepper")).not.toContainText("Pagamento");
+      await page.locator("#termsLink").click({ noWaitAfter: true }).catch(() => {});
+      await page.locator("#termImage").check();
+      await page.locator("#termCosts").check();
+      popups = 0;
+      await page.getByRole("button", { name: "Enviar cadastro" }).click();
+      await expect(page.getByRole("button", { name: "Enviar cadastro" })).toBeEnabled();
+      await expect(page.getByRole("heading", { name: "Cadastro enviado com sucesso!" })).toHaveCount(0);
+      await page.unroute("**/api/register");
+      await page.route("**/api/register", async (route) => {
+        registrationPayload = route.request().postDataJSON();
+        await route.fulfill({ json: { success: true } });
+      });
+      await page.getByRole("button", { name: "Enviar cadastro" }).click();
+      await expect(page.getByRole("heading", { name: "Cadastro enviado com sucesso!" })).toBeVisible();
+      expect(registrationPayload.relacao).toBe(isToken ? "TOKEN" : "PARCEIRO");
+      expect(registrationPayload.tipoPessoa).toBe(isToken ? "PF" : "PARCEIRO");
+      expect(registrationPayload.turmas).toBe("TURMA-001");
+      expect(registrationPayload.cidade).toBe("Canoas");
+      if (isToken) expect(registrationPayload.token).toBe("FULLGAUGE-6EY380IL10CCP3ZANSZZ");
+      expect(Object.keys(registrationPayload).filter((key) => key.endsWith("Cobranca"))).toEqual([]);
+      expect(registrationPayload.formaPagamento).toBeUndefined();
+      expect(paymentRequests).toBe(0);
+      expect(popups).toBe(0);
+    });
+  }
+
   test("limpar cadastro reinicia o fluxo na primeira etapa", async ({ page }) => {
     await mockApis(page);
     await page.goto("/?debug");
@@ -237,7 +305,7 @@ test.describe("fluxo de pagamento", () => {
     await expect(page.getByLabel("CNPJ")).not.toHaveAttribute("required");
     await expect(page.locator("#cepCobranca")).toHaveCount(0);
     await expect(page.locator("#cidadeCobranca")).toHaveAttribute("required", "");
-    await expect(page.locator("#estadoCobranca")).toHaveAttribute("required", "");
+    await expect(page.locator("#estadoCobranca")).toHaveCount(0);
     await expect(page.locator("#paisCobranca")).toHaveAttribute("required", "");
     await expect(page.locator("#enderecoCobranca")).not.toHaveAttribute("required");
     await expect(page.locator("#numeroEnderecoCobranca")).not.toHaveAttribute("required");

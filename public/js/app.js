@@ -387,7 +387,7 @@ const STEPS = [
           { value: "TOKEN", label: { pt: "Inscrição com Token", en: "Registration with Token", es: "Inscripción con Token" } },
         ],
       },
-      { id: "token", label: { pt: "Qual o token enviado pelo parceiro? *", en: "Which token is sent by the partner? *", es: "¿Qué token es enviado por el socio? *" }, type: "text", required: true, validateToken: true, uppercase: true },
+      { id: "token", label: { pt: "Token de inscrição *", en: "Registration token *", es: "Token de inscripción *" }, type: "text", required: true, validateToken: true, uppercase: true },
     ],
   },
     {
@@ -609,6 +609,14 @@ const STEPS = [
 let currentStep = 0;
 let currentLang = "pt";
 let formData = {};
+
+function isDirectRegistration() {
+  return ["PARCEIRO", "TOKEN"].includes(formData.relacao);
+}
+
+function getRegistrationSteps() {
+  return isDirectRegistration() ? STEPS.slice(0, -1) : STEPS;
+}
 let pendingAction = null;
 let isFetchingTurmas = false;
 let isFetchingModulos = false;
@@ -972,7 +980,7 @@ function updateTurmasFieldOptions({ fetchModules = false } = {}) {
 function renderStepper() {
   const stepper = document.getElementById("stepper");
   if (!stepper) return;
-  stepper.innerHTML = STEPS.map((s, i) => {
+  stepper.innerHTML = getRegistrationSteps().map((s, i) => {
     const cls = i < currentStep ? "done" : i === currentStep ? "active" : "";
     const label = s.title[currentLang] || s.title.pt;
     return `<div class="step-item ${cls}">
@@ -983,13 +991,14 @@ function renderStepper() {
 }
 
 function renderProgress() {
-  const pct = Math.round(((currentStep + 1) / STEPS.length) * 100);
+  const steps = getRegistrationSteps();
+  const pct = Math.round(((currentStep + 1) / steps.length) * 100);
   const fill = document.getElementById("progressFill");
   const val = document.getElementById("progressValue");
   const counter = document.getElementById("stepCounter");
   if (fill) { fill.style.width = pct + "%"; fill.setAttribute("aria-valuenow", pct); }
   if (val) val.textContent = pct + "%";
-  if (counter) counter.textContent = `Etapa ${currentStep + 1} de ${STEPS.length}`;
+  if (counter) counter.textContent = `Etapa ${currentStep + 1} de ${steps.length}`;
 }
 
 function renderFields() {
@@ -1060,9 +1069,11 @@ function renderFields() {
     .map((f) => {
       // O campo token só aparece na inscrição com token.
       if (f.id === "token" && formData.relacao !== "TOKEN") return "";
-      if (f.id === "cidade" && ["PF", "PJ"].includes(formData.tipoPessoa)) return "";
+      if (f.id === "cidade" && !isDirectRegistration() && ["PF", "PJ"].includes(formData.tipoPessoa)) return "";
+      if (f.id.endsWith("Cobranca") && isDirectRegistration()) return "";
       if (["segmento", "atuacao"].includes(f.id) && formData.tipoPessoa === "PJ") return "";
       if (f.id === "cepCobranca" && formData.estrangeiro) return "";
+      if (f.id === "estadoCobranca" && formData.estrangeiro) return "";
       if (f.onlyFor && formData.tipoPessoa !== f.onlyFor) return "";
       if (f.id === "vagasDesejadas" && !formData.turmas) return "";
       if (f.id === "vagasDesejadas" && selectedTurmaHasNoSeats()) return "";
@@ -1271,7 +1282,7 @@ function renderFields() {
           if (f.id === "relacao") {
             const isTokenRegistration = radio.value === "TOKEN";
             formData = {
-              tipoPessoa: isTokenRegistration ? "PARCEIRO" : radio.value,
+              tipoPessoa: isTokenRegistration ? "PF" : radio.value,
               relacao: isTokenRegistration || radio.value === "PARCEIRO" ? radio.value : "GERAL"
             };
             if (!isTokenRegistration && radio.value !== "PARCEIRO") {
@@ -1337,13 +1348,14 @@ function renderFields() {
           if (el.checked) {
             formData.cpf = "";
             formData.cepCobranca = "";
+            formData.estadoCobranca = "";
           }
           render();
           return;
         }
         
         // Se estivermos na última etapa, atualizamos o estado do botão de submit em tempo real
-        const isLast = currentStep === STEPS.length - 1;
+        const isLast = currentStep === getRegistrationSteps().length - 1;
         if (isLast) renderButtons();
       } else if (f.id === "turmas" && v) {
         // Atualiza a disponibilidade sem ocupar a tela com módulos.
@@ -1458,7 +1470,7 @@ function renderButtons() {
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
   const submitBtn = document.getElementById("submitBtn");
-  const isLast = currentStep === STEPS.length - 1;
+  const isLast = currentStep === getRegistrationSteps().length - 1;
   const step = STEPS[currentStep];
 
   if (waitlistSubmitted) {
@@ -1487,13 +1499,13 @@ function renderButtons() {
       submitBtn.innerHTML = `<span class="spinner" aria-hidden="true"></span><span class="btn-label">${t("loading")}</span>`;
     } else {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = `<span class="btn-label">${isLast ? t("goToIpag") : t("submit")}</span><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 5 5L20 6"></path></svg>`;
+      submitBtn.innerHTML = `<span class="btn-label">${isDirectRegistration() ? t("submit") : t("goToIpag")}</span><svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 5 5L20 6"></path></svg>`;
     }
     
     // Desabilita o botão se houver checkboxes obrigatórios não marcados (termos)
     const termsStep = STEPS.find((s) => s.termsLink);
     const termsAccepted = !termsStep || termsStep.fields.every(f => f.type !== "checkbox" || !f.required || formData[f.id] === true);
-    submitBtn.disabled = isLast && !termsAccepted;
+    submitBtn.disabled = isSubmittingForm || (isLast && !termsAccepted);
   }
   if (prevBtn) prevBtn.innerHTML = `<span class="btn-icon btn-icon-arrow" aria-hidden="true">←</span><span class="btn-label">${t("previous")}</span>`;
 }
@@ -1715,11 +1727,11 @@ async function goNext() {
 
   const termsStepIndex = STEPS.findIndex((step) => step.termsLink);
   if (currentStep === termsStepIndex && formData.listaEspera) {
-    await handleWaitlistSubmission();
+    await handleRegistrationSubmission(true);
     return;
   }
 
-  if (currentStep < STEPS.length - 1) {
+  if (currentStep < getRegistrationSteps().length - 1) {
     currentStep++;
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1848,8 +1860,14 @@ function resetRegistrationFlow() {
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
 async function handleSubmit() {
+  if (isSubmittingForm) return;
   if (!validateCurrentStep()) {
     showStatus(t("requiredFields"), "error");
+    return;
+  }
+
+  if (isDirectRegistration()) {
+    await handleRegistrationSubmission(!!formData.listaEspera);
     return;
   }
 
@@ -2093,20 +2111,25 @@ function showPaymentAwaitingScreen(paymentUrl) {
   }
 }
 
-async function handleWaitlistSubmission() {
+async function handleRegistrationSubmission(isWaitlist = false) {
   isSubmittingForm = true;
   renderButtons();
 
-  const payload = { ...formData, modulos: [], listaEspera: true };
+  const payload = { ...formData };
+  if (isWaitlist) Object.assign(payload, { modulos: [], listaEspera: true });
+  if (isDirectRegistration()) {
+    Object.keys(payload).filter((key) => key.endsWith("Cobranca") || key === "formaPagamento")
+      .forEach((key) => delete payload[key]);
+  }
   try {
     const response = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    if (!response.ok) throw new Error("Falha ao solicitar lista de espera");
+    if (!response.ok) throw new Error("Falha ao enviar inscrição");
     waitlistSubmitted = true;
-    showStatus(i18n[currentLang].waitingListSuccess, "success", true);
+    showStatus(isWaitlist ? i18n[currentLang].waitingListSuccess : i18n[currentLang].submitSuccess, "success", true);
   } catch {
     showStatus(t("submitError"), "error");
   } finally {
@@ -2295,7 +2318,7 @@ async function init() {
   // Submit
   document.getElementById("leadForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
-    const isLast = currentStep === STEPS.length - 1;
+    const isLast = currentStep === getRegistrationSteps().length - 1;
     if (isLast) {
       handleSubmit();
     } else {
@@ -2367,7 +2390,7 @@ async function init() {
           formData = {
             ...formData,
             relacao: relType,
-            tipoPessoa: isTokenRegistration ? "PARCEIRO" : relType,
+            tipoPessoa: isTokenRegistration ? "PF" : relType,
             listaEspera: false,
             vagasDesejadas: ""
           };

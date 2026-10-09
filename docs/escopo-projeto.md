@@ -66,6 +66,7 @@ O fluxo principal roda em `public/index.html` com lógica em `public/js/app.js`.
 Pontos principais:
 
 - validação de token via `/api/validate-token` quando a opção Inscrição com Token é escolhida
+- Inscrição com Token identifica uma Pessoa Física (`tipoPessoa: "PF"`, `relacao: "TOKEN"`) usando o token gerado pela Pessoa Jurídica; assim como Parceiro, informa cidade, não solicita endereço de cobrança e envia diretamente a `/api/register` após aceitar os termos, sem checkout iPag
 - preenchimento automático de dados quando o token é válido
 - na etapa 2, Pessoa Jurídica informa razão social, responsável e CNPJ para o iPag; Pessoa Física informa CPF
 - após a escolha da turma, Pessoa Jurídica pode selecionar as vagas desejadas em um combobox; a consulta de disponibilidade será adicionada depois
@@ -182,7 +183,7 @@ Pontos principais:
 12. Tela mostra "Inscrição realizada com sucesso"
 ```
 
-O clique no link não envia o cadastro nem confirma o pagamento. Ele apenas inicia a espera pelo pagamento. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`); somente então o cadastro é enviado. Parceiros não passam pelo checkout pago.
+O clique no link não envia o cadastro nem confirma o pagamento. Ele apenas inicia a espera pelo pagamento. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`); somente então o cadastro é enviado. Parceiros e PF com token não passam pelo checkout pago: concluem nos termos e enviam diretamente a `/api/register`, sem campos de cobrança nem `formaPagamento`. O handler aceita esses cadastros sem `paymentReference`; para TOKEN exige `tipoPessoa: "PF"` e token não vazio. A validação do token ocorre em `/api/validate-token` e a autorização definitiva da inscrição cabe ao fluxo de destino (`url_registro`).
 
 A tabela `payment_orders` mantém a reserva/cadastro local e usa `payment_reference` para relacionar o link, o cadastro e o pagamento. A tabela `payment_events` permanece exclusiva para idempotência do webhook.
 
