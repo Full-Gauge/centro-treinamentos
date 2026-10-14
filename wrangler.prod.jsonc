@@ -8,6 +8,14 @@
     "not_found_handling": "single-page-application"
   },
   "vars": {},
+  "d1_databases": [
+    {
+      "binding": "PAYMENTS_DB",
+      "database_name": "centro-treinamentos-prod",
+      "database_id": "6a2dc8ec-d383-45c5-bedb-6a2f6cf63e5e",
+      "migrations_dir": "migrations"
+    }
+  ],
   "kv_namespaces": [
     {
       "binding": "URL_SHORTENER_KV",
