@@ -1402,7 +1402,7 @@ function renderFields() {
       // Limpa erro de token em tempo real
       if (f.validateToken) {
         const errSpan = document.getElementById(`${f.id}-error`);
-        if (v.trim().startsWith("FULLGAUGE-")) {
+        if (v.trim()) {
           el.classList.remove("invalid");
           if (errSpan) errSpan.textContent = "";
         }
