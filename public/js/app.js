@@ -1067,8 +1067,8 @@ function renderFields() {
 
   container.innerHTML = classSelectionNoticeHtml + paymentStepHtml + termsLinkHtml + step.fields
     .map((f) => {
-      // O campo token só aparece na inscrição com token.
-      if (f.id === "token" && formData.relacao !== "TOKEN") return "";
+      // O campo token é obrigatório para Parceiro e para inscrição com token.
+      if (f.id === "token" && !["PARCEIRO", "TOKEN"].includes(formData.relacao)) return "";
       if (f.id === "cidade" && !isDirectRegistration() && ["PF", "PJ"].includes(formData.tipoPessoa)) return "";
       if (f.id.endsWith("Cobranca") && isDirectRegistration()) return "";
       if (["segmento", "atuacao"].includes(f.id) && formData.tipoPessoa === "PJ") return "";
@@ -1641,16 +1641,6 @@ function validateCurrentStep() {
       valid = false;
     }
 
-    if (f.validateToken && el.value.trim()) {
-      const errSpan = document.getElementById(`${f.id}-error`);
-      if (!el.value.trim().startsWith("FULLGAUGE-")) {
-        el.classList.add("invalid");
-        if (errSpan) errSpan.textContent = t("invalidToken");
-        valid = false;
-      } else {
-        if (errSpan) errSpan.textContent = "";
-      }
-    }
   });
 
   if (currentStep === 2 && selectedTurmaHasNoSeats() && !formData.listaEspera) {
@@ -1668,7 +1658,7 @@ async function goNext() {
   }
 
   // Validação do token via API na etapa 1.
-  if (currentStep === 0 && formData.relacao === "TOKEN") {
+  if (currentStep === 0 && ["PARCEIRO", "TOKEN"].includes(formData.relacao)) {
     const tokenField = document.getElementById("token");
     const errSpan = document.getElementById("token-error");
     
