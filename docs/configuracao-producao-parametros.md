@@ -88,3 +88,4 @@ npx wrangler d1 migrations apply centro-treinamentos-prod --remote --config wran
 - [ ] Criar KV separado para produção, atualizar seu ID em `wrangler.prod.jsonc` e evitar o compartilhamento do KV de dev.
 - [ ] Conferir novamente as migrations do D1 de produção.
 - [ ] Só então publicar com `npx wrangler deploy --config wrangler.prod.jsonc`.
+- [ ] Quando a configuração e a validação estiverem concluídas, abrir um PR da branch de trabalho para `main`.
