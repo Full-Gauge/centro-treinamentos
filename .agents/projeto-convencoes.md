@@ -22,6 +22,7 @@ Siga estas regras em toda alteração neste repositório.
 - `GET/POST /api/parceiros`
 - `POST /api/register`
 - `POST /api/validate-token`
+- `POST /api/validate-token-pj`
 - `POST /api/confirmation`
 - `POST /api/cancellation`
 - `POST /api/attendance`
@@ -42,7 +43,7 @@ Siga estas regras em toda alteração neste repositório.
 - `/api/payment-link` → link iPag (`{ link, uuid, amount, paymentMethod }`); usa Basic Auth, não `x-api-key`
 
 ## Variáveis de ambiente
-- URLs: `url_registro`, `url_turmas`, `url_modulos`, `url_parceiros`, `url_token`, `url_registro_presenca`
+- URLs: `url_registro`, `url_turmas`, `url_modulos`, `url_parceiros`, `url_token`, `url_token_pj`, `url_registro_presenca`
 - Webhooks: `ATTENDANCE_WEBHOOK_URL`, `CONFIRMATION_WEBHOOK_URL`, `CANCELLATION_WEBHOOK_URL`, `NAME_VALIDATION_WEBHOOK_URL`, `URL_VALIDATE_CPF_MODULOS`
 - iPag: `IPAG_BASE_URL` (opcional), `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS`; o valor atual do link é fixo em R$ 1.000,00 no Worker
 - Webhook iPag: `POST /api/webhooks/ipag/payment-confirmed` usa `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`

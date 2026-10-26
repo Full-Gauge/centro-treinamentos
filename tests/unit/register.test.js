@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { handleRegisterRequest } from "../../worker/worker-register.js";
 
-test("register aceita parceiro e PF com token sem reserva, mas exige referência para inscrição paga", async () => {
+test("register aceita parceiro e enviado corporativo com token sem reserva, mas exige referência para inscrição paga", async () => {
   const originalFetch = globalThis.fetch;
   const forwarded = [];
   globalThis.fetch = async (_url, options) => {
@@ -13,7 +13,7 @@ test("register aceita parceiro e PF com token sem reserva, mas exige referência
   try {
     const env = { url_registro: "https://flow.test/register", API_KEY: "test-api-key", PAYMENTS_DB: {} };
     for (const payload of [
-      { relacao: "TOKEN", tipoPessoa: "PF", token: "TOKEN-TEST" },
+      { relacao: "TOKEN", tipoPessoa: "Enviado corporativo", token: "TOKEN-TEST" },
       { relacao: "PARCEIRO", tipoPessoa: "PARCEIRO" }
     ]) {
       const response = await handleRegisterRequest(new Request("https://app.test/api/register", {
@@ -25,7 +25,7 @@ test("register aceita parceiro e PF com token sem reserva, mas exige referência
     for (const payload of [
       { relacao: "GERAL", tipoPessoa: "PF" },
       { relacao: "GERAL", tipoPessoa: "PJ" },
-      { relacao: "TOKEN", tipoPessoa: "PF", token: " " },
+      { relacao: "TOKEN", tipoPessoa: "Enviado corporativo", token: " " },
       { relacao: "TOKEN", tipoPessoa: "PJ", token: "TOKEN-TEST" }
     ]) {
       const response = await handleRegisterRequest(new Request("https://app.test/api/register", {

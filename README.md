@@ -91,6 +91,7 @@ npx wrangler secret put url_turmas --config wrangler.dev.jsonc
 npx wrangler secret put url_modulos --config wrangler.dev.jsonc
 npx wrangler secret put url_parceiros --config wrangler.dev.jsonc
 npx wrangler secret put url_token --config wrangler.dev.jsonc
+npx wrangler secret put url_token_pj --config wrangler.dev.jsonc
 npx wrangler secret put url_registro_presenca --config wrangler.dev.jsonc
 npx wrangler secret put URL_VALIDATE_CPF_MODULOS --config wrangler.dev.jsonc
 npx wrangler secret put ATTENDANCE_WEBHOOK_URL --config wrangler.dev.jsonc
@@ -113,7 +114,7 @@ Para o fluxo principal de inscrição e pagamento funcionar, configure pelo meno
 - `IPAG_API_KEY`
 - `POWER_AUTOMATE_WEBHOOK_TOKEN`
 - `TURNSTILE_SECRET_KEY`
-- `url_turmas`, `url_modulos`, `url_registro`, `url_token` e `url_parceiros`
+- `url_turmas`, `url_modulos`, `url_registro`, `url_token`, `url_token_pj` e `url_parceiros`
 - binding `PAYMENTS_DB` com as migrations aplicadas
 - binding `URL_SHORTENER_KV`
 

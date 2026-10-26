@@ -61,12 +61,12 @@ A arquitetura combina:
 
 ### 5.1 Inscrição de treinamentos
 
-O fluxo principal roda em `public/index.html` com lógica em `public/js/app.js`. Ele funciona como um wizard com etapas, validação de campos e quatro entradas na primeira etapa: Pessoa Física, Pessoa Jurídica, Parceiro e Inscrição com Token.
+O fluxo principal roda em `public/index.html` com lógica em `public/js/app.js`. Ele funciona como um wizard com etapas, validação de campos e três entradas na primeira etapa: Pessoa Física, Pessoa Jurídica e Via Token. Via Token exige escolher Indicação parceiro (`relacao: "PARCEIRO"`) ou Enviado corporativo (`relacao: "TOKEN"`, `tipoPessoa: "Enviado corporativo"`) antes de exibir o campo de token. Cada opção mantém sua API e secret de validação.
 
 Pontos principais:
 
-- validação de token via `/api/validate-token` quando a opção Inscrição com Token é escolhida
-- Inscrição com Token identifica uma Pessoa Física (`tipoPessoa: "PF"`, `relacao: "TOKEN"`) usando o token gerado pela Pessoa Jurídica; assim como Parceiro, informa cidade, não solicita endereço de cobrança e envia diretamente a `/api/register` após aceitar os termos, sem checkout iPag
+- validação de token via `/api/validate-token-pj` (secret `url_token_pj`) para Inscrição com Token e `/api/validate-token` (secret `url_token`) para Parceiro
+- Inscrição com Token identifica um participante enviado pela empresa (`tipoPessoa: "Enviado corporativo"`, `relacao: "TOKEN"`) usando o token gerado pela Pessoa Jurídica; assim como Parceiro, informa cidade, não solicita endereço de cobrança e envia diretamente a `/api/register` após aceitar os termos, sem checkout iPag
 - preenchimento automático de dados quando o token é válido
 - na etapa 2, Pessoa Jurídica informa razão social, responsável e CNPJ para o iPag; Pessoa Física informa CPF
 - após a escolha da turma, Pessoa Jurídica pode selecionar as vagas desejadas em um combobox; a consulta de disponibilidade será adicionada depois
@@ -169,7 +169,7 @@ Pontos principais:
 ### 5.10 Fluxo ponta a ponta do checkout
 
 ```text
-1. Cliente escolhe PF, PJ, Parceiro ou Inscrição com Token
+1. Cliente escolhe PF, PJ ou Via Token (Indicação parceiro ou Enviado corporativo)
 2. Preenche cadastro, turma, módulos e, para PJ, vagas desejadas
 3. Aceita os termos
 4. PF/PJ escolhe Pix ou cartão
@@ -183,7 +183,7 @@ Pontos principais:
 12. Tela mostra "Inscrição realizada com sucesso"
 ```
 
-O clique no link não envia o cadastro nem confirma o pagamento. Ele apenas inicia a espera pelo pagamento. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`); somente então o cadastro é enviado. Parceiros e PF com token não passam pelo checkout pago: concluem nos termos e enviam diretamente a `/api/register`, sem campos de cobrança nem `formaPagamento`. O handler aceita esses cadastros sem `paymentReference`; para TOKEN exige `tipoPessoa: "PF"` e token não vazio. A validação do token ocorre em `/api/validate-token` e a autorização definitiva da inscrição cabe ao fluxo de destino (`url_registro`).
+O clique no link não envia o cadastro nem confirma o pagamento. Ele apenas inicia a espera pelo pagamento. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`); somente então o cadastro é enviado. Parceiros e enviados corporativos com token não passam pelo checkout pago: concluem nos termos e enviam diretamente a `/api/register`, sem campos de cobrança nem `formaPagamento`. O handler aceita esses cadastros sem `paymentReference`; para TOKEN exige `tipoPessoa: "Enviado corporativo"` e token não vazio. A validação do token ocorre em `/api/validate-token` para Parceiro e `/api/validate-token-pj` para Inscrição com Token e a autorização definitiva da inscrição cabe ao fluxo de destino (`url_registro`).
 
 A tabela `payment_orders` mantém a reserva/cadastro local e usa `payment_reference` para relacionar o link, o cadastro e o pagamento. A tabela `payment_events` permanece exclusiva para idempotência do webhook.
 
@@ -194,6 +194,7 @@ A tabela `payment_orders` mantém a reserva/cadastro local e usa `payment_refere
 - `GET/POST /api/parceiros`
 - `POST /api/register`
 - `POST /api/validate-token`
+- `POST /api/validate-token-pj`
 - `POST /api/confirmation`
 - `POST /api/cancellation`
 - `POST /api/attendance`
@@ -251,6 +252,7 @@ npx wrangler secret put url_turmas --config wrangler.dev.jsonc
 npx wrangler secret put url_modulos --config wrangler.dev.jsonc
 npx wrangler secret put url_parceiros --config wrangler.dev.jsonc
 npx wrangler secret put url_token --config wrangler.dev.jsonc
+npx wrangler secret put url_token_pj --config wrangler.dev.jsonc
 npx wrangler secret put url_registro_presenca --config wrangler.dev.jsonc
 npx wrangler secret put URL_VALIDATE_CPF_MODULOS --config wrangler.dev.jsonc
 npx wrangler secret put ATTENDANCE_WEBHOOK_URL --config wrangler.dev.jsonc
@@ -278,6 +280,7 @@ Os valores devem permanecer somente no ambiente Cloudflare. As URLs de webhook t
 - `url_modulos`: consulta os módulos da turma.
 - `url_parceiros`: consulta os parceiros.
 - `url_token`: valida o token de parceiro.
+- `url_token_pj`: valida o token gerado pela Pessoa Jurídica para Inscrição com Token. Recebe POST `{ token }` com `x-api-key` de `API_KEY`; mantém o contrato de resposta da validação existente (`data` booleano, `parceiro` e `turma` opcionais). Não há fallback para `url_token`.
 - `url_registro_presenca`: URL legada/de fallback para registro de presença.
 - `URL_VALIDATE_CPF_MODULOS`: valida CPF e módulos selecionados.
 - `ATTENDANCE_WEBHOOK_URL`: webhook principal de presença; usa `url_registro_presenca` como fallback.

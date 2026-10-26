@@ -383,8 +383,18 @@ const STEPS = [
         options: [
           { value: "PF", label: { pt: "Pessoa Física", en: "Individual", es: "Persona Física" } },
           { value: "PJ", label: { pt: "Pessoa Jurídica", en: "Legal entity", es: "Persona Jurídica" } },
-          { value: "PARCEIRO", label: { pt: "Parceiro", en: "Partner", es: "Socio" } },
-          { value: "TOKEN", label: { pt: "Inscrição com Token", en: "Registration with Token", es: "Inscripción con Token" } },
+          { value: "VIA_TOKEN", label: { pt: "Via Token", en: "Via Token", es: "Vía Token" } },
+        ],
+      },
+      {
+        id: "tokenRelation",
+        label: { pt: "Tipo de inscrição via token *", en: "Token registration type *", es: "Tipo de inscripción con token *" },
+        type: "radio",
+        required: true,
+        full: true,
+        options: [
+          { value: "PARCEIRO", label: { pt: "Indicação parceiro", en: "Partner referral", es: "Indicación de socio" } },
+          { value: "TOKEN", label: { pt: "Enviado corporativo", en: "Corporate participant", es: "Participante corporativo" } },
         ],
       },
       { id: "token", label: { pt: "Token de inscrição *", en: "Registration token *", es: "Token de inscripción *" }, type: "text", required: true, validateToken: true, uppercase: true },
@@ -1067,6 +1077,7 @@ function renderFields() {
 
   container.innerHTML = classSelectionNoticeHtml + paymentStepHtml + termsLinkHtml + step.fields
     .map((f) => {
+      if (f.id === "tokenRelation" && !["VIA_TOKEN", "PARCEIRO", "TOKEN"].includes(formData.relacao)) return "";
       // O campo token é obrigatório para Parceiro e para inscrição com token.
       if (f.id === "token" && !["PARCEIRO", "TOKEN"].includes(formData.relacao)) return "";
       if (f.id === "cidade" && !isDirectRegistration() && ["PF", "PJ"].includes(formData.tipoPessoa)) return "";
@@ -1088,8 +1099,8 @@ function renderFields() {
           : (f.label[currentLang] || f.label.pt);
       const fieldLabel = isRequiredField(f) ? label : label.replace(/\s*\*$/, "");
       let val = f.id === "relacao"
-        ? (formData.relacao === "TOKEN" ? "TOKEN" : (formData.tipoPessoa || ""))
-        : (formData[f.id] ?? "");
+        ? (["VIA_TOKEN", "PARCEIRO", "TOKEN"].includes(formData.relacao) ? "VIA_TOKEN" : (formData.tipoPessoa || ""))
+        : f.id === "tokenRelation" ? formData.relacao : (formData[f.id] ?? "");
       const fullClass = f.full ? "full" : "";
 
       if (fieldType === "select") {
@@ -1279,16 +1290,14 @@ function renderFields() {
           const wrap = document.getElementById(`field-wrap-${f.id}`);
           if (wrap) wrap.classList.remove("invalid-group");
 
-          if (f.id === "relacao") {
+          if (f.id === "relacao" || f.id === "tokenRelation") {
             const isTokenRegistration = radio.value === "TOKEN";
             formData = {
-              tipoPessoa: isTokenRegistration ? "PF" : radio.value,
-              relacao: isTokenRegistration || radio.value === "PARCEIRO" ? radio.value : "GERAL"
+              tipoPessoa: isTokenRegistration ? "Enviado corporativo" : radio.value,
+              relacao: ["VIA_TOKEN", "PARCEIRO", "TOKEN"].includes(radio.value) ? radio.value : "GERAL"
             };
-            if (!isTokenRegistration && radio.value !== "PARCEIRO") {
-              turmasFromPartnerToken = null;
-              updateTurmasFieldOptions();
-            }
+            turmasFromPartnerToken = null;
+            updateTurmasFieldOptions();
             render();
           } else {
             formData[f.id] = radio.value;
@@ -1668,7 +1677,8 @@ async function goNext() {
     renderButtons();
 
     try {
-      const response = await fetch("/api/validate-token", {
+      const endpoint = formData.relacao === "TOKEN" ? "/api/validate-token-pj" : "/api/validate-token";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: formData.token })
@@ -2380,7 +2390,7 @@ async function init() {
           formData = {
             ...formData,
             relacao: relType,
-            tipoPessoa: isTokenRegistration ? "PF" : relType,
+            tipoPessoa: isTokenRegistration ? "Enviado corporativo" : relType,
             listaEspera: false,
             vagasDesejadas: ""
           };

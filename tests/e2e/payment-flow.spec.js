@@ -97,15 +97,53 @@ async function completeCourseAndTerms(page, { legalEntity = false } = {}) {
 }
 
 test.describe("fluxo de pagamento", () => {
-  for (const registrationType of ["Parceiro", "Inscrição com Token"]) {
+  test("Via Token exige subtipo e token e limpa dados ao trocar de opção", async ({ page }) => {
+    await mockApis(page);
+    const requests = [];
+    await page.route("**/api/validate-token*", (route) => {
+      requests.push(new URL(route.request().url()).pathname);
+      return route.fulfill({ json: { data: false } });
+    });
+    await page.goto("/");
+    await expect(page.getByRole("radio")).toHaveCount(3);
+    await expect(page.locator("#token")).toHaveCount(0);
+    await page.getByRole("radio", { name: "Via Token", exact: true }).check();
+    await expect(page.locator("#token")).toHaveCount(0);
+    await page.getByRole("button", { name: "Avançar" }).click();
+    await expect(page.locator("#fullName")).toHaveCount(0);
+    for (const [label, endpoint] of [["Indicação parceiro", "/api/validate-token"], ["Enviado corporativo", "/api/validate-token-pj"]]) {
+      await page.getByRole("radio", { name: label, exact: true }).check();
+      await expect(page.locator("#token")).toHaveValue("");
+      await page.getByRole("button", { name: "Avançar" }).click();
+      expect(requests).not.toContain(endpoint);
+      await page.locator("#token").fill("INVALID-TEST-TOKEN");
+      await page.getByRole("button", { name: "Avançar" }).click();
+      await expect(page.locator("#token-error")).not.toBeEmpty();
+      expect(requests.at(-1)).toBe(endpoint);
+      await expect(page.locator("#fullName")).toHaveCount(0);
+    }
+    await page.getByRole("radio", { name: "Pessoa Física", exact: true }).check();
+    await expect(page.locator("#tokenRelation-group")).toHaveCount(0);
+    await expect(page.locator("#token")).toHaveCount(0);
+    await page.getByRole("radio", { name: "Via Token", exact: true }).check();
+    await expect(page.locator("#tokenRelation-group input:checked")).toHaveCount(0);
+  });
+
+  for (const registrationType of ["Indicação parceiro", "Enviado corporativo"]) {
     test(`${registrationType} conclui sem endereço e sem pagamento`, async ({ page }) => {
       await mockApis(page);
       await page.route("**/api/parceiros**", (route) => route.fulfill({
         json: [{ id: "PAR-TEST", name: "Parceiro Teste" }]
       }));
-      await page.route("**/api/validate-token", (route) => route.fulfill({
-        json: { data: true, turma: { id: "TURMA-001", name: "Turma Playwright", availableSlots: 16 } }
-      }));
+      const isToken = registrationType === "Enviado corporativo";
+      const tokenEndpoint = isToken ? "/api/validate-token-pj" : "/api/validate-token";
+      const tokenRequests = [];
+      await page.route("**/api/validate-token*", (route) => {
+        tokenRequests.push(new URL(route.request().url()).pathname);
+        return route.fulfill({
+          json: { data: true, ...(isToken ? { turma: { id: "TURMA-001", name: "Turma Playwright", availableSlots: 16 } } : {}) }
+        });
+      });
       let registrationPayload;
       let paymentRequests = 0;
       let popups = 0;
@@ -119,11 +157,12 @@ test.describe("fluxo de pagamento", () => {
         await route.fulfill({ status: 500, json: { error: "Teste de falha" } });
       });
       await page.goto("/");
+      await page.getByRole("radio", { name: "Via Token", exact: true }).check();
       await page.getByRole("radio", { name: registrationType, exact: true }).check();
-      const isToken = registrationType === "Inscrição com Token";
-      if (isToken) await page.locator("#token").fill("FULLGAUGE-6EY380IL10CCP3ZANSZZ");
+      await page.locator("#token").fill("FULLGAUGE-6EY380IL10CCP3ZANSZZ");
       await page.getByRole("button", { name: "Avançar" }).click();
       await page.locator("#fullName").fill("Pessoa Teste");
+      expect(tokenRequests).toEqual([tokenEndpoint]);
       await page.locator("#cpf").fill("956.863.230-11");
       if (isToken) await expect(page.locator("#empresa")).toHaveCount(0);
       else await page.locator("#empresa").selectOption("PAR-TEST");
@@ -139,7 +178,10 @@ test.describe("fluxo de pagamento", () => {
       await page.getByRole("button", { name: "Avançar" }).click();
       await expect(page.getByText("Etapa 4 de 4")).toBeVisible();
       await expect(page.locator("#stepper")).not.toContainText("Pagamento");
-      await page.locator("#termsLink").click({ noWaitAfter: true }).catch(() => {});
+      await Promise.all([
+        page.waitForEvent("popup"),
+        page.locator("#termsLink").click()
+      ]);
       await page.locator("#termImage").check();
       await page.locator("#termCosts").check();
       popups = 0;
@@ -154,7 +196,7 @@ test.describe("fluxo de pagamento", () => {
       await page.getByRole("button", { name: "Enviar cadastro" }).click();
       await expect(page.getByRole("heading", { name: "Cadastro enviado com sucesso!" })).toBeVisible();
       expect(registrationPayload.relacao).toBe(isToken ? "TOKEN" : "PARCEIRO");
-      expect(registrationPayload.tipoPessoa).toBe(isToken ? "PF" : "PARCEIRO");
+      expect(registrationPayload.tipoPessoa).toBe(isToken ? "Enviado corporativo" : "PARCEIRO");
       expect(registrationPayload.turmas).toBe("TURMA-001");
       expect(registrationPayload.cidade).toBe("Canoas");
       if (isToken) expect(registrationPayload.token).toBe("FULLGAUGE-6EY380IL10CCP3ZANSZZ");
@@ -195,11 +237,11 @@ test.describe("fluxo de pagamento", () => {
     await expect(page.getByRole("radio", { name: "Pessoa Jurídica" })).toBeChecked();
 
     await page.getByRole("button", { name: /Fill Partner/ }).click();
-    await expect(page.getByRole("radio", { name: "Parceiro" })).toBeChecked();
-    await expect(page.locator("#token")).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: "Indicação parceiro" })).toBeChecked();
+    await expect(page.locator("#token")).toBeVisible();
 
     await page.getByRole("button", { name: /Fill Token Registration/ }).click();
-    await expect(page.getByRole("radio", { name: "Inscrição com Token" })).toBeChecked();
+    await expect(page.getByRole("radio", { name: "Enviado corporativo" })).toBeChecked();
     await expect(page.locator("#token")).toHaveValue("FULLGAUGE-6EY380IL10CCP3ZANSZZ");
 
     await page.getByRole("button", { name: /Fill Legal Entity/ }).click();

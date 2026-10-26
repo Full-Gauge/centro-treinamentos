@@ -27,7 +27,7 @@ export async function handleRegisterRequest(request, env, ctx) {
     const formData = await request.json();
     const paymentReference = String(formData.paymentReference || "").trim();
     const isDirectRegistration = formData.relacao === "PARCEIRO"
-      || (formData.relacao === "TOKEN" && formData.tipoPessoa === "PF"
+      || (formData.relacao === "TOKEN" && formData.tipoPessoa === "Enviado corporativo"
         && typeof formData.token === "string" && formData.token.trim());
     if (env.PAYMENTS_DB && !paymentReference && !isDirectRegistration) {
       return new Response(JSON.stringify({ error: "paymentReference é obrigatório." }), {
