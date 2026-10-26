@@ -67,7 +67,7 @@ Pontos principais:
 
 - validação de token via `/api/validate-token-pj` (secret `url_token_pj`) para Inscrição com Token e `/api/validate-token` (secret `url_token`) para Parceiro
 - Inscrição com Token identifica um participante enviado pela empresa (`tipoPessoa: "Enviado corporativo"`, `relacao: "TOKEN"`) usando o token gerado pela Pessoa Jurídica; informa cidade, não solicita endereço de cobrança e envia diretamente a `/api/register` após aceitar os termos, sem checkout iPag
-- Indicação parceiro exibe e envia todos os campos de endereço de cobrança, com consulta de CEP e as mesmas regras para estrangeiros dos demais cadastros; mantém o envio direto sem iPag
+- Indicação parceiro exibe e envia todos os campos de endereço de cobrança, com consulta de CEP e as mesmas regras para estrangeiros dos demais cadastros; mantém o envio direto sem iPag; exibe somente a cidade do endereço e também usa esse valor no campo `cidade` do payload
 - preenchimento automático de dados quando o token é válido
 - na etapa 2, Pessoa Jurídica informa razão social, responsável e CNPJ para o iPag; Pessoa Física informa CPF
 - após a escolha da turma, Pessoa Jurídica pode selecionar as vagas desejadas em um combobox; a consulta de disponibilidade será adicionada depois

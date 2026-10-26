@@ -207,7 +207,9 @@ test.describe("fluxo de pagamento", () => {
       else await page.locator("#empresa").selectOption("PAR-TEST");
       await page.locator("#segmento").selectOption("Refrigeração");
       await page.locator("#atuacao").selectOption("Industrial");
-      await page.locator("#cidade").fill("Canoas");
+      await expect(page.getByLabel("Cidade *", { exact: true })).toHaveCount(1);
+      if (isToken) await page.locator("#cidade").fill("Canoas");
+      else await expect(page.locator("#cidade")).toHaveCount(0);
       await page.locator("#telefone").fill("(51) 98888-7777");
       await page.locator("#email").fill("teste@example.com");
       if (isToken) {
