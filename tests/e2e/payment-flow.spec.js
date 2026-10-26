@@ -96,7 +96,46 @@ async function completeCourseAndTerms(page, { legalEntity = false } = {}) {
   await page.getByRole("button", { name: "Avançar" }).click();
 }
 
+test("assets de texto declaram UTF-8 e preservam acentos e símbolos", async ({ request }) => {
+  for (const [path, contentType, text] of [
+    ["/", "text/html", "UTF-8"],
+    ["/css/style.css", "text/css", "\\2713"],
+    ["/js/app.js", "application/javascript", "Inscrição"],
+    ["/admin.html", "text/html", "UTF-8"],
+    ["/confirmation-enrollment.html", "text/html", "UTF-8"],
+    ["/cancellation-enrollment.html", "text/html", "UTF-8"],
+    ["/attendance-register.html", "text/html", "UTF-8"],
+    ["/assets/logo.svg", "image/svg+xml", "<svg"]
+  ]) {
+    const response = await request.get(path);
+    expect(response.ok()).toBe(true);
+    expect(response.headers()["content-type"].toLowerCase()).toBe(`${contentType}; charset=utf-8`);
+    expect(await response.text()).toContain(text);
+  }
+});
+
 test.describe("fluxo de pagamento", () => {
+  for (const [status, response] of [[503, { error: "Falha" }], [403, { error: "Falha" }], [200, { success: true, link: "" }]]) {
+    test(`falha de pagamento HTTP ${status} mantém cadastro e fecha janela vazia`, async ({ page }) => {
+      await mockApis(page);
+      await page.route("**/api/payment-link", (route) => route.fulfill({ status, json: response }));
+      await page.goto("/");
+      await selectRegistrationType(page, "Pessoa Física");
+      await fillCommonRegistration(page);
+      await completeCourseAndTerms(page);
+      await page.getByRole("radio", { name: "Cartão de crédito" }).check();
+      const popupPromise = page.waitForEvent("popup");
+      await page.getByRole("button", { name: "Ir para o iPag" }).click();
+      const popup = await popupPromise;
+      await expect(page.locator("#statusMessage")).toHaveClass(/error/);
+      await expect(page.locator("#statusMessage")).toContainText(`HTTP ${status}`);
+      await expect(page.locator("#statusMessage")).not.toContainText("Pagamento necessário");
+      await expect.poll(() => popup.isClosed()).toBe(true);
+      await expect(page.locator("#wizardContent")).toBeVisible();
+      await expect(page.getByRole("button", { name: "Ir para o iPag" })).toBeEnabled();
+    });
+  }
+
   test("Via Token exige subtipo e token e limpa dados ao trocar de opção", async ({ page }) => {
     await mockApis(page);
     const requests = [];
@@ -130,7 +169,7 @@ test.describe("fluxo de pagamento", () => {
   });
 
   for (const registrationType of ["Indicação parceiro", "Enviado corporativo"]) {
-    test(`${registrationType} conclui sem endereço e sem pagamento`, async ({ page }) => {
+    test(`${registrationType} conclui ${registrationType === "Indicação parceiro" ? "com" : "sem"} endereço e sem pagamento`, async ({ page }) => {
       await mockApis(page);
       await page.route("**/api/parceiros**", (route) => route.fulfill({
         json: [{ id: "PAR-TEST", name: "Parceiro Teste" }]
@@ -171,7 +210,18 @@ test.describe("fluxo de pagamento", () => {
       await page.locator("#cidade").fill("Canoas");
       await page.locator("#telefone").fill("(51) 98888-7777");
       await page.locator("#email").fill("teste@example.com");
-      await expect(page.locator('[id$="Cobranca"]')).toHaveCount(0);
+      if (isToken) {
+        await expect(page.locator('[id$="Cobranca"]')).toHaveCount(0);
+      } else {
+        await page.locator("#cepCobranca").fill("92010-000");
+        await expect(page.locator("#enderecoCobranca")).toHaveValue("Rua ViaCEP");
+        await page.locator("#numeroEnderecoCobranca").fill("100");
+        await page.locator("#complementoCobranca").fill("Sala 2");
+        await expect(page.locator("#bairroCobranca")).toHaveValue("Centro");
+        await expect(page.locator("#cidadeCobranca")).toHaveValue("Canoas");
+        await expect(page.locator("#estadoCobranca")).toHaveValue("RS");
+        await page.locator("#paisCobranca").selectOption("BR");
+      }
       await page.getByRole("button", { name: "Avançar" }).click();
       if (isToken) await expect(page.locator("#turmas")).toBeDisabled();
       else await page.locator("#turmas").selectOption("TURMA-001");
@@ -200,7 +250,16 @@ test.describe("fluxo de pagamento", () => {
       expect(registrationPayload.turmas).toBe("TURMA-001");
       expect(registrationPayload.cidade).toBe("Canoas");
       if (isToken) expect(registrationPayload.token).toBe("FULLGAUGE-6EY380IL10CCP3ZANSZZ");
-      expect(Object.keys(registrationPayload).filter((key) => key.endsWith("Cobranca"))).toEqual([]);
+      if (isToken) {
+        expect(Object.keys(registrationPayload).filter((key) => key.endsWith("Cobranca"))).toEqual([]);
+      } else {
+        expect(registrationPayload).toMatchObject({
+          cepCobranca: "92010-000", enderecoCobranca: "Rua ViaCEP",
+          numeroEnderecoCobranca: "100", complementoCobranca: "Sala 2",
+          bairroCobranca: "Centro", cidadeCobranca: "Canoas",
+          estadoCobranca: "RS", paisCobranca: "BR"
+        });
+      }
       expect(registrationPayload.formaPagamento).toBeUndefined();
       expect(paymentRequests).toBe(0);
       expect(popups).toBe(0);
@@ -252,6 +311,9 @@ test.describe("fluxo de pagamento", () => {
 
   test("Pessoa Física envia endereço, gera link e conclui após confirmação", async ({ page }) => {
     await mockApis(page, { status: "pending" });
+    await page.context().route("https://sandbox.ipag.com.br/link/playwright", (route) =>
+      route.fulfill({ contentType: "text/html", body: "<h1>Checkout iPag</h1>" })
+    );
     let paymentPayload;
     let registrationPayload;
 
@@ -276,10 +338,18 @@ test.describe("fluxo de pagamento", () => {
   await completeCourseAndTerms(page);
 
     await page.getByRole("radio", { name: "Pix" }).check();
+    // Simula a suspensão de frames da aba original ao abrir o checkout.
+    await page.evaluate(() => {
+      window.requestAnimationFrame = () => 0;
+      const open = window.open.bind(window);
+      // Após o clique, o navegador pode bloquear uma segunda chamada a window.open.
+      window.open = (url, ...args) => url === "about:blank" ? open(url, ...args) : null;
+    });
     const paymentPopupPromise = page.waitForEvent("popup");
     await page.getByRole("button", { name: "Ir para o iPag" }).click();
     const paymentPopup = await paymentPopupPromise;
     await expect.poll(() => paymentPopup.url()).toBe("https://sandbox.ipag.com.br/link/playwright");
+    await expect(paymentPopup.getByRole("heading", { name: "Checkout iPag" })).toBeVisible();
     await paymentPopup.close();
     await expect(page.getByRole("heading", { name: "Aguardando pagamento" })).toBeVisible();
     await expect(page.locator(".payment-awaiting-loader-wrap")).toBeVisible();
@@ -335,6 +405,14 @@ test.describe("fluxo de pagamento", () => {
     expect(registrationPayload).toBeUndefined();
     expect(paymentPayload.businessName).toBe("Empresa Playwright Ltda");
     expect(paymentPayload.vagasDesejadas).toBe("2");
+    await page.unroute("**/api/payment-status**");
+    await page.route("**/api/payment-status**", (route) =>
+      route.fulfill({ json: { success: true, status: "confirmed", confirmed: true } })
+    );
+    await expect(page.getByRole("heading", { name: "Pagamento confirmado!", exact: true })).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("#statusMessage")).toContainText("O pagamento foi confirmado. A confirmação da inscrição será enviada por e-mail.");
+    await expect(page.locator("#statusMessage")).not.toContainText("Um link foi enviado");
+    await expect(page.locator("#statusMessage")).not.toContainText("Atenção:");
   });
 
   test("Pessoa Jurídica pode se identificar como estrangeira sem CNPJ", async ({ page }) => {
@@ -396,3 +474,26 @@ test.describe("fluxo de pagamento", () => {
     expect(registerPayload.turmas).toBe("TURMA-0002");
   });
 });
+
+for (const label of ["Pessoa Física", "Pessoa Jurídica", "Indicação parceiro", "Enviado corporativo"]) {
+  test(`exibe tipo escolhido no progresso: ${label}`, async ({ page }) => {
+    await mockApis(page);
+    await page.goto("/");
+    const summary = page.locator("#registrationTypeSummary");
+    await expect(summary).toBeHidden();
+    const viaToken = ["Indicação parceiro", "Enviado corporativo"].includes(label);
+    if (viaToken) await page.getByRole("radio", { name: "Via Token", exact: true }).check();
+    await page.getByRole("radio", { name: label, exact: true }).check();
+    await expect(summary).toHaveText(`Tipo de cadastro: ${label}`);
+    if (!viaToken) {
+      await page.getByRole("button", { name: "Avançar", exact: true }).click();
+      await expect(summary).toHaveText(`Tipo de cadastro: ${label}`);
+      await page.getByRole("button", { name: "Voltar", exact: true }).click();
+      const other = label === "Pessoa Física" ? "Pessoa Jurídica" : "Pessoa Física";
+      await page.getByRole("radio", { name: other, exact: true }).check();
+      await expect(summary).toHaveText(`Tipo de cadastro: ${other}`);
+      await page.locator('.lang-btn[data-lang="en"]').click();
+      await expect(summary).toHaveText(`Registration type: ${other === "Pessoa Física" ? "Individual" : "Legal entity"}`);
+    }
+  });
+}

@@ -15,6 +15,7 @@ const i18n = {
     featureFour: "Instrumentos para refrigeração comercial e industrial",
     featureFive: "Aplicações práticas e configuração de equipamentos",
     overallProgressLabel: "Progresso geral",
+    selectedRegistrationType: "Tipo de cadastro",
     clearForm: "Limpar cadastro",
     themeToggle: "Tema",
     previous: "Voltar",
@@ -29,6 +30,10 @@ const i18n = {
       title: "Cadastro enviado com sucesso!",
       message: "Agradecemos o seu interesse! Em breve entraremos em contato com mais informações sobre a sua inscrição.<br><br>Atenção: A sua inscrição só será registrada mediante a confirmação. Um link foi enviado para o seu e-mail. Caso não tenha recebido, contate o suporte",
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>' // Ícone de checkmark
+    },
+    companyPaymentSuccess: {
+      title: "Pagamento confirmado!",
+      message: "O pagamento foi confirmado. A confirmação da inscrição será enviada por e-mail."
     },
     paymentReady: {
       title: "Pagamento necessário",
@@ -119,6 +124,7 @@ const i18n = {
     featureFour: "Commercial and industrial refrigeration instruments",
     featureFive: "Practical applications and equipment configuration",
     overallProgressLabel: "Overall Progress",
+    selectedRegistrationType: "Registration type",
     clearForm: "Clear form",
     themeToggle: "Theme",
     previous: "Back",
@@ -133,6 +139,10 @@ const i18n = {
       title: "Registration submitted successfully!",
       message: "Thank you for your interest! We will contact you shortly with more information about your enrollment.<br><br>Attention: Your enrollment will only be registered after confirmation. A link has been sent to your email. If you did not receive it, please contact support.",
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>'
+    },
+    companyPaymentSuccess: {
+      title: "Payment confirmed!",
+      message: "Payment has been confirmed. Enrollment confirmation will be sent by email."
     },
     paymentReady: {
       title: "Payment required",
@@ -223,6 +233,7 @@ const i18n = {
     featureFour: "Instrumentos para refrigeración comercial e industrial",
     featureFive: "Aplicaciones prácticas y configuración de equipos",
     overallProgressLabel: "Progreso general",
+    selectedRegistrationType: "Tipo de registro",
     clearForm: "Limpiar registro",
     themeToggle: "Tema",
     previous: "Volver",
@@ -237,6 +248,10 @@ const i18n = {
       title: "¡Registro enviado con éxito!",
       message: "¡Gracias por tu interés! Nos pondremos en contacto contigo en breve con más información sobre tu inscripción.<br><br>Atención: Tu inscripción solo se registrará tras la confirmación. Se ha enviado un enlace a tu correo electrónico. Si no lo has recibido, contacta con soporte.",
       icon: '<svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 16.7 19 7"></path></svg>'
+    },
+    companyPaymentSuccess: {
+      title: "¡Pago confirmado!",
+      message: "El pago ha sido confirmado. La confirmación de la inscripción se enviará por correo electrónico."
     },
     paymentReady: {
       title: "Pago necesario",
@@ -1009,6 +1024,13 @@ function renderProgress() {
   if (fill) { fill.style.width = pct + "%"; fill.setAttribute("aria-valuenow", pct); }
   if (val) val.textContent = pct + "%";
   if (counter) counter.textContent = `Etapa ${currentStep + 1} de ${steps.length}`;
+  const summary = document.getElementById("registrationTypeSummary");
+  if (summary) {
+    const value = ["VIA_TOKEN", "PARCEIRO", "TOKEN"].includes(formData.relacao) ? formData.relacao : formData.tipoPessoa;
+    const option = STEPS[0].fields.flatMap((field) => field.options || []).find((option) => option.value === value);
+    summary.hidden = !option;
+    summary.textContent = option ? `${t("selectedRegistrationType")}: ${option.label[currentLang] || option.label.pt}` : "";
+  }
 }
 
 function renderFields() {
@@ -1081,7 +1103,7 @@ function renderFields() {
       // O campo token é obrigatório para Parceiro e para inscrição com token.
       if (f.id === "token" && !["PARCEIRO", "TOKEN"].includes(formData.relacao)) return "";
       if (f.id === "cidade" && !isDirectRegistration() && ["PF", "PJ"].includes(formData.tipoPessoa)) return "";
-      if (f.id.endsWith("Cobranca") && isDirectRegistration()) return "";
+      if (f.id.endsWith("Cobranca") && formData.relacao === "TOKEN") return "";
       if (["segmento", "atuacao"].includes(f.id) && formData.tipoPessoa === "PJ") return "";
       if (f.id === "cepCobranca" && formData.estrangeiro) return "";
       if (f.id === "estadoCobranca" && formData.estrangeiro) return "";
@@ -1919,6 +1941,8 @@ async function generatePaymentLink() {
     const paymentLink = normalizePaymentLink(data.link);
     if (!res.ok || !paymentLink) {
       resetTurnstileWidget();
+      const upstreamStatus = Number.isInteger(data.upstreamStatus) ? ` / iPag HTTP ${data.upstreamStatus}` : "";
+      showStatus(`${t("paymentError")} (HTTP ${res.status}${upstreamStatus})`, "error");
       return null;
     }
     return {
@@ -1928,6 +1952,7 @@ async function generatePaymentLink() {
     };
   } catch {
     resetTurnstileWidget();
+    showStatus(t("paymentError"), "error");
     return null;
   }
 }
@@ -1940,6 +1965,7 @@ function resetTurnstileWidget() {
 }
 
 function normalizePaymentLink(value) {
+  if (typeof value !== "string" || !value.trim()) return "";
   try {
     const url = new URL(String(value || ""), window.location.origin);
     return ["http:", "https:"].includes(url.protocol) ? url.href : "";
@@ -1954,18 +1980,9 @@ function openPaymentLink(link, preOpenedWindow = null) {
 
   if (preOpenedWindow && !preOpenedWindow.closed) {
     try {
-      // Reutiliza a janela nomeada aberta durante o clique. Isso é mais confiável
-      // no Chrome do que alterar a referência de uma janela about:blank após o fetch.
-      const navigatedWindow = window.open(paymentUrl, PAYMENT_WINDOW_NAME);
-      if (!navigatedWindow) throw new Error("Não foi possível navegar para o iPag.");
-      navigatedWindow.focus();
-      window.setTimeout(() => {
-        try {
-          navigatedWindow.focus();
-        } catch {
-          // A janela pode ter sido fechada pelo usuário durante a navegação.
-        }
-      }, 250);
+      // Navega a aba já aberta sem depender de outro popup após a resposta da API.
+      preOpenedWindow.location.replace(paymentUrl);
+      preOpenedWindow.focus();
       return true;
     } catch {
       try {
@@ -2055,7 +2072,10 @@ function startPaymentStatusPolling(reference, payButton) {
 
       if (response.ok && data.confirmed === true) {
         stopPaymentStatusPolling();
-        showStatus(i18n[currentLang].submitSuccess, "success", true);
+        const success = formData.tipoPessoa === "PJ"
+          ? { ...t("submitSuccess"), ...t("companyPaymentSuccess") }
+          : t("submitSuccess");
+        showStatus(success, "success", true);
         return;
       }
     } catch {
@@ -2118,7 +2138,7 @@ async function handleRegistrationSubmission(isWaitlist = false) {
   const payload = { ...formData };
   if (isWaitlist) Object.assign(payload, { modulos: [], listaEspera: true });
   if (isDirectRegistration()) {
-    Object.keys(payload).filter((key) => key.endsWith("Cobranca") || key === "formaPagamento")
+    Object.keys(payload).filter((key) => (formData.relacao === "TOKEN" && key.endsWith("Cobranca")) || key === "formaPagamento")
       .forEach((key) => delete payload[key]);
   }
   try {
@@ -2144,49 +2164,43 @@ async function handleSuccessfulSubmission(paymentWindow = null) {
   const statusMessageWrapper = document.getElementById("statusMessageWrapper");
 
   const payment = await generatePaymentLink();
+  if (!payment) {
+    paymentWindow?.close();
+    return;
+  }
 
   if (wizardContent) wizardContent.style.display = "block";
   if (statusMessageWrapper) {
     statusMessageWrapper.style.display = 'block'; // Garante que o wrapper da mensagem de status esteja visível
-    // Pequeno delay para garantir que a transição CSS funcione após a mudança de display
-    requestAnimationFrame(() => {
-      showStatus(i18n[currentLang].paymentReady, "success", true);
+    // A aba original pode ficar em segundo plano; não adie a navegação para um frame.
+    showStatus(i18n[currentLang].paymentReady, "success", true);
 
-      if (payment) {
-        paymentReference = payment.reference;
-        const payButton = renderPaymentLinkButton(payment.link, payment.reference, payment.amount);
-        if (paymentWindow && payButton) {
-          const opened = openPaymentLink(payment.link, paymentWindow);
-          if (!opened) {
-            paymentWindow.close();
-          } else {
-            showPaymentAwaitingScreen(payment.link);
-          }
-          startPaymentConfirmation(payButton, payment.reference);
-        } else if (paymentWindow) {
+    if (payment) {
+      paymentReference = payment.reference;
+      const payButton = renderPaymentLinkButton(payment.link, payment.reference, payment.amount);
+      if (paymentWindow && payButton) {
+        const opened = openPaymentLink(payment.link, paymentWindow);
+        if (!opened) {
           paymentWindow.close();
+        } else {
+          showPaymentAwaitingScreen(payment.link);
         }
-      } else {
-        const textWrapper = document.querySelector("#statusMessage .status-text-wrapper");
-        if (textWrapper) {
-          const warn = document.createElement("p");
-          warn.className = "status-description payment-error";
-          warn.textContent = t("paymentError");
-          textWrapper.appendChild(warn);
-        }
+        startPaymentConfirmation(payButton, payment.reference);
+      } else if (paymentWindow) {
+        paymentWindow.close();
       }
+    }
 
-      // Dispara a animação de confete
-      if (window.confetti) {
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#007a47', '#00a15c', '#ffffff'], // Cores da marca
-          disableForReducedMotion: true // Respeita usuários que preferem menos movimento
-        });
-      }
-    });
+    // Dispara a animação de confete
+    if (window.confetti) {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#007a47', '#00a15c', '#ffffff'], // Cores da marca
+        disableForReducedMotion: true // Respeita usuários que preferem menos movimento
+      });
+    }
   }
 }
 

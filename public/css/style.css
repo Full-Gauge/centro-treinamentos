@@ -225,6 +225,13 @@ body {
   font-weight: 700;
 }
 
+.progress-registration {
+  margin: 0.4rem 0 0;
+  color: var(--ink-900);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
 .progress-head strong {
   font-size: 1.35rem;
   line-height: 1;
@@ -404,7 +411,7 @@ body[data-theme="dark"] .theme-icon-moon {
 }
 
 .step-item.done::before {
-  content: "✓";
+  content: "\2713";
   width: 1.05rem;
   height: 1.05rem;
   display: grid;

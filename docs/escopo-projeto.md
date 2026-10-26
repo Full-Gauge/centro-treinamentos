@@ -16,7 +16,7 @@ Este documento registra a estrutura, a arquitetura e o escopo técnico do projet
 
 A arquitetura combina:
 
-- frontend estático em `public/`
+- frontend estático em `public/`; `public/_headers` declara UTF-8 para HTML, CSS, JavaScript e SVG também quando a Cloudflare entrega assets sem executar o Worker
 - lógica de interface em JavaScript puro
 - roteamento serverless em Cloudflare Workers
 - integrações externas via webhooks do Power Automate
@@ -66,7 +66,8 @@ O fluxo principal roda em `public/index.html` com lógica em `public/js/app.js`.
 Pontos principais:
 
 - validação de token via `/api/validate-token-pj` (secret `url_token_pj`) para Inscrição com Token e `/api/validate-token` (secret `url_token`) para Parceiro
-- Inscrição com Token identifica um participante enviado pela empresa (`tipoPessoa: "Enviado corporativo"`, `relacao: "TOKEN"`) usando o token gerado pela Pessoa Jurídica; assim como Parceiro, informa cidade, não solicita endereço de cobrança e envia diretamente a `/api/register` após aceitar os termos, sem checkout iPag
+- Inscrição com Token identifica um participante enviado pela empresa (`tipoPessoa: "Enviado corporativo"`, `relacao: "TOKEN"`) usando o token gerado pela Pessoa Jurídica; informa cidade, não solicita endereço de cobrança e envia diretamente a `/api/register` após aceitar os termos, sem checkout iPag
+- Indicação parceiro exibe e envia todos os campos de endereço de cobrança, com consulta de CEP e as mesmas regras para estrangeiros dos demais cadastros; mantém o envio direto sem iPag
 - preenchimento automático de dados quando o token é válido
 - na etapa 2, Pessoa Jurídica informa razão social, responsável e CNPJ para o iPag; Pessoa Física informa CPF
 - após a escolha da turma, Pessoa Jurídica pode selecionar as vagas desejadas em um combobox; a consulta de disponibilidade será adicionada depois
@@ -161,6 +162,8 @@ Pontos principais:
 - a tela consulta `GET /api/payment-status` até o webhook confirmar o pagamento
 - `worker/worker-ipag.js` monta o payload e chama `POST /service/v2/payment_links` do iPag com Basic Auth
 - retorna `{ link, paymentReference }`, exibido como botão "Pagar agora"
+- o clique em "Ir para o iPag" abre uma nova aba e navega para o checkout assim que o link retorna, sem depender de frames de animação da aba original
+- se a geração falhar ou não retornar link, o frontend mantém o cadastro para nova tentativa, fecha a janela vazia e exibe erro com status HTTP, sem indicar pagamento pronto
 - coleta o endereço de cobrança no cadastro e envia os campos para `customer.address` do iPag
 - cria a reserva local em `payment_orders` no D1 antes de chamar o iPag
 - atualiza a reserva para `registration_submitted` após o envio do cadastro
@@ -183,7 +186,7 @@ Pontos principais:
 12. Tela mostra "Inscrição realizada com sucesso"
 ```
 
-O clique no link não envia o cadastro nem confirma o pagamento. Ele apenas inicia a espera pelo pagamento. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`); somente então o cadastro é enviado. Parceiros e enviados corporativos com token não passam pelo checkout pago: concluem nos termos e enviam diretamente a `/api/register`, sem campos de cobrança nem `formaPagamento`. O handler aceita esses cadastros sem `paymentReference`; para TOKEN exige `tipoPessoa: "Enviado corporativo"` e token não vazio. A validação do token ocorre em `/api/validate-token` para Parceiro e `/api/validate-token-pj` para Inscrição com Token e a autorização definitiva da inscrição cabe ao fluxo de destino (`url_registro`).
+O clique no link não envia o cadastro nem confirma o pagamento. Ele apenas inicia a espera pelo pagamento. A confirmação definitiva depende do webhook `TransactionCaptured` com status `8` (`CAPTURED`); somente então o cadastro é enviado. Parceiros e enviados corporativos com token não passam pelo checkout pago: concluem nos termos e enviam diretamente a `/api/register`, sem `formaPagamento`; Parceiro envia os campos de endereço de cobrança, enquanto Enviado corporativo não os solicita. O handler aceita esses cadastros sem `paymentReference`; para TOKEN exige `tipoPessoa: "Enviado corporativo"` e token não vazio. A validação do token ocorre em `/api/validate-token` para Parceiro e `/api/validate-token-pj` para Inscrição com Token e a autorização definitiva da inscrição cabe ao fluxo de destino (`url_registro`).
 
 A tabela `payment_orders` mantém a reserva/cadastro local e usa `payment_reference` para relacionar o link, o cadastro e o pagamento. A tabela `payment_events` permanece exclusiva para idempotência do webhook.
 
