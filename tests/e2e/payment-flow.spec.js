@@ -169,7 +169,7 @@ test.describe("fluxo de pagamento", () => {
   });
 
   for (const registrationType of ["Indicação parceiro", "Enviado corporativo"]) {
-    test(`${registrationType} conclui ${registrationType === "Indicação parceiro" ? "com" : "sem"} endereço e sem pagamento`, async ({ page }) => {
+    test(`${registrationType} conclui com endereço e sem pagamento`, async ({ page }) => {
       await mockApis(page);
       await page.route("**/api/parceiros**", (route) => route.fulfill({
         json: [{ id: "PAR-TEST", name: "Parceiro Teste" }]
@@ -208,13 +208,10 @@ test.describe("fluxo de pagamento", () => {
       await page.locator("#segmento").selectOption("Refrigeração");
       await page.locator("#atuacao").selectOption("Industrial");
       await expect(page.getByLabel("Cidade *", { exact: true })).toHaveCount(1);
-      if (isToken) await page.locator("#cidade").fill("Canoas");
-      else await expect(page.locator("#cidade")).toHaveCount(0);
+      await expect(page.locator("#cidade")).toHaveCount(0);
       await page.locator("#telefone").fill("(51) 98888-7777");
       await page.locator("#email").fill("teste@example.com");
-      if (isToken) {
-        await expect(page.locator('[id$="Cobranca"]')).toHaveCount(0);
-      } else {
+      {
         await page.locator("#cepCobranca").fill("92010-000");
         await expect(page.locator("#enderecoCobranca")).toHaveValue("Rua ViaCEP");
         await page.locator("#numeroEnderecoCobranca").fill("100");
@@ -252,9 +249,7 @@ test.describe("fluxo de pagamento", () => {
       expect(registrationPayload.turmas).toBe("TURMA-001");
       expect(registrationPayload.cidade).toBe("Canoas");
       if (isToken) expect(registrationPayload.token).toBe("FULLGAUGE-6EY380IL10CCP3ZANSZZ");
-      if (isToken) {
-        expect(Object.keys(registrationPayload).filter((key) => key.endsWith("Cobranca"))).toEqual([]);
-      } else {
+      {
         expect(registrationPayload).toMatchObject({
           cepCobranca: "92010-000", enderecoCobranca: "Rua ViaCEP",
           numeroEnderecoCobranca: "100", complementoCobranca: "Sala 2",

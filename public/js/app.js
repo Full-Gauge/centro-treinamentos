@@ -1102,8 +1102,7 @@ function renderFields() {
       if (f.id === "tokenRelation" && !["VIA_TOKEN", "PARCEIRO", "TOKEN"].includes(formData.relacao)) return "";
       // O campo token é obrigatório para Parceiro e para inscrição com token.
       if (f.id === "token" && !["PARCEIRO", "TOKEN"].includes(formData.relacao)) return "";
-      if (f.id === "cidade" && (formData.relacao === "PARCEIRO" || (!isDirectRegistration() && ["PF", "PJ"].includes(formData.tipoPessoa)))) return "";
-      if (f.id.endsWith("Cobranca") && formData.relacao === "TOKEN") return "";
+      if (f.id === "cidade" && (isDirectRegistration() || ["PF", "PJ"].includes(formData.tipoPessoa))) return "";
       if (["segmento", "atuacao"].includes(f.id) && formData.tipoPessoa === "PJ") return "";
       if (f.id === "cepCobranca" && formData.estrangeiro) return "";
       if (f.id === "estadoCobranca" && formData.estrangeiro) return "";
@@ -2136,11 +2135,10 @@ async function handleRegistrationSubmission(isWaitlist = false) {
   renderButtons();
 
   const payload = { ...formData };
-  if (formData.relacao === "PARCEIRO") payload.cidade = formData.cidadeCobranca;
+  if (isDirectRegistration()) payload.cidade = formData.cidadeCobranca;
   if (isWaitlist) Object.assign(payload, { modulos: [], listaEspera: true });
   if (isDirectRegistration()) {
-    Object.keys(payload).filter((key) => (formData.relacao === "TOKEN" && key.endsWith("Cobranca")) || key === "formaPagamento")
-      .forEach((key) => delete payload[key]);
+    delete payload.formaPagamento;
   }
   try {
     const response = await fetch("/api/register", {
