@@ -20,6 +20,7 @@ Siga estas regras em toda alteração neste repositório.
 - `GET/POST /api/turmas`
 - `GET/POST /api/modulos?classId=`
 - `GET/POST /api/parceiros`
+- `GET /api/impostos?cursoId=`
 - `POST /api/register`
 - `POST /api/validate-token`
 - `POST /api/validate-token-pj`
@@ -45,7 +46,7 @@ Siga estas regras em toda alteração neste repositório.
 ## Variáveis de ambiente
 - URLs: `url_registro`, `url_turmas`, `url_modulos`, `url_parceiros`, `url_token`, `url_token_pj`, `url_registro_presenca`
 - Webhooks: `ATTENDANCE_WEBHOOK_URL`, `CONFIRMATION_WEBHOOK_URL`, `CANCELLATION_WEBHOOK_URL`, `NAME_VALIDATION_WEBHOOK_URL`, `URL_VALIDATE_CPF_MODULOS`
-- iPag: `IPAG_BASE_URL` (opcional), `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS`; o valor atual do link é fixo em R$ 1.000,00 no Worker
+- iPag: `IPAG_BASE_URL` (opcional), `IPAG_DEFAULT_DESCRIPTION`, `IPAG_LINK_EXPIRES_DAYS`; o valor do link é calculado pelo Worker a partir da simulação de impostos e conferido com `expectedAmount` exibido no resumo
 - Webhook iPag: `POST /api/webhooks/ipag/payment-confirmed` usa `POWER_AUTOMATE_PAYMENT_CONFIRMATION_URL`
 - A lista oficial e a finalidade dos secrets estão em `docs/escopo-projeto.md`, seção 8.1.
 - Binding KV: `URL_SHORTENER_KV`

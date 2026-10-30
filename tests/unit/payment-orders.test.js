@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { markPaymentOrderPaid, updatePaymentOrder } from "../../worker/payment-orders.js";
 import { buildIpagCustomer, getPaymentAmount } from "../../worker/worker-ipag.js";
+import { taxSimulation } from "../fixtures/impostos.js";
 import { buildPaymentLinkCreatedPayload } from "../../worker/power-automate.js";
 
 test("buildIpagCustomer envia o endereco para o link e para o checkout", () => {
@@ -30,10 +31,22 @@ test("buildIpagCustomer envia o endereco para o link e para o checkout", () => {
   assert.deepEqual(customer.billing_address, address);
 });
 
-test("getPaymentAmount calcula o total da PJ pelo número de vagas", () => {
-  assert.equal(getPaymentAmount({ tipoPessoa: "PJ", vagasDesejadas: "3" }), "3000.00");
-  assert.equal(getPaymentAmount({ tipoPessoa: "PF", vagasDesejadas: "9" }), "1000.00");
-  assert.equal(getPaymentAmount({ tipoPessoa: "PJ", vagasDesejadas: "0" }), null);
+test("getPaymentAmount usa o líquido da simulação para PF, PJ e Canoas", () => {
+  const simulation = taxSimulation();
+  assert.equal(getPaymentAmount({ tipoPessoa: "PF", vagasDesejadas: "9" }, simulation), "1200.00");
+  assert.equal(getPaymentAmount({ tipoPessoa: "PJ", vagasDesejadas: "3" }, simulation), "3378.60");
+  const canoas = { tipoPessoa: "PJ", vagasDesejadas: "2", cidadeCobranca: " Canoas ", estadoCobranca: "rs", paisCobranca: "BR" };
+  assert.equal(getPaymentAmount(canoas, simulation), "2180.40");
+  assert.equal(getPaymentAmount({ ...canoas, estadoCobranca: "SP" }, simulation), "2252.40");
+  assert.equal(getPaymentAmount({ ...canoas, paisCobranca: "US" }, simulation), "2252.40");
+  simulation.quantidade = 2;
+  assert.equal(getPaymentAmount(canoas, simulation), "1090.20");
+  assert.equal(getPaymentAmount({ ...canoas, vagasDesejadas: "0" }, simulation), null);
+  assert.equal(getPaymentAmount({ ...canoas, vagasDesejadas: "1.5" }, simulation), null);
+  assert.equal(getPaymentAmount({ ...canoas, vagasDesejadas: Number.MAX_SAFE_INTEGER }, simulation), null);
+  assert.equal(getPaymentAmount(canoas, { ...simulation, moeda: "USD" }), null);
+  assert.equal(getPaymentAmount(canoas, { ...simulation, cenarios: [] }), null);
+  assert.equal(getPaymentAmount(canoas, { ...simulation, quantidade: 0 }), null);
 });
 
 test("monta evento de link criado com idempotência local", () => {

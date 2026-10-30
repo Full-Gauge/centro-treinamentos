@@ -1,3 +1,5 @@
+import { getPaymentQuote } from "./payment-pricing.js";
+
 // ─── Traduções ───────────────────────────────────────────────────────────────
 const i18n = {
   pt: {
@@ -651,7 +653,7 @@ let isSubmittingForm = false;
 let turmasFromPartnerToken = null;
 let allTurmasOptions = [];
 let allEmpresaOptions = DEFAULT_EMPRESA_OPTIONS.slice();
-const COURSE_AMOUNT = 1000;
+let paymentQuote = null;
 const FOREIGNER_OPTIONAL_ADDRESS_FIELDS = [
   "enderecoCobranca",
   "numeroEnderecoCobranca",
@@ -689,6 +691,75 @@ function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
+async function loadPaymentTaxes() {
+  const container = document.getElementById("paymentTaxes");
+  if (!container) return;
+  paymentQuote = null;
+  container.setAttribute("aria-busy", "true");
+  container.innerHTML = '<p class="payment-tax-loading" role="status"><span class="payment-awaiting-loader" aria-hidden="true"></span>Carregando valores e impostos...</p>';
+  for (const id of ["paymentAmountPerSlot", "paymentTotalAmount"]) {
+    document.getElementById(id).textContent = t("loading");
+  }
+  renderButtons();
+  try {
+    // shortcut: curso fixo TREIN-0001, substituir pelo curso da turma quando houver esse vínculo.
+    const response = await fetch(`/api/impostos?${new URLSearchParams({ cursoId: "TREIN-0001" })}`, { cache: "no-store" });
+    if (!response.ok) {
+      const failure = await response.json();
+      if (document.getElementById("paymentTaxes") !== container) return;
+      container.innerHTML = '<p role="alert"></p><button type="button">Tentar novamente</button>';
+      container.querySelector("p").textContent = `Não foi possível carregar os impostos.${/^tax_[a-z_]+$/.test(failure.code) ? ` Código: ${failure.code}.` : ""}${Number.isInteger(failure.upstreamStatus) ? ` Serviço externo: HTTP ${failure.upstreamStatus}.` : ""}`;
+      container.querySelector("button").addEventListener("click", loadPaymentTaxes);
+      return;
+    }
+    const data = await response.json();
+    const money = (value) => escapeHtml(new Intl.NumberFormat(currentLang, {
+      style: "currency", currency: data.moeda
+    }).format(value));
+    const quote = getPaymentQuote(formData, data);
+    if (!quote) throw new Error("price unavailable");
+    const scenarios = [data.cenarios.find((scenario) => scenario.tipo === quote.scenarioType)];
+    const taxes = new Map();
+    const key = (tax) => JSON.stringify([tax.codigo, tax.retido]);
+    for (const scenario of scenarios) {
+      for (const tax of scenario.impostos) taxes.set(key(tax), tax);
+    }
+    const amountRow = (label, field) => `<tr><th scope="row">${label}</th>${scenarios.map((scenario) => `<td>${money(scenario[field])}</td>`).join("")}</tr>`;
+    const html = `<div class="payment-tax-table-wrap" tabindex="0" role="region" aria-label="Impostos do curso">
+        <table class="payment-tax-table">
+          <caption>Impostos do curso — ${escapeHtml(data.dataCalculo)} · Base: ${escapeHtml(data.quantidade)}</caption>
+          <thead><tr><th scope="col">Tributo</th>${scenarios.map((scenario) => `<th scope="col">${escapeHtml(scenario.descricao)}</th>`).join("")}</tr></thead>
+          <tbody>
+            ${Array.from(taxes, ([taxKey, tax]) => `<tr><th scope="row">${escapeHtml(tax.descricao)}${tax.retido ? " — retido" : ""}</th>${scenarios.map((scenario) => {
+              const item = scenario.impostos.find((entry) => key(entry) === taxKey);
+              return `<td>${item ? `${money(item.valor)}<br><small>${escapeHtml(item.aliquotaOuValor)} ${escapeHtml(item.unidade || "")}</small>` : "—"}</td>`;
+            }).join("")}</tr>`).join("")}
+          </tbody>
+          <tfoot>${amountRow("Retenções", "retencoes")}</tfoot>
+        </table>
+      </div>`;
+    if (document.getElementById("paymentTaxes") === container) {
+      paymentQuote = quote;
+      container.innerHTML = html;
+      document.getElementById("paymentAmountPerSlot").textContent = formatCurrency(quote.amountPerSlot);
+      document.getElementById("paymentTotalAmount").textContent = formatCurrency(quote.totalAmount);
+    }
+  } catch {
+    if (document.getElementById("paymentTaxes") !== container) return;
+    container.innerHTML = '<p role="alert">Não foi possível carregar os impostos.</p><button type="button">Tentar novamente</button>';
+    container.querySelector("button").addEventListener("click", loadPaymentTaxes);
+  } finally {
+    if (document.getElementById("paymentTaxes") === container) {
+      container.setAttribute("aria-busy", "false");
+      if (!paymentQuote) {
+        document.getElementById("paymentAmountPerSlot").textContent = "—";
+        document.getElementById("paymentTotalAmount").textContent = "—";
+      }
+      renderButtons();
+    }
+  }
+}
+
 function getSelectedTurma() {
   const field = STEPS.find((step) => step.fields.some((item) => item.id === "turmas"))?.fields.find((item) => item.id === "turmas");
   return field?.options?.find((option) => typeof option === "object" && option.value === formData.turmas) || null;
@@ -699,7 +770,7 @@ function getRequestedSlots() {
 }
 
 function getPaymentAmount() {
-  return COURSE_AMOUNT * getRequestedSlots();
+  return paymentQuote?.totalAmount ?? null;
 }
 
 function isMobileDevice() {
@@ -1089,9 +1160,10 @@ function renderFields() {
         <div class="payment-step-summary-grid">
           <div><span>${t("selectedClass")}</span><strong>${escapeHtml(getSelectedTurma()?.label || "-")}</strong></div>
           <div><span>${t("requestedSlots")}</span><strong>${getRequestedSlots()}</strong></div>
-          <div><span>${t("amountPerSlot")}</span><strong>${formatCurrency(COURSE_AMOUNT)}</strong></div>
-          <div class="payment-step-total"><span>${t("totalAmount")}</span><strong>${formatCurrency(getPaymentAmount())}</strong></div>
+          <div><span>${t("amountPerSlot")}</span><strong id="paymentAmountPerSlot">${t("loading")}</strong></div>
+          <div class="payment-step-total"><span>${t("totalAmount")}</span><strong id="paymentTotalAmount">${t("loading")}</strong></div>
         </div>
+        <div id="paymentTaxes" aria-live="polite"><p>Carregando impostos...</p></div>
         <p>${t("paymentSecurity")}</p>
       </div>
       ${turnstileSiteKey ? `<div class="turnstile-payment-wrap full"><div id="turnstile-payment-widget" class="cf-turnstile" data-sitekey="${escapeHtml(turnstileSiteKey)}"></div></div>` : ""}`
@@ -1296,6 +1368,7 @@ function renderFields() {
     .join("");
 
   mountTurnstileWidget();
+  loadPaymentTaxes();
 
   // === EVENT LISTENERS (corrigido) ===
   step.fields.forEach((f) => {
@@ -1535,7 +1608,7 @@ function renderButtons() {
     // Desabilita o botão se houver checkboxes obrigatórios não marcados (termos)
     const termsStep = STEPS.find((s) => s.termsLink);
     const termsAccepted = !termsStep || termsStep.fields.every(f => f.type !== "checkbox" || !f.required || formData[f.id] === true);
-    submitBtn.disabled = isSubmittingForm || (isLast && !termsAccepted);
+    submitBtn.disabled = isSubmittingForm || (isLast && (!termsAccepted || (!isDirectRegistration() && !paymentQuote)));
   }
   if (prevBtn) prevBtn.innerHTML = `<span class="btn-icon btn-icon-arrow" aria-hidden="true">←</span><span class="btn-label">${t("previous")}</span>`;
 }
@@ -1865,6 +1938,7 @@ function resetRegistrationFlow() {
   resetTurnstileWidget();
   clearStatus();
   formData = {};
+  paymentQuote = null;
   currentStep = 0;
   paymentReference = "";
   waitlistSubmitted = false;
@@ -1891,6 +1965,8 @@ async function handleSubmit() {
     await handleRegistrationSubmission(!!formData.listaEspera);
     return;
   }
+
+  if (!paymentQuote) return;
 
   const paymentWindow = window.open("about:blank", PAYMENT_WINDOW_NAME);
   isSubmittingForm = true;
@@ -1920,6 +1996,7 @@ async function generatePaymentLink() {
         email: formData.email,
         phone: formData.telefone,
         paymentMethod: formData.formaPagamento,
+        expectedAmount: getPaymentAmount(),
         relacao: formData.relacao,
         tipoPessoa: formData.tipoPessoa,
         turmas: formData.turmas,
@@ -1940,6 +2017,11 @@ async function generatePaymentLink() {
     const paymentLink = normalizePaymentLink(data.link);
     if (!res.ok || !paymentLink) {
       resetTurnstileWidget();
+      if (res.status === 409) {
+        await loadPaymentTaxes();
+        showStatus("O valor mudou. Confira o resumo atualizado antes de continuar.", "error");
+        return null;
+      }
       const upstreamStatus = Number.isInteger(data.upstreamStatus) ? ` / iPag HTTP ${data.upstreamStatus}` : "";
       showStatus(`${t("paymentError")} (HTTP ${res.status}${upstreamStatus})`, "error");
       return null;

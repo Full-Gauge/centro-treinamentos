@@ -3,9 +3,10 @@
 import { createPaymentOrder, updatePaymentOrder } from "./payment-orders.js";
 import { verifyTurnstileToken } from "./worker-turnstile.js";
 import { buildPaymentLinkCreatedPayload, forwardPaymentLinkCreated } from "./power-automate.js";
+import { getImpostosResponse } from "./worker-impostos.js";
+import { getPaymentQuote } from "../public/js/payment-pricing.js";
 
 const IPAG_SANDBOX_BASE = "https://sandbox.ipag.com.br";
-const COURSE_AMOUNT_PER_SLOT = 1000;
 
 function basicAuthToken(apiId, apiKey) {
   return "Basic " + btoa(`${apiId}:${apiKey}`);
@@ -67,10 +68,8 @@ function getBillingAddress(body) {
   return isValid ? address : null;
 }
 
-export function getPaymentAmount(body) {
-  const requestedSlots = body.tipoPessoa === "PJ" ? Number(body.vagasDesejadas) : 1;
-  if (!Number.isInteger(requestedSlots) || requestedSlots < 1) return null;
-  return (COURSE_AMOUNT_PER_SLOT * requestedSlots).toFixed(2);
+export function getPaymentAmount(body, simulation) {
+  return getPaymentQuote(body, simulation)?.totalAmount.toFixed(2) ?? null;
 }
 
 export function buildIpagCustomer({
@@ -133,7 +132,14 @@ export async function handlePaymentLinkRequest(request, env, ctx) {
     const name = String(body.name ?? body.fullName ?? "").trim();
     const businessName = String(body.businessName ?? body.razaoSocial ?? "").trim();
     const taxReceipt = String(body.cpfCnpj ?? body.cpf ?? body.tax_receipt ?? "").trim();
-    const amount = getPaymentAmount(body);
+    // shortcut: curso fixo TREIN-0001, substituir pelo curso da turma quando houver esse vínculo.
+    const simulationResponse = await getImpostosResponse("TREIN-0001", env);
+    if (!simulationResponse.ok) return simulationResponse;
+    const amount = getPaymentAmount(body, await simulationResponse.json());
+    if (amount === null) return jsonResponse({ error: "Preço indisponível para este cadastro." }, 422);
+    if (!Number.isFinite(body.expectedAmount) || body.expectedAmount !== Number(amount)) {
+      return jsonResponse({ error: "O valor mudou. Confira o resumo atualizado antes de continuar." }, 409);
+    }
     const description =
       body.description || env.IPAG_DEFAULT_DESCRIPTION || "Inscrição - Centro de Treinamentos Full Gauge";
     const paymentMethod = normalizePaymentMethod(body.paymentMethod ?? body.formaPagamento);

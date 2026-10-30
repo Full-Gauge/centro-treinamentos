@@ -1,6 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { taxSimulation } from "../fixtures/impostos.js";
 
 async function mockApis(page, { status = "confirmed" } = {}) {
+  await page.route("**/api/impostos?*", (route) => {
+    const cursoId = new URL(route.request().url()).searchParams.get("cursoId");
+    expect(cursoId).toBe("TREIN-0001");
+    return route.fulfill({ json: taxSimulation(cursoId) });
+  });
   await page.route("https://challenges.cloudflare.com/turnstile/v0/api.js", (route) =>
     route.fulfill({
       contentType: "application/javascript",
@@ -44,7 +50,7 @@ async function selectRegistrationType(page, label) {
   await page.getByRole("button", { name: "Avançar" }).click();
 }
 
-async function fillCommonRegistration(page, { legalEntity = false } = {}) {
+async function fillCommonRegistration(page, { legalEntity = false, city = "Canoas" } = {}) {
   await expect(page.getByLabel("Cidade *")).toHaveCount(1);
   if (legalEntity) {
     await page.getByLabel("Nome do responsável *").fill("Responsável Playwright");
@@ -62,7 +68,7 @@ async function fillCommonRegistration(page, { legalEntity = false } = {}) {
     await page.getByLabel("Segmento *").selectOption({ label: "Refrigeração" });
     await page.getByLabel("Atuação *").selectOption({ label: "Industrial" });
   }
-  await page.getByLabel("Cidade *").first().fill("Canoas");
+  await page.getByLabel("Cidade *").first().fill(city);
   await page.getByLabel("Telefone / WhatsApp *").fill("(51) 98888-7777");
   await page.getByLabel("E-mail *").fill("playwright@example.com");
   await page.getByLabel("CEP *").fill("92010-000");
@@ -71,7 +77,7 @@ async function fillCommonRegistration(page, { legalEntity = false } = {}) {
   await page.getByLabel("Número *").fill("100");
   await page.getByLabel("Bairro *").fill("Centro");
   await page.getByLabel("Complemento").fill("Sala 2");
-  await page.getByLabel("Cidade *").last().fill("Canoas");
+  await page.getByLabel("Cidade *").last().fill(city);
   await page.getByLabel("Estado *").selectOption("RS");
   await page.getByLabel("País *").selectOption("BR");
 
@@ -334,6 +340,14 @@ test.describe("fluxo de pagamento", () => {
     await fillCommonRegistration(page);
   await completeCourseAndTerms(page);
 
+    const taxes = page.getByRole("table", { name: /Impostos do curso/ });
+    await expect(taxes).toBeVisible();
+    await expect(taxes.getByRole("columnheader")).toHaveCount(2);
+    await expect(taxes.getByRole("columnheader", { name: "Pessoa Física", exact: true })).toBeVisible();
+    await expect(taxes.getByRole("rowheader", { name: "ISSQN", exact: true })).toBeVisible();
+    await expect(taxes.getByRole("row", { name: /Líquido a pagar|Valor do curso/ })).toHaveCount(0);
+    await expect(taxes.getByRole("rowheader", { name: "Retenções", exact: true })).toBeVisible();
+    await expect(page.locator(".payment-step-total")).toContainText("1.200,00");
     await page.getByRole("radio", { name: "Pix" }).check();
     // Simula a suspensão de frames da aba original ao abrir o checkout.
     await page.evaluate(() => {
@@ -357,6 +371,7 @@ test.describe("fluxo de pagamento", () => {
       route.fulfill({ json: { success: true, status: "confirmed", confirmed: true } })
     );
     expect(paymentPayload.turnstileToken).toBe("playwright-turnstile-token");
+    expect(paymentPayload.expectedAmount).toBe(1200);
     expect(paymentPayload.enderecoCobranca).toBe("Rua dos Testes");
     expect(paymentPayload.cepCobranca).toBe("92010-000");
     expect(paymentPayload.paisCobranca).toBe("BR");
@@ -374,7 +389,7 @@ test.describe("fluxo de pagamento", () => {
     let registrationPayload;
     await page.route("**/api/payment-link", async (route) => {
       paymentPayload = route.request().postDataJSON();
-      await route.fulfill({ json: { success: true, link: "https://pay.test/link", paymentReference: "FG-PJ-001", amount: "2000.00" } });
+      await route.fulfill({ json: { success: true, link: "https://pay.test/link", paymentReference: "FG-PJ-001", amount: "2180.40" } });
     });
     await page.route("**/api/register", async (route) => {
       registrationPayload = route.request().postDataJSON();
@@ -389,7 +404,11 @@ test.describe("fluxo de pagamento", () => {
     await completeCourseAndTerms(page, { legalEntity: true });
 
     await expect(page.getByText("Turma Playwright")).toBeVisible();
-    await expect(page.getByText("R$ 2.000,00")).toBeVisible();
+    await expect(page.locator("#paymentAmountPerSlot")).toHaveText("R$ 1.090,20");
+    await expect(page.locator("#paymentTotalAmount")).toHaveText("R$ 2.180,40");
+    const taxes = page.getByRole("table", { name: /Impostos do curso/ });
+    await expect(taxes.getByRole("columnheader")).toHaveCount(2);
+    await expect(taxes.getByRole("columnheader", { name: "Pessoa Jurídica (Canoas)", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Ir para o iPag" })).toBeVisible();
     await page.getByRole("radio", { name: "Pix" }).check();
     const paymentPopupPromise = page.waitForEvent("popup");
@@ -402,6 +421,7 @@ test.describe("fluxo de pagamento", () => {
     expect(registrationPayload).toBeUndefined();
     expect(paymentPayload.businessName).toBe("Empresa Playwright Ltda");
     expect(paymentPayload.vagasDesejadas).toBe("2");
+    expect(paymentPayload.expectedAmount).toBe(2180.4);
     await page.unroute("**/api/payment-status**");
     await page.route("**/api/payment-status**", (route) =>
       route.fulfill({ json: { success: true, status: "confirmed", confirmed: true } })
@@ -494,3 +514,83 @@ for (const label of ["Pessoa Física", "Pessoa Jurídica", "Indicação parceiro
     }
   });
 }
+
+test("falha na consulta de impostos permite tentar novamente sem exibir valores fixos", async ({ page }) => {
+  await mockApis(page);
+  await page.route("**/api/impostos?*", (route) => route.fulfill({ status: 502, json: { error: "Indisponível", code: "tax_upstream_http", upstreamStatus: 401 } }));
+  await page.goto("/");
+  await selectRegistrationType(page, "Pessoa Física");
+  await fillCommonRegistration(page);
+  await completeCourseAndTerms(page);
+  await expect(page.getByText("Não foi possível carregar os impostos.", { exact: false })).toBeVisible();
+  await expect(page.locator("#paymentTaxes")).toContainText("Serviço externo: HTTP 401.");
+  await expect(page.locator(".payment-tax-table")).toHaveCount(0);
+  await page.unroute("**/api/impostos?*");
+  await page.route("**/api/impostos?*", (route) => route.fulfill({ json: taxSimulation("TREIN-0001") }));
+  await page.getByRole("button", { name: "Tentar novamente", exact: true }).click();
+  await expect(page.getByRole("table", { name: /Impostos do curso/ })).toBeVisible();
+});
+
+test("resumo aguarda a simulação com animação e bloqueia pagamento até receber os valores", async ({ page }) => {
+  await mockApis(page);
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  await page.route("**/api/impostos?*", async (route) => {
+    await pending;
+    await route.fulfill({ json: taxSimulation("TREIN-0001") });
+  });
+  await page.goto("/");
+  await selectRegistrationType(page, "Pessoa Física");
+  await fillCommonRegistration(page);
+  await completeCourseAndTerms(page);
+  await expect(page.locator(".payment-tax-loading .payment-awaiting-loader")).toBeVisible();
+  expect(await page.locator(".payment-tax-loading .payment-awaiting-loader").evaluate((el) => getComputedStyle(el).animationName)).toBe("payment-awaiting-spin");
+  await expect(page.locator("#paymentTaxes")).toHaveAttribute("aria-busy", "true");
+  await expect(page.locator("#paymentTotalAmount")).toHaveText("Carregando...");
+  await page.getByRole("radio", { name: "Pix" }).check();
+  await expect(page.getByRole("button", { name: "Ir para o iPag" })).toBeDisabled();
+  release();
+  await expect(page.locator("#paymentTotalAmount")).toHaveText("R$ 1.200,00");
+  await expect(page.locator("#paymentAmountPerSlot")).toHaveText("R$ 1.200,00");
+  await expect(page.locator("#paymentTaxes")).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator(".payment-tax-loading")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Ir para o iPag" })).toBeEnabled();
+});
+
+test("preço alterado atualiza o resumo e exige nova confirmação antes do checkout", async ({ page }) => {
+  await mockApis(page);
+  await page.goto("/");
+  await selectRegistrationType(page, "Pessoa Física");
+  await fillCommonRegistration(page);
+  await completeCourseAndTerms(page);
+  await expect(page.locator("#paymentTotalAmount")).toHaveText("R$ 1.200,00");
+  await page.unroute("**/api/impostos?*");
+  const updated = taxSimulation("TREIN-0001");
+  updated.cenarios[0].liquidoAPagar = 1500;
+  updated.cenarios[0].valorCurso = 1500;
+  await page.route("**/api/impostos?*", (route) => route.fulfill({ json: updated }));
+  await page.route("**/api/payment-link", (route) => {
+    expect(route.request().postDataJSON().expectedAmount).toBe(1200);
+    return route.fulfill({ status: 409, json: { error: "Valor alterado" } });
+  });
+  await page.getByRole("radio", { name: "Pix" }).check();
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "Ir para o iPag" }).click();
+  const popup = await popupPromise;
+  await expect.poll(() => popup.isClosed()).toBe(true);
+  await expect(page.locator("#paymentTotalAmount")).toHaveText("R$ 1.500,00");
+  await expect(page.locator("#statusMessage")).toContainText("O valor mudou. Confira o resumo atualizado antes de continuar.");
+  await expect(page.getByRole("button", { name: "Ir para o iPag" })).toBeEnabled();
+});
+
+test("Pessoa Jurídica fora de Canoas exibe somente a coluna do seu cenário", async ({ page }) => {
+  await mockApis(page);
+  await page.goto("/");
+  await selectRegistrationType(page, "Pessoa Jurídica");
+  await fillCommonRegistration(page, { legalEntity: true, city: "Porto Alegre" });
+  await completeCourseAndTerms(page, { legalEntity: true });
+  const taxes = page.getByRole("table", { name: /Impostos do curso/ });
+  await expect(taxes.getByRole("columnheader")).toHaveCount(2);
+  await expect(taxes.getByRole("columnheader", { name: "Pessoa Jurídica", exact: true })).toBeVisible();
+  await expect(page.locator("#paymentTotalAmount")).toHaveText("R$ 2.252,40");
+});

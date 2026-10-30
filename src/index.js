@@ -16,6 +16,7 @@ import { handleIpagPaymentConfirmed } from '../worker/worker-ipag-payment-confir
 import { handleIpagPaymentStatusRequest } from '../worker/worker-ipag-payment-status.js';
 import { handleAdminOrdersRequest } from '../worker/worker-admin.js';
 import { publicTurnstileConfig } from '../worker/worker-turnstile.js';
+import { handleImpostosRequest } from '../worker/worker-impostos.js';
 
 function serveStaticAsset(request, env) {
   return env.ASSETS.fetch(request).then((response) => {
@@ -116,6 +117,10 @@ export default {
 
     if (url.pathname.replace(/\/$/, "") === "/api/public-config") {
       return publicTurnstileConfig(env);
+    }
+
+    if (url.pathname.replace(/\/$/, "") === "/api/impostos") {
+      return handleImpostosRequest(request, env);
     }
 
     // 6.7 Webhook de confirmação de pagamento do iPag

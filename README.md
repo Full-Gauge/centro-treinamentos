@@ -90,6 +90,7 @@ npx wrangler secret put url_registro --config wrangler.dev.jsonc
 npx wrangler secret put url_turmas --config wrangler.dev.jsonc
 npx wrangler secret put url_modulos --config wrangler.dev.jsonc
 npx wrangler secret put url_parceiros --config wrangler.dev.jsonc
+npx wrangler secret put url_impostos --config wrangler.dev.jsonc
 npx wrangler secret put url_token --config wrangler.dev.jsonc
 npx wrangler secret put url_token_pj --config wrangler.dev.jsonc
 npx wrangler secret put url_registro_presenca --config wrangler.dev.jsonc
@@ -148,7 +149,7 @@ Depois, copie esse arquivo para a pasta da documentação da empresa.
 
 ### Fluxo do checkout
 
-Após aceitar os termos, PF e PJ escolhem Pix ou cartão e recebem um link iPag. PF paga uma vaga; PJ paga `vagasDesejadas × R$ 1.000,00`. Ao abrir o link, a tela aguarda o pagamento e consulta `GET /api/payment-status`. Somente após a confirmação pelo webhook `POST /api/webhooks/ipag/payment-confirmed` o cadastro completo é enviado ao destino de `/api/register`.
+Após aceitar os termos, PF e PJ escolhem Pix ou cartão e recebem um link iPag. O resumo e a cobrança usam o valor líquido por vaga retornado pela simulação de impostos: PF paga uma vaga e PJ paga as vagas desejadas. Ao abrir o link, a tela aguarda o pagamento e consulta `GET /api/payment-status`. Somente após a confirmação pelo webhook `POST /api/webhooks/ipag/payment-confirmed` o cadastro completo é enviado ao destino de `/api/register`.
 
 O webhook valida HMAC-SHA256, `TransactionCaptured`, status `8`/`CAPTURED` e encaminha uma única vez ao mesmo destino de `/api/register` (`url_registro`) o cadastro completo junto com os dados de pagamento, `paymentReference`, `tipoPessoa` e todos os campos de endereço da reserva. A inscrição só aparece como realizada após o status `confirmed`.
 

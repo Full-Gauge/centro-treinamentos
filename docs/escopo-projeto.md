@@ -152,7 +152,7 @@ Pontos principais:
 
 ### 5.9 Pagamento (iPag)
 
-O fluxo de pagamento gera um link de checkout no iPag para Pix e cartão.
+O fluxo de pagamento gera um link de checkout no iPag para Pix e cartão. A etapa 5 consulta `GET /api/impostos?cursoId=TREIN-0001` e usa os cenários retornados pelo Power Automate para preencher a tabela, o valor por vaga e o total a pagar. Durante a consulta, exibe uma animação com texto de carregamento, sem valores fixos, e bloqueia o pagamento. Falhas mantêm o resumo sem preço, com aviso e nova tentativa.
 
 Pontos principais:
 
@@ -169,6 +169,17 @@ Pontos principais:
 - atualiza a reserva para `registration_submitted` após o envio do cadastro
 - atualiza a reserva para `paid` após a confirmação válida do webhook
 
+#### Consulta de impostos e valor do curso
+
+- Rota interna: `GET /api/impostos?cursoId=...`; handler: `worker/worker-impostos.js`.
+- `cursoId` é enviado pelo frontend com o valor fixo `TREIN-0001`, temporariamente, independentemente da turma selecionada. A rota aceita IDs de 1 a 20 caracteres. O Worker envia esse parâmetro e `dataCalculo` no formato `AAAA-MM-DD`, sempre com a data atual de `America/Sao_Paulo`, à URL do secret `url_impostos` por POST, no corpo JSON `{ cursoId, dataCalculo }`. A rota interna do site permanece GET.
+- Autenticação upstream: header `x-ct-webhook-token` com o secret existente `POWER_AUTOMATE_WEBHOOK_TOKEN`. URL assinada e credencial ficam exclusivamente no Worker.
+- Resposta: `{ cursoId, dataCalculo, moeda, quantidade, calculadoEm, calculoId, cenarios }`. Cada cenário contém `{ tipo, descricao, valorCurso, retencoes, liquidoAPagar, impostos }`. Cada imposto contém `{ codigo, descricao, grupo, tipoFiscalAX, metodoBaseAX, unidade, aliquotaOuValor, baseCalculo, valor, valorComSinalAX, retido }`.
+- Valores monetários e alíquotas são números JSON; `retido` é booleano. A tabela mostra somente a coluna do cenário aplicável ao cadastro, com o título de `descricao` (PF, PJ ou PJ de Canoas), une impostos por `codigo` e `retido`, mostra valor e alíquota/unidade de cada cenário e informa a `quantidade` base da simulação. Valores ausentes em um cenário aparecem como traço. A tabela mantém apenas impostos e retenções, sem repetir as linhas de valor do curso e líquido a pagar; os valores de pagamento ficam no resumo. Os nomes dos impostos são exibidos sem repetir seus códigos.
+- A resposta não é armazenada em cache. Método incorreto retorna 405; curso inválido, 400; configuração ausente, 500; falha, timeout ou contrato upstream inválido, 502 com mensagem genérica. A consulta tem timeout de 15 segundos e não segue redirects. Falhas retornam um código diagnóstico (`tax_upstream_http`, `tax_invalid_json`, `tax_invalid_response`, `tax_timeout` ou `tax_fetch_failed`); rejeições HTTP incluem `upstreamStatus` e, quando disponível, o código alfanumérico `upstreamCode`, sem mensagem ou corpo externo, URL ou credenciais. A interface exibe esse diagnóstico junto à opção de tentar novamente.
+- O resumo e o iPag compartilham a regra de cálculo em `public/js/payment-pricing.js`: PF usa o cenário `PF`; PJ com cidade Canoas, estado RS e país BR usa `PJ_CANOAS`; as demais PJ usam `PJ`. O valor por vaga corresponde a `liquidoAPagar / quantidade`, arredondado para centavos, e o total multiplica esse valor por uma vaga PF ou por `vagasDesejadas` PJ. Apenas BRL é aceito para o pagamento.
+- `POST /api/payment-link` recebe `expectedAmount` numérico com o total exibido. Após validar o Turnstile, o Worker consulta novamente a simulação com curso fixo `TREIN-0001` e data atual de São Paulo e calcula o preço independentemente do navegador. Divergência de preço retorna 409 antes de criar reserva ou link; a interface recarrega a simulação e pede nova confirmação. Simulação indisponível ou cenário sem preço impede gerar o link.
+
 ### 5.10 Fluxo ponta a ponta do checkout
 
 ```text
@@ -176,7 +187,7 @@ Pontos principais:
 2. Preenche cadastro, turma, módulos e, para PJ, vagas desejadas
 3. Aceita os termos
 4. PF/PJ escolhe Pix ou cartão
-5. Worker calcula o total (`R$ 1.000,00` por vaga) e cria o link no iPag
+5. Worker consulta a simulação, calcula o total líquido do cenário e confere `expectedAmount` antes de criar o link no iPag
 6. Cliente clica em "Pagar agora"
 7. Tela abre o checkout iPag e consulta GET /api/payment-status a cada 5 segundos
 8. iPag envia POST /api/webhooks/ipag/payment-confirmed
@@ -254,6 +265,7 @@ npx wrangler secret put url_registro --config wrangler.dev.jsonc
 npx wrangler secret put url_turmas --config wrangler.dev.jsonc
 npx wrangler secret put url_modulos --config wrangler.dev.jsonc
 npx wrangler secret put url_parceiros --config wrangler.dev.jsonc
+npx wrangler secret put url_impostos --config wrangler.dev.jsonc
 npx wrangler secret put url_token --config wrangler.dev.jsonc
 npx wrangler secret put url_token_pj --config wrangler.dev.jsonc
 npx wrangler secret put url_registro_presenca --config wrangler.dev.jsonc
@@ -277,6 +289,7 @@ Os valores devem permanecer somente no ambiente Cloudflare. As URLs de webhook t
 - `IPAG_API_KEY`: credencial Basic Auth do iPag e segredo do HMAC-SHA256 do webhook.
 - `POWER_AUTOMATE_PAYMENT_LINK_CREATED_URL`: recebe o evento de link iPag criado.
 - `POWER_AUTOMATE_WEBHOOK_TOKEN`: enviado no header `X-CT-Webhook-Token` aos fluxos de pagamento.
+- `url_impostos`: URL assinada do POST de simulação de impostos e valor do curso; autentica com `POWER_AUTOMATE_WEBHOOK_TOKEN`.
 - `TURNSTILE_SECRET_KEY`: valida no Worker os tokens do Cloudflare Turnstile.
 - `url_registro`: recebe o cadastro completo após a confirmação do pagamento pelo webhook.
 - `url_turmas`: consulta as turmas disponíveis.
@@ -303,7 +316,7 @@ Os valores devem permanecer somente no ambiente Cloudflare. As URLs de webhook t
 
 - As URLs de integração estão descritas em 8.1 porque são armazenadas como secrets.
 - As configurações opcionais do iPag estão descritas em 8.2.
-- o valor do link iPag é `R$ 1.000,00` por vaga; para PJ, o total é `vagasDesejadas × R$ 1.000,00`
+- o valor do link iPag vem da simulação de impostos: líquido por vaga do cenário aplicável multiplicado pelas vagas desejadas, conforme seção 5.9
 
 O endpoint `POST /api/webhooks/ipag/payment-confirmed` valida o HMAC-SHA256 usando o body bruto, exige `X-Ipag-Event: TransactionCaptured`, `attributes.status.code = 8` e `status.message = CAPTURED`. Depois de persistir a confirmação localmente, responde imediatamente `200` ao iPag e encaminha uma única inscrição completa ao mesmo destino de `/api/register` (`url_registro`) em segundo plano. O payload combina os dados originais do cadastro, `paymentReference`, `tipoPessoa`, os dados do pagamento (`event`, `transaction_uuid`, `name`, `email`, `order_id`, `amount`, `status`, `payment_method`, `installments`, `captured_at`, `acquirer`) e todos os campos de endereço (`enderecoCobranca`, `numeroEnderecoCobranca`, `bairroCobranca`, `complementoCobranca`, `cidadeCobranca`, `estadoCobranca`, `paisCobranca` e `cepCobranca`), além dos headers `x-api-key` e `X-CT-Webhook-Token`.
 

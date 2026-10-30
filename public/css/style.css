@@ -1739,3 +1739,56 @@ body[data-theme="dark"] .waiting-list-note {
 }
 
  
+
+.payment-tax-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.payment-tax-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  color: var(--ink-900);
+}
+
+.payment-tax-table caption {
+  text-align: left;
+  padding-bottom: 0.6rem;
+  font-weight: 600;
+}
+
+.payment-tax-table th,
+.payment-tax-table td {
+  border: 1px solid var(--line-200);
+  padding: 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.payment-tax-table th {
+  font-weight: 600;
+}
+
+.payment-tax-table th:first-child {
+  text-align: left;
+}
+
+.payment-tax-table thead,
+.payment-tax-table tfoot {
+  background: var(--fg-green-100);
+  color: var(--fg-green-700);
+}
+
+.payment-step-summary .payment-tax-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0;
+}
+
+.payment-tax-loading .payment-awaiting-loader {
+  border-color: var(--line-200);
+  border-top-color: var(--fg-green-500);
+}
